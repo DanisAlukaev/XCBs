@@ -1,7 +1,11 @@
 # Automatic Concept Bottleneck Models
 
 ## Getting Started
-1. Download public datasets
+1. Set-up conda environment
+```
+conda create --name bottleneck --file requirements.txt python=3.10
+```
+2. Download public datasets
 ```
 make download_data
 ```
