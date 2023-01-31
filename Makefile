@@ -20,3 +20,4 @@ download_cub:
 preprocess_data:
 	cd autoconcept/; \
 	python -m scripts.majority_voting; \
+	python -m scripts.merge_datasets; \

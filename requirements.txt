@@ -141,7 +141,7 @@ nltk=3.8.1=pypi_0
 nodeenv=1.7.0=pypi_0
 notebook=6.5.2=pypi_0
 notebook-shim=0.2.2=pypi_0
-numpy=1.24.1=pypi_0
+numpy=1.23.5=pypi_0
 numpy-base=1.23.5=py310h8e6c178_0
 nvidia-cublas-cu11=11.10.3.66=pypi_0
 nvidia-cuda-nvrtc-cu11=11.7.99=pypi_0
@@ -173,6 +173,7 @@ psutil=5.9.4=pypi_0
 ptyprocess=0.7.0=pypi_0
 pure-eval=0.2.2=pypi_0
 pybind11=2.10.3=pypi_0
+pycocotools=2.0.6=pypi_0
 pycparser=2.21=pyhd3eb1b0_0
 pydantic=1.8.2=pypi_0
 pydicom=2.3.1=pypi_0
@@ -229,7 +230,7 @@ tinycss2=1.2.1=pypi_0
 tk=8.6.12=h1ccaba5_0
 tokenizers=0.13.2=pypi_0
 tomli=2.0.1=pypi_0
-torch=1.12.0=pypi_0
+torch=1.12.1=pypi_0
 torchaudio=0.12.1=pypi_0
 torchmetrics=0.11.0=pypi_0
 torchtext=0.13.0=pypi_0
@@ -243,7 +244,7 @@ typing-extensions=4.4.0=pypi_0
 typing_extensions=4.4.0=py310h06a4308_0
 tzdata=2022g=h04d1e81_0
 uri-template=1.2.0=pypi_0
-urllib3=1.26.13=pypi_0
+urllib3=1.26.14=pypi_0
 virtualenv=20.17.1=pypi_0
 wasabi=0.10.1=pyhd8ed1ab_1
 wcwidth=0.2.6=pypi_0
