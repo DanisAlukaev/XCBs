@@ -16,3 +16,7 @@ download_cub:
 	wget -c --read-timeout=5 --tries=0 https://s3.amazonaws.com/fast-ai-imageclas/CUB_200_2011.tgz; \
 	tar -xf CUB_200_2011.tgz; \
 	rm *.tgz; \
+
+preprocess_data:
+	cd autoconcept/; \
+	python -m scripts.majority_voting; \
