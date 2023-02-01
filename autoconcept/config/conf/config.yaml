@@ -1,13 +1,15 @@
 defaults:
   - dataset: public
+  - model: M01
   - _self_
 
 name: Experiment
 timestamp: ${now:%Y-%m-%d}/${now:%H-%M-%S}
-seed: 42
 accelerator: gpu
 devices: [0]
 debug: False
+seed: 42
+max_epochs: 200
 
 hydra:
   job:

@@ -16,24 +16,24 @@ class LitBaseModel(pl.LightningModule):
 
     def __init__(
         self,
-        backbone=TorchvisionFeatureExtractor(),
-        policy=MLPPredictor(),
+        feature_extractor=TorchvisionFeatureExtractor(),
+        predictor=MLPPredictor(),
         criterion=nn.CrossEntropyLoss(),
         optimizer_template=partial(torch.optim.Adam, lr=0.0001),
         interim_activation=nn.ReLU(),
     ):
         super().__init__()
-        assert backbone.out_features == policy.layers[0]
+        assert feature_extractor.out_features == predictor.layers[0]
         self.save_hyperparameters(
-            ignore=['backbone', 'policy', 'criterion', 'interim_activation'], logger=False)
+            ignore=['feature_extractor', 'predictor', 'criterion', 'interim_activation'], logger=False)
 
-        self.backbone = backbone
-        self.policy = policy
+        self.feature_extractor = feature_extractor
+        self.predictor = predictor
         self.interim_activation = interim_activation
 
         self.is_gumbel_sigmoid = isinstance(interim_activation, GumbelSigmoid)
         self.sigmoid = nn.Sigmoid()
-        self.bn = nn.BatchNorm1d(backbone.out_features)
+        self.bn = nn.BatchNorm1d(feature_extractor.out_features)
 
         self.criterion = criterion
         self.optimizer_template = optimizer_template
@@ -42,7 +42,7 @@ class LitBaseModel(pl.LightningModule):
             f'INIT RAM/train/rss {psutil.Process().memory_info().rss / 1e9} RAM/train/vms {psutil.Process().memory_info().vms / 1e9}')
 
     def forward(self, images, iteration=None):
-        concept_logits = self.backbone(images)
+        concept_logits = self.feature_extractor(images)
         concept_probs = self.sigmoid(concept_logits)
 
         args = [concept_logits]
@@ -50,7 +50,7 @@ class LitBaseModel(pl.LightningModule):
             args.append(iteration)
 
         concept_activated = self.bn(self.interim_activation(*args))
-        prediction = self.policy(concept_activated)
+        prediction = self.predictor(concept_activated)
 
         out_dict = dict(
             concept_logits=concept_logits,
@@ -62,7 +62,7 @@ class LitBaseModel(pl.LightningModule):
         return out_dict
 
     def configure_optimizers(self):
-        optimizer = self.optimizer_template(self.main.parameters())
+        optimizer = self.optimizer_template(self.parameters())
         return optimizer
 
     def training_step(self, batch, batch_idx):
@@ -83,8 +83,8 @@ class LitBaseModel(pl.LightningModule):
         }
         self.log_dict(metrics)
 
-        if self.main.is_gumbel_sigmoid:
-            self.log("gumbel/temp", self.main.interim_activation.t)
+        if self.is_gumbel_sigmoid:
+            self.log("gumbel/temp", self.interim_activation.t)
 
         iter_dict = dict(
             loss=loss,

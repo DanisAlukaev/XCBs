@@ -1,0 +1,7 @@
+_target_: functools.partial
+_args_:
+  - _target_: hydra.utils.get_class
+    path: torch.optim.SGD
+lr: 0.01
+momentum: 0.9
+weight_decay: 0.00004

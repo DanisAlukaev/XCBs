@@ -15,6 +15,11 @@ make download_data
 make preprocess_data
 ```
 ## Experiments
-| ID   | Model | Description |
-| ----:| :---  | :----       |
-| E01 | Unrestricted Bottleneck Model | Visual feature extractor + predictor |
+| EID   | MID | Model name | Description | Task |
+| ----:| :--- | :---  | :----       | :--- |
+| E01 | M01 | Unrestricted Bottleneck Model | Visual feature extractor + predictor | CLF CUB200 |
+
+## How to run?
+```
+python main.py dataset.batch_size=64 seed=42 +experiment={XXX}
+```
