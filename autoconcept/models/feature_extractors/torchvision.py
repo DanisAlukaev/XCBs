@@ -4,7 +4,7 @@ import torchvision.models as models
 from models.feature_extractors.base import BaseFeatureExtractor
 
 
-class FeatureExtractor(BaseFeatureExtractor):
+class TorchvisionFeatureExtractor(BaseFeatureExtractor):
 
     def __init__(
         self,
@@ -43,7 +43,7 @@ class FeatureExtractor(BaseFeatureExtractor):
 
 
 if __name__ == "__main__":
-    feature_extractor = FeatureExtractor(
+    feature_extractor = TorchvisionFeatureExtractor(
         model="inception_v3",
         weights="IMAGENET1K_V1"
     )
