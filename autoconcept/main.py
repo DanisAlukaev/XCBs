@@ -21,13 +21,8 @@ def run(cfg):
     dm = instantiate(cfg.dataset)
     dm.setup()
 
-    print(1)
-
     train_loader, test_loader, val_loader = dm.train_dataloader(
     ), dm.test_dataloader(), dm.val_dataloader()
-
-    print(len(train_loader.dataset) / 64, len(val_loader.dataset) /
-          64, len(test_loader.dataset) / 64)
 
     model = instantiate(cfg.model)
 
