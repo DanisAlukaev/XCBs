@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import torch
 from albumentations.pytorch.transforms import ToTensorV2
-from dataset.collators import CollateEmulator
+from datasets.collators import CollateEmulator
 from pytorch_lightning import LightningDataModule
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
