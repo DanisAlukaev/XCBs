@@ -13,4 +13,3 @@ make download_data
 ```
 make preprocess_data
 ```
-4. Fill in paths in `.env` file (see `.env.example`)
