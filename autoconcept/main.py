@@ -1,9 +1,7 @@
-import logging
 import os
 import traceback
 
 import hydra
-import psutil
 import pytorch_lightning as pl
 from clearml import Task
 from helpers import pretty_cfg, report_to_telegram, set_seed
@@ -20,22 +18,19 @@ def run(cfg):
         'outputs', artifact_object=os.path.abspath(os.getcwd()))
     set_seed(cfg.seed)
 
-    logging.info(
-        f'RAM/train/rss {psutil.Process().memory_info().rss / 1e9} RAM/train/vms {psutil.Process().memory_info().vms / 1e9}')
-
     dm = instantiate(cfg.dataset)
     dm.setup()
+
+    print(1)
 
     train_loader, test_loader, val_loader = dm.train_dataloader(
     ), dm.test_dataloader(), dm.val_dataloader()
 
-    logging.info(
-        f'RAM/train/rss {psutil.Process().memory_info().rss / 1e9} RAM/train/vms {psutil.Process().memory_info().vms / 1e9}')
+    print(len(train_loader.dataset) / 64, len(val_loader.dataset) /
+          64, len(test_loader.dataset) / 64)
 
     model = instantiate(cfg.model)
 
-    logging.info(
-        f'RAM/train/rss {psutil.Process().memory_info().rss / 1e9} RAM/train/vms {psutil.Process().memory_info().vms / 1e9}')
     checkpoint_callback = ModelCheckpoint(
         save_top_k=1,
         monitor="loss/val",
@@ -43,8 +38,6 @@ def run(cfg):
         filename="epoch{epoch:03d}-val_loss{loss/val:.5f}",
         auto_insert_metric_name=False,
     )
-    logging.info(
-        f'RAM/train/rss {psutil.Process().memory_info().rss / 1e9} RAM/train/vms {psutil.Process().memory_info().vms / 1e9}')
 
     trainer_callbacks = [
         checkpoint_callback,
@@ -57,10 +50,9 @@ def run(cfg):
         callbacks=trainer_callbacks,
         accelerator=cfg.accelerator,
         devices=cfg.devices,
-        log_every_n_steps=1,
+        log_every_n_steps=5,
     )
-    logging.info(
-        f'RAM/train/rss {psutil.Process().memory_info().rss / 1e9} RAM/train/vms {psutil.Process().memory_info().vms / 1e9}')
+
     trainer.fit(model, train_loader, val_loader)
 
     checkpoint_path = checkpoint_callback.best_model_path

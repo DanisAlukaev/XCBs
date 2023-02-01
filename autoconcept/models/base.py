@@ -1,4 +1,3 @@
-import logging
 from functools import partial
 
 import numpy as np
@@ -24,8 +23,6 @@ class LitBaseModel(pl.LightningModule):
     ):
         super().__init__()
         assert feature_extractor.out_features == predictor.layers[0]
-        self.save_hyperparameters(
-            ignore=['feature_extractor', 'predictor', 'criterion', 'interim_activation'], logger=False)
 
         self.feature_extractor = feature_extractor
         self.predictor = predictor
@@ -38,8 +35,8 @@ class LitBaseModel(pl.LightningModule):
         self.criterion = criterion
         self.optimizer_template = optimizer_template
 
-        logging.info(
-            f'INIT RAM/train/rss {psutil.Process().memory_info().rss / 1e9} RAM/train/vms {psutil.Process().memory_info().vms / 1e9}')
+        self.save_hyperparameters(ignore=[
+                                  'feature_extractor', 'predictor', 'criterion', 'interim_activation'], logger=False)
 
     def forward(self, images, iteration=None):
         concept_logits = self.feature_extractor(images)
