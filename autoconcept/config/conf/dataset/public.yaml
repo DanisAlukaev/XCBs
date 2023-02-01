@@ -1,0 +1,12 @@
+defaults:
+  - base
+
+_target_: datasets.public_dataset.JointDataModule
+
+annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/captions_merged.csv
+img_root: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/merged_files
+CUB_dir: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/CUB_200_2011
+mix_with_mscoco: True
+use_val_for_train: True
+collate_fn:
+  _target_: datasets.collators.CollateEmulator

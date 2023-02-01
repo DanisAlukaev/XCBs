@@ -1,0 +1,14 @@
+defaults:
+  - dataset: public
+  - _self_
+
+name: Experiment
+timestamp: ${now:%Y-%m-%d}/${now:%H-%M-%S}
+seed: 42
+accelerator: gpu
+devices: [0]
+debug: False
+
+hydra:
+  job:
+    chdir: True
