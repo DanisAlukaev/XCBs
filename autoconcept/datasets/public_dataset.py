@@ -14,41 +14,28 @@ from torch.utils.data import DataLoader, Dataset
 
 class JointDataset(Dataset):
 
-    def __init__(self,
-                 annotations_file,
-                 img_dir,
-                 CUB_dir="data/CUB_200_2011",
-                 transforms=None,
-                 phase='train',
-                 debug_sample=None,
-                 mix_with_mscoco=True,
-                 ) -> None:
-        """Joint dataset for CUB and MSCOCO datasets. Picture form MSCOCO in UL corner, from CUB in LR corner.
-
-        Args:
-            annotations_file (str): path to the annotations file
-            img_dir (str): path to the directory with images
-            CUB_dir (str, optional): path to CUB dataset folder. Defaults to 'data/CUB_200_2011'.
-            transforms (List[], optional): list of Albumentation transforms. Defaults to None.
-            phase (str, optional): train|val|test. Defaults to 'train'.
-            debug_sample (int, optional): limit number of samples in dataset. Defaults to None.
-            mix_with_mscoco (bool, optional): Whether add MSCOCO dataset to CUB. Otherwise only CUB is loaded. Defaults to True.
-            n_captions_from_MSCOCO (int, optional): number of caption to take from MSCOCO. Defaults to None.
-            n_captions_from_CUB (int, optional): number of caption to take from CUB. Defaults to None.
-            sample_caption_randomly (bool, optional): whether to take random sample from captions. Otherwise take first n.. Defaults to False.
-        """
-        # Set the loading directory
+    def __init__(
+        self,
+        annotations_file,
+        img_dir,
+        CUB_dir="data/CUB_200_2011",
+        transforms=None,
+        phase='train',
+        debug_sample=None,
+        mix_with_mscoco=True,
+    ):
         self.CUB_dir = Path(CUB_dir)
         self.annotations_file = annotations_file
         self.phase = phase
         self.mix_with_mscoco = mix_with_mscoco
         self.transforms = transforms
+        self.img_dir = Path(img_dir)
+
         self.read_images_txt()
         self.read_classes_txt()
         self.read_image_class_labels_txt()
         self.read_train_test_split_txt()
         self.read_annotations_file()
-        self.img_dir = Path(img_dir)
 
         if debug_sample is not None:
             self.annotations = self.annotations.iloc[:debug_sample]
@@ -68,24 +55,22 @@ class JointDataset(Dataset):
             img_path = self.CUB_dir / 'images' / row.path
         image = cv2.cvtColor(cv2.imread(str(img_path)), cv2.COLOR_BGR2RGB)
 
-        # apply transformations
         if self.transforms:
             transformed = self.transforms(image=image)
             image = transformed["image"]
 
-        # Creating captions, as the annotations are saved as a string, so eval is used
-        # to convert the long string back to array
+        attributes = torch.tensor(eval(row.attributes)).float()
+
         mask_source_captions = [str(label)
                                 for label in eval(row.mask_source_captions)]
-        source_captions = eval(row.source_captions)
-        attributes = torch.tensor(eval(row.attributes)).float()
-        source_captions = [str(caption) for caption in source_captions]
-        # separate caption by dataset
+        source_captions = [str(caption)
+                           for caption in eval(row.source_captions)]
+
         captions_cub = [caption for caption, label in zip(
             source_captions, mask_source_captions) if label == 'cub']
-        mask_cub = ['cub'] * len(captions_cub)
         captions_mscoco = [caption for caption, label in zip(
             source_captions, mask_source_captions) if label == 'coco']
+        mask_cub = ['cub'] * len(captions_cub)
         mask_mscoco = ['coco'] * len(captions_mscoco)
 
         if self.mix_with_mscoco:
@@ -99,17 +84,19 @@ class JointDataset(Dataset):
 
         class_id = self.image_id2class_id[row.name]
         target_one_hot = torch.zeros(len(self.class_id2class_name))
-        target_one_hot[class_id-1] = 1
-        target = torch.tensor(class_id-1)
+        target_one_hot[class_id - 1] = 1
+        target = torch.tensor(class_id - 1)
 
-        sample = dict(image=image,
-                      report=caption,
-                      target_one_hot=target_one_hot,
-                      class_id=class_id,
-                      class_name=self.class_id2class_name[class_id],
-                      source_captions=source_captions,
-                      mask_source_captions=mask_source_captions,
-                      attributes=attributes)
+        sample = dict(
+            image=image,
+            report=caption,
+            target_one_hot=target_one_hot,
+            attributes=attributes,
+            class_id=class_id,
+            class_name=self.class_id2class_name[class_id],
+            source_captions=source_captions,
+            mask_source_captions=mask_source_captions,
+        )
         self.dict_to_float32(sample)
         sample['target'] = target
         return sample
@@ -186,7 +173,6 @@ class JointDataset(Dataset):
         _, df_val = train_test_split(
             df_train, test_size=test_size, random_state=42, stratify=df_train.class_id)
 
-        # no need to set 1 to train samples since it is already set to 1, because we used only train set
         self.df_train_test_split.loc[df_val.index, 'is_training_image'] = 2
 
 
@@ -198,7 +184,7 @@ class JointDataModule(LightningDataModule):
         augmentations_test=None,
         annotation_path="data/captions_merged.csv",
         img_root="data/merged_files/",
-        CUB_dir='data/CUB_200_2011',
+        CUB_dir="data/CUB_200_2011",
         debug_sample=None,
         batch_size=64,
         num_workers=4,
@@ -208,29 +194,34 @@ class JointDataModule(LightningDataModule):
         use_val_for_train=False
     ):
         super().__init__()
+        self.img_size = img_size
         self.annotation_path = annotation_path
         self.img_root = img_root
         self.CUB_dir = CUB_dir
+        self.debug_sample = debug_sample
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.debug_sample = debug_sample
         self.shuffle_train = shuffle_train
-        self.img_size = img_size
+        self.mix_with_mscoco = mix_with_mscoco
         self.use_val_for_train = use_val_for_train
 
-        self.dataset_kwargs = dict(annotations_file=self.annotation_path,
-                                   img_dir=self.img_root,
-                                   CUB_dir=self.CUB_dir,
-                                   debug_sample=self.debug_sample,
-                                   mix_with_mscoco=mix_with_mscoco,
-                                   )
+        self.dataset_kwargs = dict(
+            annotations_file=self.annotation_path,
+            img_dir=self.img_root,
+            CUB_dir=self.CUB_dir,
+            debug_sample=self.debug_sample,
+            mix_with_mscoco=mix_with_mscoco,
+        )
 
-        self.dataloader_kwargs = dict(batch_size=self.batch_size,
-                                      num_workers=self.num_workers,
-                                      )
+        self.dataloader_kwargs = dict(
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+        )
+
         if collate_fn is not None:
             self.dataloader_kwargs['collate_fn'] = collate_fn
 
+        # default augmentations were taken from the paper "Concept Bottleneck Models"
         self.pre_transforms = []
         self.augmentations_train = augmentations_train or [
             A.augmentations.transforms.ColorJitter(
@@ -250,23 +241,26 @@ class JointDataModule(LightningDataModule):
         pass
 
     def setup(self, stage=None):
-        # Assign train/val datasets for use in dataloaders
         if stage == "fit" or stage is None:
-            self.train_dataset = JointDataset(phase='train',
-                                              transforms=self.pre_transforms + self.augmentations_train + self.post_transforms,
-                                              **self.dataset_kwargs
-                                              )
-            augmentations_val = self.augmentations_train if self.use_val_for_train else self.augmentations_test
-            self.val_dataset = JointDataset(phase='val',
-                                            transforms=self.pre_transforms + augmentations_val + self.post_transforms,
-                                            **self.dataset_kwargs
-                                            )
+            self.train_dataset = JointDataset(
+                phase='train',
+                transforms=self.pre_transforms + self.augmentations_train + self.post_transforms,
+                **self.dataset_kwargs
+            )
 
-        # Assign test dataset for use in dataloader(s)
+            augmentations_val = self.augmentations_train if self.use_val_for_train else self.augmentations_test
+            self.val_dataset = JointDataset(
+                phase='val',
+                transforms=self.pre_transforms + augmentations_val + self.post_transforms,
+                **self.dataset_kwargs
+            )
+
         if stage == "test" or stage is None:
-            self.test_dataset = JointDataset(phase='test',
-                                             transforms=self.pre_transforms + self.augmentations_test + self.post_transforms,
-                                             **self.dataset_kwargs)
+            self.test_dataset = JointDataset(
+                phase='test',
+                transforms=self.pre_transforms + self.augmentations_test + self.post_transforms,
+                **self.dataset_kwargs
+            )
 
     def train_dataloader(self):
         train_dataset = self.train_dataset
@@ -307,15 +301,6 @@ if __name__ == '__main__':
                          collate_fn=collate_fn)
     dm.setup()
 
-    # training_data = dm.train_dataset
     training_data = dm.train_dataloader()
-    validation_data = dm.val_dataloader()
-    testing_data = dm.test_dataloader()
-
-    # Display text and label.
     print('\nFirst iteration of data set: ', next(iter(training_data)), '\n')
-
-    # Print how many items are in the data set
     print('Length of data set: ', len(training_data), '\n')
-    print('Length of data set: ', len(validation_data), '\n')
-    print('Length of data set: ', len(testing_data), '\n')

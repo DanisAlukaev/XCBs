@@ -5,7 +5,7 @@ import os
 
 import pandas as pd
 import torchvision.datasets as dset
-from dataset.utils import Preprocess
+from datasets.utils import Preprocess
 from PIL import Image, ImageFile
 from tqdm import tqdm
 
