@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 
-class BaseFeatureExtractor(nn.Module):
+class BasePredictor(nn.Module):
 
     def __init__(self):
         super().__init__()
@@ -10,6 +10,6 @@ class BaseFeatureExtractor(nn.Module):
         raise NotImplementedError(
             f"Method of abstract class for '{type(self).__name__}' was used")
 
-    def get_samples_per_feature(self):
+    def get_importances(self):
         raise NotImplementedError(
             f"Method of abstract class for '{type(self).__name__}' was used")
