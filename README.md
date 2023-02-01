@@ -13,3 +13,7 @@ make download_data
 ```
 make preprocess_data
 ```
+## Experiments
+| ID   | Model | Description |
+| ----:| :---  | :----       |
+| E01 | Unrestricted Bottleneck Model | Visual feature extractor + predictor |
