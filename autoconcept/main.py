@@ -47,12 +47,12 @@ def run(cfg):
         devices=cfg.devices,
         log_every_n_steps=5,
     )
-
     trainer.fit(model, train_loader, val_loader)
 
     checkpoint_path = checkpoint_callback.best_model_path
     target_class = get_class(cfg.model._target_)
-    inference = target_class.load_from_checkpoint(checkpoint_path)
+    main = instantiate(cfg.model.main)
+    inference = target_class.load_from_checkpoint(checkpoint_path, main=main)
     trainer.test(inference, test_loader)
 
 

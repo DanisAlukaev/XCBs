@@ -11,16 +11,9 @@ from models.helpers import AllMulticlassClfMetrics, retrieve
 from models.predictors.mlp import MLPPredictor
 
 
-class LitBaseModel(pl.LightningModule):
+class BaseModel(nn.Module):
 
-    def __init__(
-        self,
-        feature_extractor=TorchvisionFeatureExtractor(),
-        predictor=MLPPredictor(),
-        criterion=nn.CrossEntropyLoss(),
-        optimizer_template=partial(torch.optim.Adam, lr=0.0001),
-        interim_activation=nn.ReLU(),
-    ):
+    def __init__(self, feature_extractor, predictor, interim_activation):
         super().__init__()
         assert feature_extractor.out_features == predictor.layers[0]
 
@@ -28,22 +21,16 @@ class LitBaseModel(pl.LightningModule):
         self.predictor = predictor
         self.interim_activation = interim_activation
 
-        self.is_gumbel_sigmoid = isinstance(interim_activation, GumbelSigmoid)
+        self.has_gumbel_sigmoid = isinstance(interim_activation, GumbelSigmoid)
         self.sigmoid = nn.Sigmoid()
         self.bn = nn.BatchNorm1d(feature_extractor.out_features)
 
-        self.criterion = criterion
-        self.optimizer_template = optimizer_template
-
-        self.save_hyperparameters(ignore=[
-                                  'feature_extractor', 'predictor', 'criterion', 'interim_activation'], logger=False)
-
-    def forward(self, images, iteration=None):
+    def forward(self, images, iteration):
         concept_logits = self.feature_extractor(images)
         concept_probs = self.sigmoid(concept_logits)
 
         args = [concept_logits]
-        if self.is_gumbel_sigmoid:
+        if self.has_gumbel_sigmoid:
             args.append(iteration)
 
         concept_activated = self.bn(self.interim_activation(*args))
@@ -58,9 +45,37 @@ class LitBaseModel(pl.LightningModule):
 
         return out_dict
 
+
+class LitBaseModel(pl.LightningModule):
+
+    def __init__(
+        self,
+        main=BaseModel(
+            feature_extractor=TorchvisionFeatureExtractor(),
+            predictor=MLPPredictor(),
+            interim_activation=nn.ReLU(),
+        ),
+        criterion=nn.CrossEntropyLoss(),
+        optimizer_template=partial(torch.optim.Adam, lr=0.0001),
+        scheduler_template=partial(
+            torch.optim.lr_scheduler.StepLR, step_size=30, gamma=0.1),
+    ):
+        super().__init__()
+        self.save_hyperparameters(ignore=['main'], logger=False)
+
+        self.main = main
+        self.criterion = criterion
+        self.optimizer_template = optimizer_template
+        self.scheduler_template = scheduler_template
+
+    def forward(self, images, iteration=None):
+        out_dict = self.main(images, iteration=iteration)
+        return out_dict
+
     def configure_optimizers(self):
         optimizer = self.optimizer_template(self.parameters())
-        return optimizer
+        scheduler = self.scheduler_template(optimizer)
+        return [optimizer], [scheduler]
 
     def training_step(self, batch, batch_idx):
         images, target = batch["image"], batch["target"]
@@ -80,8 +95,8 @@ class LitBaseModel(pl.LightningModule):
         }
         self.log_dict(metrics)
 
-        if self.is_gumbel_sigmoid:
-            self.log("gumbel/temp", self.interim_activation.t)
+        if self.main.has_gumbel_sigmoid:
+            self.log("gumbel/temp", self.main.interim_activation.t)
 
         iter_dict = dict(
             loss=loss,

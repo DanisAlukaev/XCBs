@@ -1,28 +1,26 @@
+defaults:
+  - optimizer_template: sgd
+  - scheduler_template: step_lr
+
 _target_: models.base.LitBaseModel
 
-feature_extractor:
-  _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
-  model: inception_v3
-  weights: IMAGENET1K_V1
-  out_features: 300
+main:
+  _target_: models.base.BaseModel
 
-predictor:
-  _target_: models.predictors.mlp.MLPPredictor
-  layers: [300, 200]
-  activation:
-    _target_: torch.nn.ReLU
+  feature_extractor:
+    _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
+    model: inception_v3
+    weights: IMAGENET1K_V1
+    out_features: 312
 
-interim_activation:
-  _target_: functional.gumbel.GumbelSigmoid
+  predictor:
+    _target_: models.predictors.mlp.MLPPredictor
+    layers: [312, 200]
+    activation:
+      _target_: torch.nn.ReLU
+
+  interim_activation:
+    _target_: functional.gumbel.GumbelSigmoid
 
 criterion:
   _target_: torch.nn.CrossEntropyLoss
-
-optimizer_template:
-  _target_: functools.partial
-  _args_:
-    - _target_: hydra.utils.get_class
-      path: torch.optim.SGD
-  lr: 0.01
-  momentum: 0.9
-  weight_decay: 0.00004
