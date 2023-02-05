@@ -40,6 +40,9 @@ def run(cfg):
         DeviceStatsMonitor(),
     ]
 
+    if cfg.early_stopper:
+        trainer_callbacks += [instantiate(cfg.early_stopper)]
+
     trainer = pl.Trainer(
         max_epochs=cfg.max_epochs,
         callbacks=trainer_callbacks,
@@ -53,14 +56,17 @@ def run(cfg):
     target_class = get_class(cfg.model._target_)
     main = instantiate(cfg.model.main)
     inference = target_class.load_from_checkpoint(checkpoint_path, main=main)
-    trainer.test(inference, test_loader)
+    f1_test = trainer.test(inference, test_loader)[
+        0]['test/weighted_avg/f1-score']
+    return f1_test
 
 
 @hydra.main(version_base=None, config_path="config/conf", config_name="config")
 def main(cfg: DictConfig):
     try:
-        run(cfg)
+        metric = run(cfg)
         message = f"✅ Successful run from {cfg.timestamp}!\n\n"
+        message += f"f1-score test: {metric}\n\n"
         message += f"Configuration:\n{pretty_cfg(cfg)}"
     except Exception:
         message = f"🚫 Run from {cfg.timestamp} failed!\n\n"

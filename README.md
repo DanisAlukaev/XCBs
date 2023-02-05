@@ -15,9 +15,9 @@ make download_data
 make preprocess_data
 ```
 ## Experiments
-| EID   | MID | Model name | Description | Task |
-| ----:| :--- | :---  | :----       | :--- |
-| E01 | M01 | Unrestricted Bottleneck Model | Visual feature extractor + predictor | CLF CUB200 |
+| EID   | MID | Model name | Description | Task | |
+| ----:| :--- | :---  | :----       | :--- |:--- |
+| E01 | M01 | Unrestricted Bottleneck Model | Visual feature extractor + predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/45290810b6594c90bd67599f9a9eb948/execution), [[2]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/7acaef594d8e4785b0259341ed68d619/execution) |
 
 ## How to run?
 ```

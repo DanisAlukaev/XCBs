@@ -11,6 +11,12 @@ debug: False
 seed: 42
 max_epochs: 200
 
+early_stopper:
+  _target_: pytorch_lightning.callbacks.early_stopping.EarlyStopping
+  monitor: loss/val
+  mode: min
+  patience: 5
+
 hydra:
   job:
     chdir: True
