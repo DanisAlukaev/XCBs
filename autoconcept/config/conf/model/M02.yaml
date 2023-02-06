@@ -27,5 +27,6 @@ criterion_task:
 
 criterion_concept:
   _target_: torch.nn.BCELoss
+  reduction: none
 
-lambda_p: 1.
+lambda_p: 0.01

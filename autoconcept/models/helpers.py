@@ -34,7 +34,7 @@ class MultiLabelClfMetrics:
 
     def __call__(self, targets, preds, prefix='train'):
         ret = {
-            prefix + 'concepts/accuracy': accuracy_score(targets, preds, normalize=True, sample_weight=None),
+            prefix + 'concepts/accuracy': accuracy_score(targets.flatten(), preds.flatten()),
             prefix + 'concepts/hamming_loss': hamming_loss(targets, preds),
             prefix + 'concepts/f1_score': f1_score(targets, preds, average='samples')
         }

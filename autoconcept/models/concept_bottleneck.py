@@ -59,8 +59,11 @@ class LitConceptBottleneckModel(pl.LightningModule):
 
         loss_task = self.criterion_task(prediction, target)
         loss_concept = self.criterion_concept(concept_probs, attributes)
+        if self.criterion_concept.reduction == "none":
+            loss_concept = loss_concept.sum(-1).mean()
+        loss_concept *= self.lambda_p
 
-        loss = loss_task + self.lambda_p * loss_concept
+        loss = loss_task + loss_concept
 
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))
@@ -140,8 +143,11 @@ class LitConceptBottleneckModel(pl.LightningModule):
 
         loss_task = self.criterion_task(prediction, target)
         loss_concept = self.criterion_concept(concept_probs, attributes)
+        if self.criterion_concept.reduction == "none":
+            loss_concept = loss_concept.sum(-1).mean()
+        loss_concept *= self.lambda_p
 
-        loss = loss_task + self.lambda_p * loss_concept
+        loss = loss_task + loss_concept
 
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))
