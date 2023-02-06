@@ -1,0 +1,4 @@
+img_size: 299
+num_workers: 10
+batch_size: 64
+shuffle_train: True
