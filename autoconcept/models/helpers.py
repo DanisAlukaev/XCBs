@@ -1,5 +1,5 @@
 from sklearn.metrics import (accuracy_score, balanced_accuracy_score,
-                             classification_report)
+                             classification_report, f1_score, hamming_loss)
 
 
 class AllMulticlassClfMetrics:
@@ -30,5 +30,18 @@ class AllMulticlassClfMetrics:
         return ret
 
 
-def retrieve(x):
-    return x.detach().cpu().numpy().flatten()
+class MultiLabelClfMetrics:
+
+    def __call__(self, targets, preds, prefix='train'):
+        ret = {
+            prefix + 'concepts/accuracy': accuracy_score(targets, preds, normalize=True, sample_weight=None),
+            prefix + 'concepts/hamming_loss': hamming_loss(targets, preds),
+            prefix + 'concepts/f1_score': f1_score(targets, preds, average='samples')
+        }
+        return ret
+
+
+def retrieve(x, flatten=True):
+    if flatten:
+        return x.detach().cpu().numpy().flatten()
+    return x.detach().cpu().numpy()

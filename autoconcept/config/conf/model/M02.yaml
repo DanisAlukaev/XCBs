@@ -1,0 +1,31 @@
+defaults:
+  - optimizer_template: sgd
+  - scheduler_template: step_lr
+
+_target_: models.concept_bottleneck.LitConceptBottleneckModel
+
+main:
+  _target_: models.base.BaseModel
+
+  feature_extractor:
+    _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
+    model: inception_v3
+    weights: IMAGENET1K_V1
+    out_features: 312
+
+  predictor:
+    _target_: models.predictors.mlp.MLPPredictor
+    layers: [312, 200]
+    activation:
+      _target_: torch.nn.ReLU
+
+  interim_activation:
+    _target_: torch.nn.Sigmoid
+
+criterion_task:
+  _target_: torch.nn.CrossEntropyLoss
+
+criterion_concept:
+  _target_: torch.nn.BCELoss
+
+lambda_p: 1.
