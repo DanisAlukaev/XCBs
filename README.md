@@ -18,6 +18,7 @@ make preprocess_data
 | EID   | MID | Model name | Description | Task | Runs |
 | ----:| :--- | :---  | :----       | :--- |:--- |
 | E01 | M01 | Unrestricted Bottleneck Model | Visual feature extractor + predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/45290810b6594c90bd67599f9a9eb948), [[2]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/7acaef594d8e4785b0259341ed68d619), [[3]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/46375d4209234e33abb4c9db98fee285/info-output/metrics/scalar) |
+| E02 | M02 | Concept Bottleneck Model | Visual feature extractor + predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/3f6163de528049c79c48a4179b0fffb5) |
 
 ## How to run?
 ```
