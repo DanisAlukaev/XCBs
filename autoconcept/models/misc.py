@@ -38,6 +38,7 @@ class LitPredictorModel(pl.LightningModule):
         optimizer_template=partial(torch.optim.Adam, lr=0.0001),
         scheduler_template=partial(
             torch.optim.lr_scheduler.StepLR, step_size=30, gamma=0.1),
+        field="attributes",
     ):
         super().__init__()
         self.save_hyperparameters(ignore=['main'], logger=False)
@@ -46,6 +47,7 @@ class LitPredictorModel(pl.LightningModule):
         self.criterion = criterion
         self.optimizer_template = optimizer_template
         self.scheduler_template = scheduler_template
+        self.field = field
 
     def forward(self, images, iteration=None):
         out_dict = self.main(images)
@@ -57,7 +59,7 @@ class LitPredictorModel(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def training_step(self, batch, batch_idx):
-        x, target = batch["attributes"], batch["target"]
+        x, target = batch[self.field], batch["target"]
 
         iteration = self.trainer.global_step
         out_dict = self(x, iteration=iteration)
@@ -117,7 +119,7 @@ class LitPredictorModel(pl.LightningModule):
         return metrics
 
     def _validation_step(self, batch, batch_idx, phase='val'):
-        x, target = batch["attributes"], batch["target"]
+        x, target = batch[self.field], batch["target"]
 
         iteration = self.trainer.global_step
         out_dict = self(x, iteration=iteration)

@@ -1,5 +1,5 @@
 defaults:
-  - optimizer_template: adamw
+  - optimizer_template: adam
   - scheduler_template: step_lr
 
 _target_: models.misc.LitPredictorModel
@@ -9,11 +9,11 @@ main:
 
   predictor:
     _target_: models.predictors.mlp.MLPPredictor
-    layers: [312, 300, 200]
+    layers: [8800, 4000, 1500, 600, 200]
     activation:
       _target_: torch.nn.ReLU
 
-field: attributes
+field: bow
 
 criterion:
   _target_: torch.nn.CrossEntropyLoss
