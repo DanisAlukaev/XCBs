@@ -1,8 +1,13 @@
 import re
+from collections import Counter
 from string import punctuation
 
 import nltk
+import pandas as pd
 from nltk.stem import WordNetLemmatizer
+from torchtext.data.utils import get_tokenizer
+from torchtext.vocab import vocab
+from tqdm import tqdm
 
 wordnet_lemmatizer = WordNetLemmatizer()
 
@@ -55,6 +60,58 @@ class Preprocess:
             clean_text = self.remove_tags(clean_text)
             word_tokens = list(self.word_tokenize(clean_text))
         return " ".join(word_tokens)
+
+
+class Vocabulary:
+
+    def __init__(
+        self,
+        annotation_path="data/captions_merged.csv",
+        mix_with_mscoco=True,
+    ):
+        self.annotation_path = annotation_path
+        self.pre_process_obj = Preprocess()
+        self.mix_with_mscoco = mix_with_mscoco
+        self.tokenizer = get_tokenizer('spacy', language='en')
+        self.read_annotations_file()
+        self.build_vocab()
+
+    def build_vocab(self):
+        word_counter = Counter()
+        for _, row in tqdm(self.annotations.iterrows(), total=self.annotations.shape[0]):
+            mask_source_captions = [str(label)
+                                    for label in eval(row.mask_source_captions)]
+            source_captions = eval(row.source_captions)
+            source_captions = [self.pre_process_obj.preprocess(
+                caption) for caption in source_captions]
+            source_captions = [str(caption) for caption in source_captions]
+
+            captions_cub = [caption for caption, label in zip(
+                source_captions, mask_source_captions) if label == 'cub']
+            mask_cub = ['cub'] * len(captions_cub)
+            captions_mscoco = [caption for caption, label in zip(
+                source_captions, mask_source_captions) if label == 'coco']
+            mask_mscoco = ['coco'] * len(captions_mscoco)
+            if self.mix_with_mscoco:
+                source_captions = captions_mscoco + captions_cub
+                mask_source_captions = mask_mscoco + mask_cub
+            else:
+                source_captions = captions_cub
+                mask_source_captions = mask_cub
+            text = " ".join(source_captions)
+            tokens = self.tokenizer(text)
+            word_counter.update(tokens)
+
+        special_symbols = ["<pad>", "<unk>"]
+        self.vocab = vocab(word_counter, specials=special_symbols)
+        self.vocab.set_default_index(self.vocab["<unk>"])
+
+    def read_annotations_file(self):
+        filename = self.annotation_path
+        self.annotations = pd.read_csv(
+            filename, names=['filename', 'source_captions', 'mask_source_captions', 'attributes'])
+        self.annotations
+        print(self.annotations.head())
 
 
 if __name__ == "__main__":
