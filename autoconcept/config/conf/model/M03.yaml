@@ -1,0 +1,14 @@
+defaults:
+  - optimizer_template: adamw
+  - scheduler_template: step_lr
+
+_target_: models.misc.LitPredictorModel
+
+main:
+  _target_: models.misc.PredictorModel
+
+  predictor:
+    _target_: models.predictors.mlp.MLPPredictor
+    layers: [312, 300, 200]
+    activation:
+      _target_: torch.nn.ReLU

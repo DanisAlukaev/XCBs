@@ -1,0 +1,11 @@
+# @package _global_
+
+defaults:
+  - override /model: M03
+
+name: E03
+dataset:
+  mix_with_mscoco: false
+  num_workers: 10
+devices:
+  - 0
