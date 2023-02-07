@@ -11,8 +11,7 @@ class LSTMConceptExtractor(BaseConceptExtractor):
         embed_dim=100,
         hidden_dim=100,
         n_layers=1,
-        n_concepts=300,
-        activation=nn.ReLU(),
+        out_features=300,
     ):
         super().__init__()
 
@@ -20,8 +19,7 @@ class LSTMConceptExtractor(BaseConceptExtractor):
         self.embed_dim = embed_dim
         self.hidden_dim = hidden_dim
         self.n_layers = n_layers
-        self.n_concepts = n_concepts
-        self.activation = activation
+        self.out_features = out_features
 
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
         self.lstm = nn.LSTM(
@@ -30,7 +28,7 @@ class LSTMConceptExtractor(BaseConceptExtractor):
             num_layers=n_layers,
             batch_first=True
         )
-        self.linear = nn.Linear(hidden_dim, n_concepts)
+        self.linear = nn.Linear(hidden_dim, out_features)
 
     def forward(self, input_ids):
         device = input_ids.device

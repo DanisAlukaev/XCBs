@@ -7,7 +7,7 @@ _target_: models.concept_bottleneck.LitConceptBottleneckModel
 main:
   _target_: models.base.BaseModel
 
-  feature_extractor:
+  extractor:
     _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
     model: inception_v3
     weights: IMAGENET1K_V1

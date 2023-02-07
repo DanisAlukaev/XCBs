@@ -1,5 +1,5 @@
 defaults:
-  - optimizer_template: sgd
+  - optimizer_template: adam
   - scheduler_template: step_lr
 
 _target_: models.base.LitBaseModel
@@ -8,9 +8,11 @@ main:
   _target_: models.base.BaseModel
 
   extractor:
-    _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
-    model: inception_v3
-    weights: IMAGENET1K_V1
+    _target_: models.concept_extractors.lstm.LSTMConceptExtractor
+    vocab_size: 8800
+    embed_dim: 100
+    hidden_dim: 312
+    n_layers: 1
     out_features: 312
 
   predictor:
@@ -20,9 +22,9 @@ main:
       _target_: torch.nn.ReLU
 
   interim_activation:
-    # _target_: functional.gumbel.GumbelSigmoid
-    # _target_: torch.nn.Sigmoid
-    _target_: torch.nn.ReLU
+    _target_: torch.nn.Sigmoid
+
+field: indices
 
 criterion:
   _target_: torch.nn.CrossEntropyLoss
