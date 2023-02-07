@@ -13,5 +13,7 @@ main:
     activation:
       _target_: torch.nn.ReLU
 
+field: bow
+
 criterion:
   _target_: torch.nn.CrossEntropyLoss

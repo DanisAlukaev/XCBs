@@ -70,7 +70,6 @@ class Vocabulary:
         mix_with_mscoco=True,
     ):
         self.annotation_path = annotation_path
-        self.pre_process_obj = Preprocess()
         self.mix_with_mscoco = mix_with_mscoco
         self.tokenizer = get_tokenizer('spacy', language='en')
         self.read_annotations_file()
@@ -82,8 +81,6 @@ class Vocabulary:
             mask_source_captions = [str(label)
                                     for label in eval(row.mask_source_captions)]
             source_captions = eval(row.source_captions)
-            source_captions = [self.pre_process_obj.preprocess(
-                caption) for caption in source_captions]
             source_captions = [str(caption) for caption in source_captions]
 
             captions_cub = [caption for caption, label in zip(
