@@ -106,6 +106,7 @@ src/multirun
 
 # data folders
 data/
+resources/
 
 # Hydra
 outputs/

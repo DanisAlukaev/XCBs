@@ -1,0 +1,13 @@
+# @package _global_
+
+defaults:
+  - override /model: M08
+
+name: E08
+dataset:
+  collate_fn:
+    _target_: datasets.collators.CollateNgrams
+  mix_with_mscoco: false
+  num_workers: 10
+devices:
+  - 0

@@ -111,6 +111,30 @@ class Vocabulary:
         print(self.annotations.head())
 
 
+def generate_ngrams(reports, n=4):
+    ngrams_list = list()
+    for report in reports:
+        ngrams = list()
+        for i in range(1, n):
+            igrams = nltk.ngrams(report.split(), i + 1)
+            igrams = [" ".join(x) for x in igrams]
+            ngrams.extend(igrams)
+
+        ngrams_list.append(ngrams)
+
+    return ngrams_list
+
+
+def pad(ngrams, max_len):
+    _ngrams = list()
+    for ngram_list in ngrams:
+        _ngram_list = ngram_list[:]
+        n_pad = max_len - len(ngram_list)
+        _ngram_list.extend([''] * n_pad)
+        _ngrams.append(_ngram_list)
+    return _ngrams
+
+
 if __name__ == "__main__":
     preprocess_obj = Preprocess()
     text = "1 <TAG> interested and ?"
