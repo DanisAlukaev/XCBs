@@ -25,7 +25,7 @@ make preprocess_data
 | [E06](autoconcept/config/conf/experiment/E06.yaml) | [M06](autoconcept/config/conf/model/M06.yaml) | Single CNN Classifier | Single CNN concept extractor + predictor (see issue [#14](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/14)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/61fe6ef5e7594f0586d1b814402d173b) |
 | [E07](autoconcept/config/conf/experiment/E07.yaml) | [M07](autoconcept/config/conf/model/M07.yaml) | Multiple CNN Classifier | Multiple CNN concept extractor + predictor (see issue [#16](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/16)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/06197c1b3a1c4352850bb181dd1bd564) |
 | [E08](autoconcept/config/conf/experiment/E08.yaml) | [M08](autoconcept/config/conf/model/M08.yaml) | Simplified Attention Classifier | Simplified Attention concept extractor + predictor (see issue [#20](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/20)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/1ac635b4173240928a2a72ea14c497d1) |
-
+| [E09](autoconcept/config/conf/experiment/E08.yaml) | [M09](autoconcept/config/conf/model/M08.yaml) | Transformer Classifier | Transformer concept extractor + predictor (see issue [#22](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/22)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/1586fc7eb35b43e9a20123eac86d394d) |
 
 ## How to run?
 ```
