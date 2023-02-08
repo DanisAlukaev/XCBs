@@ -1,0 +1,26 @@
+defaults:
+  - optimizer_template: adagrad
+  - scheduler_template: step_lr
+
+_target_: models.base.LitBaseModel
+
+main:
+  _target_: models.base.BaseModel
+
+  extractor:
+    _target_: models.concept_extractors.attention.ConceptExtractorSimplifiedAttention
+    out_features: 312
+    embed_dim: 300
+
+  predictor:
+    _target_: models.predictors.mlp.MLPPredictor
+    layers: [312, 200]
+    activation:
+      _target_: torch.nn.ReLU
+
+  interim_activation: null
+
+field: keys
+
+criterion:
+  _target_: torch.nn.CrossEntropyLoss

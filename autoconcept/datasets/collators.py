@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from datasets.embedders import Embedder, FastTextEmbedder
+from datasets.embedders.fasttext_embedder import FastTextEmbedder
 from datasets.utils import generate_ngrams, pad
 
 
@@ -102,7 +102,7 @@ class CollateNgrams:
         n_token=5
     ):
         self.n_token = n_token
-        self.embedder: Embedder = embedder
+        self.embedder = embedder
 
     def __call__(self, batch):
         batch_dict = dict()

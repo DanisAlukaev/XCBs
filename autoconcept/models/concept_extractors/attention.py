@@ -7,15 +7,15 @@ class ConceptExtractorSimplifiedAttention(BaseConceptExtractor):
 
     def __init__(
         self,
-        n_concepts=320,
+        out_features=320,
         embed_dim=300
     ):
         super().__init__()
 
-        self.n_concepts = n_concepts
+        self.out_features = out_features
         self.embed_dim = embed_dim
 
-        self.queries = nn.Embedding(n_concepts, embed_dim)
+        self.queries = nn.Embedding(out_features, embed_dim)
         self.dummy = nn.Embedding(1, embed_dim)
 
         self.softmax = nn.Softmax(dim=2)

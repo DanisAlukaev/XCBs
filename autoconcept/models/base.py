@@ -25,15 +25,19 @@ class BaseModel(nn.Module):
         self.sigmoid = nn.Sigmoid()
         self.bn = nn.BatchNorm1d(extractor.out_features)
 
-    def forward(self, images, iteration):
-        concept_logits = self.extractor(images)
+    def forward(self, x, iteration):
+        concept_logits = self.extractor(x)
         concept_probs = self.sigmoid(concept_logits)
 
         args = [concept_logits]
         if self.has_gumbel_sigmoid:
             args.append(iteration)
 
-        concept_activated = self.bn(self.interim_activation(*args))
+        concept_activated = concept_logits
+        if self.interim_activation:
+            concept_activated = self.interim_activation(*args)
+
+        concept_activated = self.bn(concept_activated)
         prediction = self.predictor(concept_activated)
 
         out_dict = dict(
