@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models.concept_extractors.base import BaseConceptExtractor
@@ -78,3 +79,43 @@ class ConceptExtractorSingleCNN(BaseConceptExtractor):
         concept_logits = self.linear(features)
 
         return concept_logits
+
+
+class ConceptExtractorMultipleCNN(nn.Module):
+
+    def __init__(
+        self,
+        vocab_size=None,
+        embed_dim=100,
+        n_filters=32,
+        filter_size=5,
+        n_concepts=300,
+        activation=nn.ReLU(),
+    ):
+        super().__init__()
+
+        self.vocab_size = vocab_size
+        self.embed_dim = embed_dim
+        self.n_filters = n_filters
+        self.filter_size = filter_size
+        self.n_concepts = n_concepts
+        self.activation = activation
+
+        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
+        self.cnns = nn.ModuleList([
+            TextualCNN(
+                embed_dim=embed_dim,
+                n_filters=n_filters,
+                filter_size=filter_size,
+                activation=activation,
+                pooling_type="overall")
+            for _ in range(n_concepts)
+        ])
+
+    def forward(self, input_ids):
+        x = self.embedding(input_ids).permute(0, 2, 1)
+        features = list()
+        for _, cnn in enumerate(self.cnns):
+            features.append(cnn(x))
+        features = torch.stack(features, dim=1).squeeze(-1)
+        return features
