@@ -48,7 +48,7 @@ def run(cfg):
         callbacks=trainer_callbacks,
         accelerator=cfg.accelerator,
         devices=cfg.devices,
-        log_every_n_steps=5,
+        log_every_n_steps=cfg.log_every_n_steps,
     )
     trainer.fit(model, train_loader, val_loader)
 
