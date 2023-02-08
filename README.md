@@ -22,8 +22,8 @@ make preprocess_data
 | [E03](autoconcept/config/conf/experiment/E03.yaml) | [M03](autoconcept/config/conf/model/M03.yaml) | Binary Attributes Classifier | Predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/60fddd0c2a0f46f384e597c5e33d1b2e) |
 | [E04](autoconcept/config/conf/experiment/E04.yaml) | [M04](autoconcept/config/conf/model/M04.yaml) | BOW Classifier | Predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/4f04a00d9b9a418fb69ac44dd77d4fbf) |
 | [E05](autoconcept/config/conf/experiment/E05.yaml) | [M05](autoconcept/config/conf/model/M05.yaml) | LSTM Classifier | LSTM concept extractor + predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/e1e2454081d04be7aaac8a0b5597c583) |
-| [E06](autoconcept/config/conf/experiment/E06.yaml) | [M06](autoconcept/config/conf/model/M06.yaml) | Sinle CNN Classifier | Single CNN concept extractor + predictor (see issue #14) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/61fe6ef5e7594f0586d1b814402d173b) |
-| [E07](autoconcept/config/conf/experiment/E07.yaml) | [M07](autoconcept/config/conf/model/M07.yaml) | Sinle CNN Classifier | Multiple CNN concept extractor + predictor (see issue #16) | CLF CUB200 | [(1)]() |
+| [E06](autoconcept/config/conf/experiment/E06.yaml) | [M06](autoconcept/config/conf/model/M06.yaml) | Sinle CNN Classifier | Single CNN concept extractor + predictor (see issue [#14](/../../issues/14)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/61fe6ef5e7594f0586d1b814402d173b) |
+| [E07](autoconcept/config/conf/experiment/E07.yaml) | [M07](autoconcept/config/conf/model/M07.yaml) | Sinle CNN Classifier | Multiple CNN concept extractor + predictor (see issue [#16](/../../issues/16)) | CLF CUB200 | [(1)]() |
 
 
 ## How to run?
