@@ -89,7 +89,7 @@ class ConceptExtractorMultipleCNN(nn.Module):
         embed_dim=100,
         n_filters=32,
         filter_size=5,
-        n_concepts=300,
+        out_features=300,
         activation=nn.ReLU(),
     ):
         super().__init__()
@@ -98,7 +98,7 @@ class ConceptExtractorMultipleCNN(nn.Module):
         self.embed_dim = embed_dim
         self.n_filters = n_filters
         self.filter_size = filter_size
-        self.n_concepts = n_concepts
+        self.out_features = out_features
         self.activation = activation
 
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
@@ -109,7 +109,7 @@ class ConceptExtractorMultipleCNN(nn.Module):
                 filter_size=filter_size,
                 activation=activation,
                 pooling_type="overall")
-            for _ in range(n_concepts)
+            for _ in range(out_features)
         ])
 
     def forward(self, input_ids):
