@@ -1,0 +1,6 @@
+_target_: functools.partial
+_args_:
+  - _target_: hydra.utils.get_class
+    path: torch.optim.Adadelta
+lr: 0.25
+rho: 0.95

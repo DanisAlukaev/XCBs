@@ -49,7 +49,7 @@ class ConceptExtractorSingleCNN(BaseConceptExtractor):
         embed_dim=100,
         n_filters=512,
         filter_size=5,
-        n_concepts=300,
+        out_features=300,
         activation=nn.ReLU(),
     ):
         super().__init__()
@@ -58,7 +58,7 @@ class ConceptExtractorSingleCNN(BaseConceptExtractor):
         self.embed_dim = embed_dim
         self.n_filters = n_filters
         self.filter_size = filter_size
-        self.n_concepts = n_concepts
+        self.out_features = out_features
         self.activation = activation
 
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
@@ -70,18 +70,11 @@ class ConceptExtractorSingleCNN(BaseConceptExtractor):
             pooling_type="filter-wise"
         )
 
-        self.linear = nn.Linear(n_filters, n_concepts)
-        self.sigmoid = nn.Sigmoid()
+        self.linear = nn.Linear(n_filters, out_features)
 
     def forward(self, input_ids):
         x = self.embedding(input_ids).permute(0, 2, 1)
         features = self.cnn(x)
         concept_logits = self.linear(features)
-        concept_probs = self.sigmoid(concept_logits)
 
-        out_dict = dict(
-            concept_logits=concept_logits,
-            concept_probs=concept_probs,
-        )
-
-        return out_dict
+        return concept_logits
