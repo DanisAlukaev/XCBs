@@ -55,3 +55,37 @@ class CollateBOW:
             batch_dict[key] = torch.stack(batch_dict[key])
 
         return batch_dict
+
+
+class CollateIndices:
+
+    def __init__(self, vocabulary):
+        self.vocabulary = vocabulary
+
+    def __call__(self, batch):
+        batch_dict = dict()
+        indices = []
+        max_len = -1
+        for sample in batch:
+            for key in sample.keys():
+                if key not in batch_dict:
+                    batch_dict[key] = list()
+                batch_dict[key].append(sample[key])
+            tokens = self.vocabulary.tokenizer(sample["report"])
+            if len(tokens) > max_len:
+                max_len = len(tokens)
+            indices.append(self.vocabulary.vocab.lookup_indices(tokens))
+
+        _indices = list()
+        for ids in indices:
+            _indices.append(torch.tensor(
+                ids + self.vocabulary.vocab.lookup_indices(["<pad>"]) * (max_len - len(ids))))
+
+        batch_dict["indices"] = _indices
+
+        for key in batch_dict.keys():
+            if not all(isinstance(x, torch.Tensor) for x in batch_dict[key]):
+                continue
+            batch_dict[key] = torch.stack(batch_dict[key])
+
+        return batch_dict

@@ -13,20 +13,20 @@ from models.predictors.mlp import MLPPredictor
 
 class BaseModel(nn.Module):
 
-    def __init__(self, feature_extractor, predictor, interim_activation):
+    def __init__(self, extractor, predictor, interim_activation):
         super().__init__()
-        assert feature_extractor.out_features == predictor.layers[0]
+        assert extractor.out_features == predictor.layers[0]
 
-        self.feature_extractor = feature_extractor
+        self.extractor = extractor
         self.predictor = predictor
         self.interim_activation = interim_activation
 
         self.has_gumbel_sigmoid = isinstance(interim_activation, GumbelSigmoid)
         self.sigmoid = nn.Sigmoid()
-        self.bn = nn.BatchNorm1d(feature_extractor.out_features)
+        self.bn = nn.BatchNorm1d(extractor.out_features)
 
     def forward(self, images, iteration):
-        concept_logits = self.feature_extractor(images)
+        concept_logits = self.extractor(images)
         concept_probs = self.sigmoid(concept_logits)
 
         args = [concept_logits]
@@ -51,7 +51,7 @@ class LitBaseModel(pl.LightningModule):
     def __init__(
         self,
         main=BaseModel(
-            feature_extractor=TorchvisionFeatureExtractor(),
+            extractor=TorchvisionFeatureExtractor(),
             predictor=MLPPredictor(),
             interim_activation=nn.ReLU(),
         ),
@@ -59,6 +59,7 @@ class LitBaseModel(pl.LightningModule):
         optimizer_template=partial(torch.optim.Adam, lr=0.0001),
         scheduler_template=partial(
             torch.optim.lr_scheduler.StepLR, step_size=30, gamma=0.1),
+        field="image",
     ):
         super().__init__()
         self.save_hyperparameters(ignore=['main'], logger=False)
@@ -67,9 +68,10 @@ class LitBaseModel(pl.LightningModule):
         self.criterion = criterion
         self.optimizer_template = optimizer_template
         self.scheduler_template = scheduler_template
+        self.field = field
 
-    def forward(self, images, iteration=None):
-        out_dict = self.main(images, iteration=iteration)
+    def forward(self, x, iteration=None):
+        out_dict = self.main(x, iteration=iteration)
         return out_dict
 
     def configure_optimizers(self):
@@ -78,10 +80,10 @@ class LitBaseModel(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def training_step(self, batch, batch_idx):
-        images, target = batch["image"], batch["target"]
+        x, target = batch[self.field], batch["target"]
 
         iteration = self.trainer.global_step
-        out_dict = self(images, iteration=iteration)
+        out_dict = self(x, iteration=iteration)
 
         prediction = out_dict["prediction"]
         loss = self.criterion(prediction, target)
@@ -141,10 +143,10 @@ class LitBaseModel(pl.LightningModule):
         return metrics
 
     def _validation_step(self, batch, batch_idx, phase='val'):
-        images, target = batch["image"], batch["target"]
+        x, target = batch[self.field], batch["target"]
 
         iteration = self.trainer.global_step
-        out_dict = self(images, iteration=iteration)
+        out_dict = self(x, iteration=iteration)
 
         prediction = out_dict["prediction"]
         loss = self.criterion(prediction, target)
