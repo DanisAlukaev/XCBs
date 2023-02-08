@@ -1,0 +1,32 @@
+defaults:
+  - optimizer_template: adadelta
+  - scheduler_template: step_lr
+
+_target_: models.base.LitBaseModel
+
+main:
+  _target_: models.base.BaseModel
+
+  extractor:
+    _target_: models.concept_extractors.cnn.ConceptExtractorSingleCNN
+    vocab_size: 8800
+    embed_dim: 100
+    n_filters: 512
+    filter_size: 5
+    out_features: 312
+    activation:
+      _target_: torch.nn.ReLU
+
+  predictor:
+    _target_: models.predictors.mlp.MLPPredictor
+    layers: [312, 200]
+    activation:
+      _target_: torch.nn.ReLU
+
+  interim_activation:
+    _target_: torch.nn.Sigmoid
+
+field: indices
+
+criterion:
+  _target_: torch.nn.CrossEntropyLoss
