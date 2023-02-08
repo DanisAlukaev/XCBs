@@ -24,6 +24,7 @@ make preprocess_data
 | [E05](autoconcept/config/conf/experiment/E05.yaml) | [M05](autoconcept/config/conf/model/M05.yaml) | LSTM Classifier | LSTM concept extractor + predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/e1e2454081d04be7aaac8a0b5597c583) |
 | [E06](autoconcept/config/conf/experiment/E06.yaml) | [M06](autoconcept/config/conf/model/M06.yaml) | Single CNN Classifier | Single CNN concept extractor + predictor (see issue [#14](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/14)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/61fe6ef5e7594f0586d1b814402d173b) |
 | [E07](autoconcept/config/conf/experiment/E07.yaml) | [M07](autoconcept/config/conf/model/M07.yaml) | Multiple CNN Classifier | Multiple CNN concept extractor + predictor (see issue [#16](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/16)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/06197c1b3a1c4352850bb181dd1bd564) |
+| [E08](autoconcept/config/conf/experiment/E08.yaml) | [M08](autoconcept/config/conf/model/M08.yaml) | Simplified Attention Classifier | Simplified Attention concept extractor + predictor (see issue [#20](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/20)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/1ac635b4173240928a2a72ea14c497d1) |
 
 
 ## How to run?
