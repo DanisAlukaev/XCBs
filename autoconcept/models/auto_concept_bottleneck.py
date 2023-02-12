@@ -84,8 +84,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.optimizer_template = optimizer_template
         self.scheduler_template = scheduler_template
 
-    def forward(self, images, captions, iteration=None):
-        out_dict = self.main(images, captions, iteration=iteration)
+    def forward(self, images, indices, iteration=None):
+        out_dict = self.main(images, indices, iteration=iteration)
         return out_dict
 
     def configure_optimizers(self):
@@ -94,10 +94,10 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def training_step(self, batch, batch_idx):
-        images, keys, target = batch["images"], batch["keys"], batch["target"]
+        images, indices, target = batch["image"], batch["indices"], batch["target"]
 
         iteration = self.trainer.global_step
-        out_dict = self(images, keys, iteration=iteration)
+        out_dict = self(images, indices, iteration=iteration)
 
         prediction, feature_probs, concept_probs = out_dict[
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
@@ -169,10 +169,10 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         return metrics
 
     def _validation_step(self, batch, batch_idx, phase='val'):
-        images, keys, target = batch["images"], batch["keys"], batch["target"]
+        images, indices, target = batch["image"], batch["indices"], batch["target"]
 
         iteration = self.trainer.global_step
-        out_dict = self(images, keys, iteration=iteration)
+        out_dict = self(images, indices, iteration=iteration)
 
         prediction, feature_probs, concept_probs = out_dict[
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]

@@ -1,0 +1,38 @@
+defaults:
+  - optimizer_template: adadelta
+  - scheduler_template: step_lr
+
+_target_: models.auto_concept_bottleneck.LitAutoConceptBottleneckModel
+
+main:
+  _target_: models.auto_concept_bottleneck.AutoConceptBottleneckModel
+
+  feature_extractor:
+    _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
+    model: inception_v3
+    weights: IMAGENET1K_V1
+    out_features: 50
+
+  concept_extractor:
+    _target_: models.concept_extractors.transformer.ConceptExtractorAttention
+    vocab_size: 8800
+    embed_dim: 100
+    out_features: 50
+    device: cuda
+    activation:
+      _target_: torch.nn.ReLU
+
+  predictor:
+    _target_: models.predictors.mlp.MLPPredictor
+    layers: [50, 200]
+    activation:
+      _target_: torch.nn.ReLU
+
+  interim_activation:
+    _target_: functional.gumbel.GumbelSigmoid
+
+criterion_task:
+  _target_: torch.nn.CrossEntropyLoss
+
+criterion_tie:
+  _target_: functional.loss.KullbackLeiblerDivergenceLoss
