@@ -74,6 +74,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         optimizer_template=partial(torch.optim.Adam, lr=0.0001),
         scheduler_template=partial(
             torch.optim.lr_scheduler.StepLR, step_size=30, gamma=0.1),
+        lambda_p=10,
     ):
         super().__init__()
         self.save_hyperparameters(ignore=['main'], logger=False)
@@ -83,6 +84,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.criterion_tie = criterion_tie
         self.optimizer_template = optimizer_template
         self.scheduler_template = scheduler_template
+        self.lambda_p = lambda_p
 
     def forward(self, images, indices, iteration=None):
         out_dict = self.main(images, indices, iteration=iteration)
@@ -103,7 +105,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
         loss_task = self.criterion_task(prediction, target)
-        loss_tie = self.criterion_tie(feature_probs, concept_probs)
+        loss_tie = self.lambda_p * \
+            self.criterion_tie(feature_probs, concept_probs)
 
         # TODO: multiplier for tie loss
         loss = loss_task + loss_tie
@@ -178,7 +181,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
         loss_task = self.criterion_task(prediction, target)
-        loss_tie = self.criterion_tie(feature_probs, concept_probs)
+        loss_tie = self.lambda_p * \
+            self.criterion_tie(feature_probs, concept_probs)
 
         # TODO: multiplier for tie loss
         loss = loss_task + loss_tie
