@@ -123,7 +123,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self,
         vocab_size=None,
         embed_dim=100,
-        out_features=300,
+        out_features=512,
         device="cuda",
         activation=nn.ReLU(),
     ):
