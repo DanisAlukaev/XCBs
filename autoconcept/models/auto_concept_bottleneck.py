@@ -1,5 +1,6 @@
 from functools import partial
 
+import numpy as np
 import psutil
 import pytorch_lightning as pl
 import torch
