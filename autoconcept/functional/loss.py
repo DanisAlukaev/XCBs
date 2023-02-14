@@ -20,7 +20,9 @@ class KullbackLeiblerDivergenceLoss(nn.Module):
         self.mode = mode
 
     def forward(self, P, Q):
-        P, Q = P + self.eps, Q + self.eps
+        # P, Q = P + self.eps, Q + self.eps
+        P = torch.clamp(P, min=0.0+self.eps, max=1.0-self.eps)
+        Q = torch.clamp(Q, min=0.0+self.eps, max=1.0-self.eps)
         loss = self.implemented[self.mode](P, Q)
         return loss
 

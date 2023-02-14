@@ -38,3 +38,8 @@ criterion_tie:
   _target_: functional.loss.KullbackLeiblerDivergenceLoss
 
 lambda_p: 20
+
+period: 50
+
+scheduler_template:
+  step_size: 100
