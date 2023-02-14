@@ -11,6 +11,7 @@ debug: False
 seed: 42
 max_epochs: 200
 log_every_n_steps: 5
+epoch_freeze_backbone: null
 
 early_stopper:
   _target_: pytorch_lightning.callbacks.early_stopping.EarlyStopping
