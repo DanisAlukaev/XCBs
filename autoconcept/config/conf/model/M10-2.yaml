@@ -1,5 +1,5 @@
 defaults:
-  - optimizer_template: adadelta
+  - optimizer_template: sgd
   - scheduler_template: step_lr
 
 _target_: models.auto_concept_bottleneck.LitAutoConceptBottleneckModel

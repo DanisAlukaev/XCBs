@@ -126,6 +126,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         out_features=512,
         device="cuda",
         activation=nn.ReLU(),
+        src_pad_idx=0,
     ):
         super().__init__()
 
@@ -133,6 +134,8 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.embed_dim = embed_dim
         self.out_features = out_features
         self.activation = activation
+        self.src_pad_idx = src_pad_idx
+        self.device = device
 
         self.encoders = nn.ModuleList([
             TransformerEncoder(
@@ -159,10 +162,14 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
         self.sigmoid = nn.Sigmoid()
 
+    def make_src_mask(self, src):
+        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
+        return src_mask.to(self.device)
+
     def forward(self, input_ids):
         concepts = list()
         for _, (encoder, mlp) in enumerate(zip(self.encoders, self.mlps)):
-            embedding, _ = encoder(input_ids, None)
+            embedding, _ = encoder(input_ids, self.make_src_mask(input_ids))
             embedding = embedding.mean(dim=1)
             concepts.append(mlp(embedding))
         concept_logits = torch.stack(concepts, dim=1).squeeze(-1)
