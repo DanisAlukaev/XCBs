@@ -33,6 +33,7 @@ def run(cfg):
         mode="min",
         filename="epoch{epoch:03d}-val_loss{loss/val:.5f}",
         auto_insert_metric_name=False,
+        save_last=True,
     )
 
     trainer_callbacks = [
