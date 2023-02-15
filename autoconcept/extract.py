@@ -1,4 +1,5 @@
 
+import json
 from pprint import pprint
 
 import hydra
@@ -31,77 +32,86 @@ def main(cfg: DictConfig):
 
     n_concepts = len(inference.main.concept_extractor.encoders)
 
-    # mode = "textual"
-    mode = "visual"
+    # Textual
+    distributions = [np.zeros(vocab_size) for _ in range(n_concepts)]
+    n_tokens = np.zeros(vocab_size)
 
-    if mode == "textual":
-        distributions = [np.zeros(vocab_size) for _ in range(n_concepts)]
-        n_tokens = np.zeros(vocab_size)
+    for batch in tqdm(train_loader):
+        indices = batch["indices"].cuda()
+        for encoder_id in range(n_concepts):
+            _, scores = inference.main.concept_extractor.encoders[encoder_id](
+                indices, None)
+            scores = scores.squeeze()
+            scores_np = scores.cpu().detach().numpy()
 
-        for batch in tqdm(train_loader):
-            indices = batch["indices"].cuda()
-            for encoder_id in range(n_concepts):
-                _, scores = inference.main.concept_extractor.encoders[encoder_id](
-                    indices, None)
-                scores = scores.squeeze()
-                scores_np = scores.cpu().detach().numpy()
+            for sample_id in range(0, indices.shape[0]):
+                indices_np = indices[sample_id].cpu().detach().numpy()
+                scores_np_prev = distributions[encoder_id][indices_np]
+                np.put(distributions[encoder_id], indices_np,
+                       scores_np[sample_id] + scores_np_prev)
 
-                for sample_id in range(0, indices.shape[0]):
-                    indices_np = indices[sample_id].cpu().detach().numpy()
-                    scores_np_prev = distributions[encoder_id][indices_np]
-                    np.put(distributions[encoder_id], indices_np,
-                           scores_np[sample_id] + scores_np_prev)
+                if encoder_id == n_concepts - 1:
+                    n_tokens[indices_np] += 1
 
-                    if encoder_id == n_concepts - 1:
-                        n_tokens[indices_np] += 1
+    results = list()
+    distributions = np.array(distributions) / n_tokens
+    top_k = 10
+    for i in range(n_concepts):
+        print(f"Concept #{i}")
+        ids = (-distributions[i]).argsort()[:top_k]
+        scores = distributions[i][ids]
+        itos_map = dm.dataloader_kwargs['collate_fn'].vocabulary.vocab.get_itos(
+        )
+        tokens = [itos_map[id] for id in ids]
+        print(list(zip(tokens, scores)))
+        print()
 
-        distributions = np.array(distributions) / n_tokens
-        top_k = 10
-        for i in range(n_concepts):
-            print(f"Concept #{i}")
-            ids = (-distributions[i]).argsort()[:top_k]
-            scores = distributions[i][ids]
-            itos_map = dm.dataloader_kwargs['collate_fn'].vocabulary.vocab.get_itos(
+        results.append(
+            dict(
+                concept=list(zip(tokens, scores))
             )
-            tokens = [itos_map[id] for id in ids]
-            print(list(zip(tokens, scores)))
-            print()
-    else:
-        top_k = 10
-        instance_exploration = [list() for _ in range(n_concepts)]
-        for batch in tqdm(train_loader):
-            images = batch["image"].cuda()
-            filenames = batch["img_path"]
-            logits = inference.main.feature_extractor(images)
+        )
 
-            logits = logits.cpu().detach()
-            # todo: abs()
+    # Visual
+    top_k = 10
+    instance_exploration = [list() for _ in range(n_concepts)]
+    for batch in tqdm(train_loader):
+        images = batch["image"].cuda()
+        filenames = batch["img_path"]
+        logits = inference.main.feature_extractor(images)
 
-            topk_lrg = torch.topk(logits, k=top_k, dim=0, largest=True)
-            topk_sml = torch.topk(logits, k=top_k, dim=0, largest=False)
+        logits = logits.cpu().detach()
 
-            lg_max_lrg = topk_lrg.values.t()
-            lg_max_sml = topk_sml.values.t()
-            lg_max = torch.cat((lg_max_lrg, lg_max_sml), 1)
+        topk_lrg = torch.topk(logits, k=top_k, dim=0, largest=True)
+        topk_sml = torch.topk(logits, k=top_k, dim=0, largest=False)
 
-            ids_lrg = topk_lrg.indices.t()
-            ids_sml = topk_sml.indices.t()
-            ids = torch.cat((ids_lrg, ids_sml), 1)
+        lg_max_lrg = topk_lrg.values.t()
+        lg_max_sml = topk_sml.values.t()
+        lg_max = torch.cat((lg_max_lrg, lg_max_sml), 1)
 
-            filenames_topk = np.array([filenames[id]
-                                      for id in ids.flatten().tolist()])
-            filenames_topk = filenames_topk.reshape(ids.shape)
+        ids_lrg = topk_lrg.indices.t()
+        ids_sml = topk_sml.indices.t()
+        ids = torch.cat((ids_lrg, ids_sml), 1)
 
-            pairs = [list(zip(filenames_topk[_], lg_max[_]))
-                     for _ in range(n_concepts)]
+        filenames_topk = np.array([filenames[id]
+                                   for id in ids.flatten().tolist()])
+        filenames_topk = filenames_topk.reshape(ids.shape)
 
-            instance_exploration = [sorted(a + b, reverse=True, key=lambda x: abs(x[1]))[
-                :top_k] for a, b in zip(instance_exploration, pairs)]
+        pairs = [list(zip(filenames_topk[_], lg_max[_]))
+                 for _ in range(n_concepts)]
 
-        for i in range(len(instance_exploration)):
-            print(f"Concept #{i}")
-            pprint(instance_exploration[i])
-            print()
+        instance_exploration = [sorted(a + b, reverse=True, key=lambda x: abs(x[1]))[
+            :top_k] for a, b in zip(instance_exploration, pairs)]
+
+    for i in range(len(instance_exploration)):
+        print(f"Concept #{i}")
+        pprint(instance_exploration[i])
+        results[i]["feature"] = [(a, b.item())
+                                 for a, b in instance_exploration[i]]
+        print()
+
+    with open("/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/results.json", "w") as outfile:
+        json.dump(results, outfile)
 
 
 if __name__ == "__main__":
