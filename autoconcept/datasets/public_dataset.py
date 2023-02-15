@@ -89,6 +89,7 @@ class JointDataset(Dataset):
 
         sample = dict(
             image=image,
+            img_path=str(img_path),
             report=caption,
             target_one_hot=target_one_hot,
             attributes=attributes,
