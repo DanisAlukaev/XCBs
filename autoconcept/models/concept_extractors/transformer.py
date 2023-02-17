@@ -46,7 +46,7 @@ class SelfAttention(nn.Module):
 
         out = self.fc_out(out)
 
-        return out
+        return out, attention
 
 
 class TransformerBlock(nn.Module):
@@ -65,12 +65,12 @@ class TransformerBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, value, key, query, mask):
-        attention = self.attention(value, key, query, mask)
+        attention, scores = self.attention(value, key, query, mask)
 
         x = self.dropout(self.norm1(attention + query))
         forward = self.feed_forward(x)
         out = self.dropout(self.norm2(forward + x))
-        return out
+        return out, scores
 
 
 class TransformerEncoder(nn.Module):
@@ -113,8 +113,8 @@ class TransformerEncoder(nn.Module):
         out = self.dropout((self.word_embedding(
             x) + self.position_embedding(positions)))
         for layer in self.layers:
-            out = layer(out, out, out, mask)
-        return out
+            out, scores = layer(out, out, out, mask)
+        return out, scores
 
 
 class ConceptExtractorAttention(BaseConceptExtractor):
@@ -126,6 +126,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         out_features=512,
         device="cuda",
         activation=nn.ReLU(),
+        src_pad_idx=0,
     ):
         super().__init__()
 
@@ -133,6 +134,8 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.embed_dim = embed_dim
         self.out_features = out_features
         self.activation = activation
+        self.src_pad_idx = src_pad_idx
+        self.device = device
 
         self.encoders = nn.ModuleList([
             TransformerEncoder(
@@ -159,10 +162,15 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
         self.sigmoid = nn.Sigmoid()
 
+    def make_src_mask(self, src):
+        src_mask = (src != self.src_pad_idx).unsqueeze(1).unsqueeze(2)
+        return src_mask.to(self.device)
+
     def forward(self, input_ids):
         concepts = list()
         for _, (encoder, mlp) in enumerate(zip(self.encoders, self.mlps)):
-            embedding = encoder(input_ids, None).mean(dim=1)
+            embedding, _ = encoder(input_ids, self.make_src_mask(input_ids))
+            embedding = embedding.mean(dim=1)
             concepts.append(mlp(embedding))
         concept_logits = torch.stack(concepts, dim=1).squeeze(-1)
         concept_probs = self.sigmoid(concept_logits)

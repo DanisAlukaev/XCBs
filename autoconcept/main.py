@@ -3,6 +3,7 @@ import traceback
 
 import hydra
 import pytorch_lightning as pl
+from callbacks import FreezingCallback
 from clearml import Task
 from helpers import pretty_cfg, report_to_telegram, set_seed
 from hydra.utils import get_class, instantiate
@@ -32,12 +33,14 @@ def run(cfg):
         mode="min",
         filename="epoch{epoch:03d}-val_loss{loss/val:.5f}",
         auto_insert_metric_name=False,
+        save_last=True,
     )
 
     trainer_callbacks = [
         checkpoint_callback,
         LearningRateMonitor(logging_interval="step"),
         DeviceStatsMonitor(),
+        FreezingCallback(cfg.epoch_freeze_backbone),
     ]
 
     if cfg.early_stopper:
