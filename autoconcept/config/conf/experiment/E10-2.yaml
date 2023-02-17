@@ -1,7 +1,7 @@
 # @package _global_
 
 defaults:
-  - override /model: M10-1
+  - override /model: M10-2
 
 name: E10
 epoch_freeze_backbone: 50

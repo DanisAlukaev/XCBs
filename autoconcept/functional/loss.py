@@ -7,17 +7,19 @@ class KullbackLeiblerDivergenceLoss(nn.Module):
     def __init__(
         self,
         eps=1e-7,
-        mode="bernoulli"
+        mode="native"
     ):
         super().__init__()
         self.implemented = {
             "bernoulli": self._bernoulli_kl,
             "direct": self._direct_kl,
+            "native": self._native_kl,
         }
         assert mode in self.implemented.keys(
         ), f"Mode '{mode}' is not supported!"
         self.eps = eps
         self.mode = mode
+        self._kl_loss = nn.KLDivLoss()
 
     def forward(self, P, Q):
         # P, Q = P + self.eps, Q + self.eps
@@ -36,3 +38,8 @@ class KullbackLeiblerDivergenceLoss(nn.Module):
         kl_div = (P * torch.log(P / Q)).flatten()
         loss_c = kl_div.mean()
         return loss_c
+
+    def _native_kl(self, P, Q):
+        loss = (Q * torch.log(Q / P) + (1 - Q) *
+                torch.log((1 - Q) / (1 - P))).mean()
+        return loss

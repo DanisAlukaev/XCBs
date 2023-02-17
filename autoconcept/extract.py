@@ -24,7 +24,7 @@ def main(cfg: DictConfig):
     vocab_size = len(dm.dataloader_kwargs['collate_fn'].vocabulary.vocab)
     print(f"Vocab size: {vocab_size}")
 
-    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-02-14/18-07-54/lightning_logs/version_0/checkpoints/last.ckpt"
+    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-02-16/21-40-34/lightning_logs/version_0/checkpoints/last.ckpt"
     target_class = get_class(cfg.model._target_)
     main = instantiate(cfg.model.main)
     inference = target_class.load_from_checkpoint(
@@ -73,8 +73,9 @@ def main(cfg: DictConfig):
         )
 
     # Visual
-    top_k = 10
-    instance_exploration = [list() for _ in range(n_concepts)]
+    top_k = 5
+    instance_exploration_lrg = [list() for _ in range(n_concepts)]
+    instance_exploration_sml = [list() for _ in range(n_concepts)]
     for batch in tqdm(train_loader):
         images = batch["image"].cuda()
         filenames = batch["img_path"]
@@ -87,21 +88,32 @@ def main(cfg: DictConfig):
 
         lg_max_lrg = topk_lrg.values.t()
         lg_max_sml = topk_sml.values.t()
-        lg_max = torch.cat((lg_max_lrg, lg_max_sml), 1)
+        # lg_max = torch.cat((lg_max_lrg, lg_max_sml), 1)
 
         ids_lrg = topk_lrg.indices.t()
         ids_sml = topk_sml.indices.t()
-        ids = torch.cat((ids_lrg, ids_sml), 1)
+        # ids = torch.cat((ids_lrg, ids_sml), 1)
 
-        filenames_topk = np.array([filenames[id]
-                                   for id in ids.flatten().tolist()])
-        filenames_topk = filenames_topk.reshape(ids.shape)
+        filenames_topk_lrg = np.array([filenames[id]
+                                       for id in ids_lrg.flatten().tolist()])
+        filenames_topk_lrg = filenames_topk_lrg.reshape(ids_lrg.shape)
 
-        pairs = [list(zip(filenames_topk[_], lg_max[_]))
-                 for _ in range(n_concepts)]
+        filenames_topk_sml = np.array([filenames[id]
+                                       for id in ids_sml.flatten().tolist()])
+        filenames_topk_sml = filenames_topk_sml.reshape(ids_sml.shape)
 
-        instance_exploration = [sorted(a + b, reverse=True, key=lambda x: abs(x[1]))[
-            :top_k] for a, b in zip(instance_exploration, pairs)]
+        pairs_lrg = [list(zip(filenames_topk_lrg[_], lg_max_lrg[_]))
+                     for _ in range(n_concepts)]
+        pairs_sml = [list(zip(filenames_topk_sml[_], lg_max_sml[_]))
+                     for _ in range(n_concepts)]
+
+        instance_exploration_lrg = [sorted(a + b, reverse=True, key=lambda x: abs(
+            x[1]))[:top_k] for a, b in zip(instance_exploration_lrg, pairs_lrg)]
+        instance_exploration_sml = [sorted(a + b, reverse=True, key=lambda x: abs(
+            x[1]))[:top_k] for a, b in zip(instance_exploration_sml, pairs_sml)]
+
+    instance_exploration = [
+        a + b for a, b in zip(instance_exploration_lrg, instance_exploration_sml)]
 
     for i in range(len(instance_exploration)):
         print(f"Concept #{i}")
