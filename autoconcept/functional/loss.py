@@ -39,7 +39,8 @@ class KullbackLeiblerDivergenceLoss(nn.Module):
         loss_c = kl_div.mean()
         return loss_c
 
-    def _native_kl(self, P, Q):
+    def _native_kl(self, Q, P):
+        # Q = texutal, P = visual
         loss = (Q * torch.log(Q / P) + (1 - Q) *
                 torch.log((1 - Q) / (1 - P))).mean()
         return loss
