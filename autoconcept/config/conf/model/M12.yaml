@@ -35,9 +35,9 @@ criterion_task:
   _target_: torch.nn.CrossEntropyLoss
 
 criterion_tie:
-  _target_: functional.loss.JensenShannonDivergenceLoss
+  _target_: torch.nn.CrossEntropyLoss
 
-lambda_p: 8
+lambda_p: 0.1
 
 period: 50
 
