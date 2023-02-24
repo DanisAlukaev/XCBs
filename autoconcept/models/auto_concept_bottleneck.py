@@ -106,6 +106,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         prediction, feature_probs, concept_probs = out_dict[
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
+        # TODO: lambda_p should be from 0 to 1
         lambda_p = self.lambda_p if self.trainer.current_epoch // self.period > 0 else 0
 
         loss_task = self.criterion_task(prediction, target)
