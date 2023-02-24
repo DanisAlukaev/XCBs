@@ -1,0 +1,17 @@
+# @package _global_
+
+defaults:
+  - override /model: M14
+
+name: E14
+epoch_freeze_backbone: 50
+dataset:
+  collate_fn:
+    _target_: datasets.collators.CollateIndices
+    vocabulary:
+      _target_: datasets.utils.Vocabulary
+      annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/captions_merged.csv
+  mix_with_mscoco: false
+  num_workers: 10
+devices:
+  - 0

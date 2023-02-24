@@ -15,7 +15,7 @@ from models.predictors.mlp import MLPPredictor
 
 class AutoConceptBottleneckModel(nn.Module):
 
-    def __init__(self, feature_extractor, concept_extractor, predictor, interim_activation):
+    def __init__(self, feature_extractor, concept_extractor, predictor, interim_activation, temperature=1.):
         super().__init__()
         assert feature_extractor.out_features == predictor.layers[0]
         assert concept_extractor.out_features == predictor.layers[0]
@@ -24,6 +24,7 @@ class AutoConceptBottleneckModel(nn.Module):
         self.concept_extractor = concept_extractor
         self.predictor = predictor
         self.interim_activation = interim_activation
+        self.T = temperature
 
         self.has_gumbel_sigmoid = isinstance(interim_activation, GumbelSigmoid)
         self.sigmoid = nn.Sigmoid()
@@ -33,8 +34,8 @@ class AutoConceptBottleneckModel(nn.Module):
         feature_logits = self.feature_extractor(images)
         concept_logits = self.concept_extractor(captions)
 
-        feature_probs = self.sigmoid(feature_logits)
-        concept_probs = self.sigmoid(concept_logits)
+        feature_probs = self.sigmoid(feature_logits / self.T)
+        concept_probs = self.sigmoid(concept_logits / self.T)
 
         args = [feature_logits]
         if self.has_gumbel_sigmoid:
@@ -68,6 +69,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             concept_extractor=ConceptExtractorAttention(vocab_size=100),
             predictor=MLPPredictor(),
             interim_activation=nn.ReLU(),
+            temperature=1.,
         ),
         criterion_task=nn.CrossEntropyLoss(),
         criterion_tie=KullbackLeiblerDivergenceLoss(),
