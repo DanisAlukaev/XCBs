@@ -31,7 +31,7 @@ main:
   interim_activation:
     _target_: functional.gumbel.GumbelSigmoid
 
-  temperature: 2.5
+  temperature: 1.
 
 criterion_task:
   _target_: torch.nn.CrossEntropyLoss

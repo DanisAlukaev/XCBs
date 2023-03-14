@@ -13,5 +13,6 @@ dataset:
       annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/captions_merged.csv
   mix_with_mscoco: false
   num_workers: 10
+  batch_size: 32
 devices:
   - 0

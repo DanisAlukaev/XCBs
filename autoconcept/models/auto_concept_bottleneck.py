@@ -96,13 +96,15 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.lambda_p = lambda_p
         self.period = period
 
+        self.automatic_optimization = False
+
     def forward(self, images, indices, iteration=None):
         out_dict = self.main(images, indices, iteration=iteration)
         return out_dict
 
     def configure_optimizers(self):
         optimizer_model = self.optimizer_model_template(
-            [self.main.feature_extractor.parameters(), self.main.predictor.parameters()])
+            [*self.main.feature_extractor.parameters(), *self.main.predictor.parameters()])
         optimizer_concept_extractor = self.optimizer_concept_extractor_template(
             self.main.concept_extractor.parameters())
         scheduler_model = self.scheduler_model_template(optimizer_model)
@@ -133,7 +135,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         opt_clf.zero_grad()
         opt_tie.zero_grad()
 
-        self.manual_backward(loss, retain_graph=True)
+        self.manual_backward(loss)
         opt_clf.step()
         opt_tie.step()
 
