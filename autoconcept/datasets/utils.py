@@ -111,6 +111,33 @@ class Vocabulary:
         print(self.annotations.head())
 
 
+class VocabularyShapes:
+
+    def __init__(
+        self,
+        annotation_path="data/shapes/captions.csv",
+    ):
+        self.annotation_path = annotation_path
+        self.tokenizer = get_tokenizer('spacy', language='en')
+        self.read_annotations_file()
+        self.build_vocab()
+
+    def build_vocab(self):
+        word_counter = Counter()
+        for _, row in tqdm(self.annotations.iterrows(), total=self.annotations.shape[0]):
+            text = row[2]
+            tokens = self.tokenizer(text)
+            word_counter.update(tokens)
+
+        special_symbols = ["<pad>", "<unk>"]
+        self.vocab = vocab(word_counter, specials=special_symbols)
+        self.vocab.set_default_index(self.vocab["<unk>"])
+
+    def read_annotations_file(self):
+        filename = self.annotation_path
+        self.annotations = pd.read_csv(filename)
+
+
 def generate_ngrams(reports, n=4):
     ngrams_list = list()
     for report in reports:
