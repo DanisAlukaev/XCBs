@@ -126,14 +126,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
         loss_task = self.criterion_task(prediction, target)
         loss_tie = lambda_p * \
-            self.criterion_tie(concept_probs, feature_probs)
+            self.criterion_tie(feature_probs, concept_probs)
 
         # TODO: multiplier for tie loss
         loss = loss_task + loss_tie
 
         opt_clf, opt_tie = self.optimizers()
-
-        sch_clf, sch_tie = self.lr_schedulers()
 
         opt_clf.zero_grad()
         opt_tie.zero_grad()
@@ -141,9 +139,6 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.manual_backward(loss)
         opt_clf.step()
         opt_tie.step()
-
-        # sch_clf.step()
-        # sch_tie.step()
 
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))
@@ -180,6 +175,10 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         return metrics
 
     def training_epoch_end(self, outputs):
+        sch_clf, sch_tie = self.lr_schedulers()
+        sch_clf.step()
+        sch_tie.step()
+
         self._validation_epoch_end(outputs, 'train')
 
     def validation_epoch_end(self, outputs):
@@ -218,7 +217,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
         loss_task = self.criterion_task(prediction, target)
         loss_tie = lambda_p * \
-            self.criterion_tie(concept_probs, feature_probs)
+            self.criterion_tie(feature_probs, concept_probs)
 
         # TODO: multiplier for tie loss
         loss = loss_task + loss_tie
