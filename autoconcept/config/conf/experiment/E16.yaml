@@ -6,7 +6,7 @@ defaults:
 
 name: E16
 epoch_freeze_backbone: 5
-max_epochs: 15
+max_epochs: 25
 dataset:
   collate_fn:
     _target_: datasets.collators.CollateIndices

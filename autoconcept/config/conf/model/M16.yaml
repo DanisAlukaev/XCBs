@@ -59,14 +59,14 @@ scheduler_model_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
-      path: torch.optim.lr_scheduler.StepLR
-  step_size: 30
+      path: torch.optim.lr_scheduler.MultiStepLR
+  milestones: [10, 20]
   gamma: 0.1
 
 scheduler_concept_extractor_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
-      path: torch.optim.lr_scheduler.StepLR
-  step_size: 30
+      path: torch.optim.lr_scheduler.MultiStepLR
+  milestones: [20, ]
   gamma: 0.1

@@ -132,12 +132,18 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         loss = loss_task + loss_tie
 
         opt_clf, opt_tie = self.optimizers()
+
+        sch_clf, sch_tie = self.lr_schedulers()
+
         opt_clf.zero_grad()
         opt_tie.zero_grad()
 
         self.manual_backward(loss)
         opt_clf.step()
         opt_tie.step()
+
+        # sch_clf.step()
+        # sch_tie.step()
 
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))
