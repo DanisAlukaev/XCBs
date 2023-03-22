@@ -73,8 +73,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         ),
         criterion_task=nn.CrossEntropyLoss(),
         criterion_tie=KullbackLeiblerDivergenceLoss(),
-        optimizer_template=partial(torch.optim.Adam, lr=0.0001),
-        scheduler_template=partial(
+        optimizer_model_template=partial(torch.optim.Adam, lr=0.0001),
+        optimizer_concept_extractor_template=partial(
+            torch.optim.Adam, lr=0.0001),
+        scheduler_model_template=partial(
+            torch.optim.lr_scheduler.StepLR, step_size=30, gamma=0.1),
+        scheduler_concept_extractor_template=partial(
             torch.optim.lr_scheduler.StepLR, step_size=30, gamma=0.1),
         lambda_p=10,
         period=50,
@@ -85,19 +89,28 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.main = main
         self.criterion_task = criterion_task
         self.criterion_tie = criterion_tie
-        self.optimizer_template = optimizer_template
-        self.scheduler_template = scheduler_template
+        self.optimizer_model_template = optimizer_model_template
+        self.optimizer_concept_extractor_template = optimizer_concept_extractor_template
+        self.scheduler_model_template = scheduler_model_template
+        self.scheduler_concept_extractor_template = scheduler_concept_extractor_template
         self.lambda_p = lambda_p
         self.period = period
+
+        self.automatic_optimization = False
 
     def forward(self, images, indices, iteration=None):
         out_dict = self.main(images, indices, iteration=iteration)
         return out_dict
 
     def configure_optimizers(self):
-        optimizer = self.optimizer_template(self.parameters())
-        scheduler = self.scheduler_template(optimizer)
-        return [optimizer], [scheduler]
+        optimizer_model = self.optimizer_model_template(
+            [*self.main.feature_extractor.parameters(), *self.main.predictor.parameters()])
+        optimizer_concept_extractor = self.optimizer_concept_extractor_template(
+            self.main.concept_extractor.parameters())
+        scheduler_model = self.scheduler_model_template(optimizer_model)
+        scheduler_concept_extractor = self.scheduler_concept_extractor_template(
+            optimizer_concept_extractor)
+        return [optimizer_model, optimizer_concept_extractor], [scheduler_model, scheduler_concept_extractor]
 
     def training_step(self, batch, batch_idx):
         images, indices, target = batch["image"], batch["indices"], batch["target"]
@@ -117,6 +130,15 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
         # TODO: multiplier for tie loss
         loss = loss_task + loss_tie
+
+        opt_clf, opt_tie = self.optimizers()
+
+        opt_clf.zero_grad()
+        opt_tie.zero_grad()
+
+        self.manual_backward(loss)
+        opt_clf.step()
+        opt_tie.step()
 
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))
@@ -153,6 +175,10 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         return metrics
 
     def training_epoch_end(self, outputs):
+        sch_clf, sch_tie = self.lr_schedulers()
+        sch_clf.step()
+        sch_tie.step()
+
         self._validation_epoch_end(outputs, 'train')
 
     def validation_epoch_end(self, outputs):

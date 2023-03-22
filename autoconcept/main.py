@@ -3,7 +3,7 @@ import traceback
 
 import hydra
 import pytorch_lightning as pl
-from callbacks import FreezingCallback
+from callbacks import FreezingCallback, ReinitializeBottleneckCallback
 from clearml import Task
 from helpers import pretty_cfg, report_to_telegram, set_seed
 from hydra.utils import get_class, instantiate
@@ -45,6 +45,10 @@ def run(cfg):
 
     if cfg.early_stopper:
         trainer_callbacks += [instantiate(cfg.early_stopper)]
+
+    if cfg.epoch_reinitialize:
+        trainer_callbacks += [
+            ReinitializeBottleneckCallback(cfg.epoch_reinitialize)]
 
     trainer = pl.Trainer(
         max_epochs=cfg.max_epochs,

@@ -1,0 +1,8 @@
+defaults:
+  - base
+
+_target_: datasets.shapes_dataset.JointDataModule
+
+annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes/captions.csv
+collate_fn:
+  _target_: datasets.collators.CollateEmulator
