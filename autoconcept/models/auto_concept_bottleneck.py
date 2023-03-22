@@ -126,7 +126,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
         loss_task = self.criterion_task(prediction, target)
         loss_tie = lambda_p * \
-            self.criterion_tie(feature_probs, concept_probs)
+            self.criterion_tie(concept_probs, feature_probs)
 
         # TODO: multiplier for tie loss
         loss = loss_task + loss_tie
@@ -217,7 +217,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
         loss_task = self.criterion_task(prediction, target)
         loss_tie = lambda_p * \
-            self.criterion_tie(feature_probs, concept_probs)
+            self.criterion_tie(concept_probs, feature_probs)
 
         # TODO: multiplier for tie loss
         loss = loss_task + loss_tie
