@@ -30,7 +30,7 @@ class ReinitializeBottleneckCallback(Callback):
         if hasattr(pl_module.main, 'feature_extractor'):
             if trainer.current_epoch == self.epoch_reinitialize - 1:
                 bottleneck = pl_module.main.feature_extractor.main.fc
-                in_features, out_features = bottleneck.in_features, bottleneck, out_features
+                in_features, out_features = bottleneck.in_features, bottleneck.out_features
                 pl_module.main.feature_extractor.main.fc = nn.Linear(
                     in_features=in_features, out_features=out_features)
                 print(
