@@ -1,4 +1,3 @@
-import torch.nn as nn
 from pytorch_lightning.callbacks import Callback
 
 
@@ -29,9 +28,6 @@ class ReinitializeBottleneckCallback(Callback):
     def on_train_epoch_end(self, trainer, pl_module):
         if hasattr(pl_module.main, 'feature_extractor'):
             if trainer.current_epoch == self.epoch_reinitialize - 1:
-                bottleneck = pl_module.main.feature_extractor.main.fc
-                in_features, out_features = bottleneck.in_features, bottleneck.out_features
-                pl_module.main.feature_extractor.main.fc = nn.Linear(
-                    in_features=in_features, out_features=out_features)
+                pl_module.main.feature_extractor.main.fc.reset_parameters()
                 print(
                     f"Bottleneck was re-initialized on {trainer.current_epoch} epoch!")
