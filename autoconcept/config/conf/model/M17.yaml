@@ -1,0 +1,76 @@
+_target_: models.auto_concept_bottleneck.LitAutoConceptBottleneckModel
+
+main:
+  _target_: models.auto_concept_bottleneck.AutoConceptBottleneckModel
+
+  feature_extractor:
+    _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
+    model: inception_v3
+    weights: IMAGENET1K_V1
+    out_features: 10
+
+  concept_extractor:
+    _target_: models.concept_extractors.novel.ConceptExtractorAttention
+    vocab_size: 30
+    embed_dim: 100
+    out_features: 10
+    max_length: 50
+    src_pad_idx: 0
+    dropout: 0.
+    forward_expansion: 4
+    device: cuda
+    activation:
+      _target_: torch.nn.ReLU
+
+  predictor:
+    _target_: models.predictors.mlp.MLPPredictor
+    layers: [10, 9]
+    activation:
+      _target_: torch.nn.ReLU
+
+  interim_activation:
+    _target_: functional.gumbel.GumbelSigmoid
+
+  temperature: 1.
+
+criterion_task:
+  _target_: torch.nn.CrossEntropyLoss
+
+criterion_tie:
+  _target_: functional.loss.KullbackLeiblerDivergenceLoss
+
+lambda_p: 2
+
+period: 5
+
+optimizer_model_template:
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.Adadelta
+  lr: 0.25
+  rho: 0.95
+
+optimizer_concept_extractor_template:
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.Adadelta
+  lr: 0.75
+  rho: 0.95
+
+scheduler_model_template:
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.lr_scheduler.MultiStepLR
+  milestones: [10, 20]
+  gamma: 0.1
+
+scheduler_concept_extractor_template:
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.lr_scheduler.MultiStepLR
+  milestones: [20, ]
+  gamma: 0.1
