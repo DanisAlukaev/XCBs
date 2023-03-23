@@ -24,7 +24,7 @@ def main(cfg: DictConfig):
     vocab_size = len(dm.dataloader_kwargs['collate_fn'].vocabulary.vocab)
     print(f"Vocab size: {vocab_size}")
 
-    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-03-22/07-32-43/lightning_logs/version_0/checkpoints/last.ckpt"
+    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-03-23/09-35-19/lightning_logs/version_0/checkpoints/last.ckpt"
     target_class = get_class(cfg.model._target_)
     main = instantiate(cfg.model.main)
     inference = target_class.load_from_checkpoint(
@@ -38,9 +38,17 @@ def main(cfg: DictConfig):
 
     for batch in tqdm(train_loader):
         indices = batch["indices"].cuda()
+        N, seq_length = indices.shape
+
         for encoder_id in range(n_concepts):
+            positions = torch.arange(0, seq_length).expand(
+                N, seq_length).to(inference.main.concept_extractor.device)
+            input_embedding = inference.main.concept_extractor.dropout((inference.main.concept_extractor.word_embedding(
+                indices) + inference.main.concept_extractor.position_embedding(positions)))
+            mask = inference.main.concept_extractor.make_src_mask(indices)
+
             _, scores = inference.main.concept_extractor.encoders[encoder_id](
-                indices, None)
+                input_embedding, mask)
             scores = scores.squeeze()
             scores_np = scores.cpu().detach().numpy()
 
@@ -73,7 +81,7 @@ def main(cfg: DictConfig):
         )
 
     # Visual
-    top_k = 5
+    top_k = 10
     instance_exploration_lrg = [list() for _ in range(n_concepts)]
     instance_exploration_sml = [list() for _ in range(n_concepts)]
     for batch in tqdm(train_loader):
