@@ -82,6 +82,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             torch.optim.lr_scheduler.StepLR, step_size=30, gamma=0.1),
         lambda_p=10,
         period=50,
+        direct_kl=True,
     ):
         super().__init__()
         self.save_hyperparameters(ignore=['main'], logger=False)
@@ -95,6 +96,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.scheduler_concept_extractor_template = scheduler_concept_extractor_template
         self.lambda_p = lambda_p
         self.period = period
+        self.direct_kl = direct_kl
 
         self.automatic_optimization = False
 
@@ -125,8 +127,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         lambda_p = self.lambda_p if self.trainer.current_epoch // self.period > 0 else 0
 
         loss_task = self.criterion_task(prediction, target)
-        loss_tie = lambda_p * \
-            self.criterion_tie(concept_probs, feature_probs)
+        if self.direct_kl:
+            loss_tie = lambda_p * \
+                self.criterion_tie(concept_probs, feature_probs)
+        else:
+            loss_tie = lambda_p * \
+                self.criterion_tie(feature_probs, concept_probs)
 
         # TODO: multiplier for tie loss
         loss = loss_task + loss_tie
@@ -216,8 +222,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         lambda_p = self.lambda_p if self.trainer.current_epoch // self.period > 0 else 0
 
         loss_task = self.criterion_task(prediction, target)
-        loss_tie = lambda_p * \
-            self.criterion_tie(concept_probs, feature_probs)
+        if self.direct_kl:
+            loss_tie = lambda_p * \
+                self.criterion_tie(concept_probs, feature_probs)
+        else:
+            loss_tie = lambda_p * \
+                self.criterion_tie(feature_probs, concept_probs)
 
         # TODO: multiplier for tie loss
         loss = loss_task + loss_tie

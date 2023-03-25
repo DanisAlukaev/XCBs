@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from models.concept_extractors.base import BaseConceptExtractor
 from models.predictors.mlp import MLPPredictor
 
@@ -8,30 +9,27 @@ class Attention(nn.Module):
     def __init__(
         self,
         embed_dim,
-        values_w,
-        keys_w,
+        queries_w,
         device,
     ):
         super(Attention, self).__init__()
         self.embed_dim = embed_dim
-        self.values_w = values_w
-        self.keys_w = keys_w
-        self.query_w = nn.Embedding(1, embed_dim)
+        self.values_keys_w = nn.Linear(embed_dim, embed_dim)
+        self.queries_w = queries_w
         self.device = device
 
     def forward(self, input_embedding, mask):
-        seq_len = input_embedding.shape[1]
+        values = self.values_keys_w(input_embedding)
+        keys = self.values_keys_w(input_embedding)
+        queries = self.queries_w.weight
 
-        values = self.values_w(input_embedding)
-        keys = self.keys_w(input_embedding)
-        queries = torch.stack([self.query_w.weight] *
-                              seq_len, dim=0).squeeze(dim=1)
-        energy = torch.einsum("qd,nkd->nqk", [queries, keys])
-
+        attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
+        attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
         if mask is not None:
-            energy = energy.masked_fill(mask == 0, float("-1e20"))
-        attention = torch.softmax(energy / (self.embed_dim ** (1 / 2)), dim=2)
-        out = torch.einsum("nql,nld->nqd", [attention, values])
+            attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
+        attention = F.softmax(attn_logits, dim=-1)
+        out = torch.matmul(attention, values)
+
         return out, attention
 
 
@@ -39,18 +37,15 @@ class TransformerEncoder(nn.Module):
     def __init__(
         self,
         embed_dim,
-        values_w,
-        keys_w,
+        queries_w,
         forward_expansion,
         device
     ):
         super(TransformerEncoder, self).__init__()
         self.embed_dim = embed_dim
-        self.values_w = values_w
-        self.keys_w = keys_w
         self.device = device
 
-        self.attention = Attention(embed_dim, values_w, keys_w, device)
+        self.attention = Attention(embed_dim, queries_w, device)
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(embed_dim)
 
@@ -95,8 +90,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.forward_expansion = forward_expansion
         self.device = device
 
-        self.values_w = nn.Linear(embed_dim, embed_dim)
-        self.keys_w = nn.Linear(embed_dim, embed_dim)
+        self.queries_w = nn.Embedding(out_features, embed_dim)
 
         self.word_embedding = nn.Embedding(vocab_size, embed_dim)
         self.position_embedding = nn.Embedding(max_length, embed_dim)
@@ -104,8 +98,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.encoders = nn.ModuleList([
             TransformerEncoder(
                 embed_dim=embed_dim,
-                values_w=self.values_w,
-                keys_w=self.keys_w,
+                queries_w=self.queries_w,
                 forward_expansion=forward_expansion,
                 device=device,
             )
