@@ -30,9 +30,9 @@ main:
 
   interim_activation:
     _target_: functional.gumbel.GumbelSigmoid
-    step: 28
+    step: 58
     t: 1.0
-    rate: 0.03
+    rate: 0.006
     min_val: 0.5
 
   temperature: 1.
