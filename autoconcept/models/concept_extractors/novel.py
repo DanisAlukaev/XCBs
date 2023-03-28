@@ -9,20 +9,23 @@ class Attention(nn.Module):
     def __init__(
         self,
         embed_dim,
+        values_w,
+        keys_w,
         queries_w,
         idx,
         device,
     ):
         super(Attention, self).__init__()
         self.embed_dim = embed_dim
-        self.values_keys_w = nn.Linear(embed_dim, embed_dim)
+        self.values_w = values_w
+        self.keys_w = keys_w
         self.queries_w = queries_w
         self.idx = idx
         self.device = device
 
     def forward(self, input_embedding, mask):
-        values = self.values_keys_w(input_embedding)
-        keys = self.values_keys_w(input_embedding)
+        values = self.values_w(input_embedding)
+        keys = self.keys_w(input_embedding)
         queries = self.queries_w.weight
 
         attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
@@ -40,6 +43,8 @@ class TransformerEncoder(nn.Module):
     def __init__(
         self,
         embed_dim,
+        values_w,
+        keys_w,
         queries_w,
         forward_expansion,
         idx,
@@ -49,7 +54,8 @@ class TransformerEncoder(nn.Module):
         self.embed_dim = embed_dim
         self.device = device
 
-        self.attention = Attention(embed_dim, queries_w, idx, device)
+        self.attention = Attention(
+            embed_dim, values_w, keys_w, queries_w, idx, device)
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(embed_dim)
 
@@ -94,6 +100,8 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.forward_expansion = forward_expansion
         self.device = device
 
+        self.values_w = nn.Linear(embed_dim, embed_dim)
+        self.keys_w = nn.Linear(embed_dim, embed_dim)
         self.queries_w = nn.Embedding(out_features, embed_dim)
 
         self.word_embedding = nn.Embedding(vocab_size, embed_dim)
@@ -102,6 +110,8 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.encoders = nn.ModuleList([
             TransformerEncoder(
                 embed_dim=embed_dim,
+                values_w=self.values_w,
+                keys_w=self.keys_w,
                 queries_w=self.queries_w,
                 forward_expansion=forward_expansion,
                 idx=idx,

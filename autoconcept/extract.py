@@ -24,7 +24,7 @@ def main(cfg: DictConfig):
     vocab_size = len(dm.dataloader_kwargs['collate_fn'].vocabulary.vocab)
     print(f"Vocab size: {vocab_size}")
 
-    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-03-28/11-16-19/lightning_logs/version_0/checkpoints/last.ckpt"
+    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-03-28/18-07-03/lightning_logs/version_0/checkpoints/last.ckpt"
     target_class = get_class(cfg.model._target_)
     main = instantiate(cfg.model.main)
     inference = target_class.load_from_checkpoint(
@@ -53,10 +53,9 @@ def main(cfg: DictConfig):
             scores_np = scores.cpu().detach().numpy()
             for sample_id in range(0, indices.shape[0]):
                 indices_np = indices[sample_id].cpu().detach().numpy()
-                scores_np_prev = distributions[encoder_id][indices_np]
 
-                np.put(distributions[encoder_id], indices_np,
-                       scores_np[sample_id] + scores_np_prev)
+                for idx_elem, index_np in enumerate(indices_np):
+                    distributions[encoder_id][index_np] += scores_np[sample_id][idx_elem]
 
                 if encoder_id == n_concepts - 1:
                     n_tokens[indices_np] += 1
