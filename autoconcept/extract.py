@@ -24,7 +24,7 @@ def main(cfg: DictConfig):
     vocab_size = len(dm.dataloader_kwargs['collate_fn'].vocabulary.vocab)
     print(f"Vocab size: {vocab_size}")
 
-    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-03-28/18-45-54/lightning_logs/version_0/checkpoints/last.ckpt"
+    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-03-28/19-47-34/lightning_logs/version_0/checkpoints/last.ckpt"
     target_class = get_class(cfg.model._target_)
     main = instantiate(cfg.model.main)
     inference = target_class.load_from_checkpoint(
@@ -71,12 +71,13 @@ def main(cfg: DictConfig):
         itos_map = dm.dataloader_kwargs['collate_fn'].vocabulary.vocab.get_itos(
         )
         tokens = [itos_map[id] for id in ids]
-        print(list(zip(tokens, scores)))
+        numbers = [n_tokens[id] for id in ids]
+        print(list(zip(tokens, scores, numbers)))
         print()
 
         results.append(
             dict(
-                concept=list(zip(tokens, scores))
+                concept=list(zip(tokens, scores, numbers))
             )
         )
 
