@@ -32,8 +32,8 @@ main:
     _target_: functional.gumbel.GumbelSigmoid
     step: 58
     t: 1.0
-    rate: 0.00001
-    min_val: 0.5
+    rate: 0.001
+    min_val: 0.1
 
   temperature: 1.
 
