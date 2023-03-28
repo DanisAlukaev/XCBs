@@ -10,12 +10,14 @@ class Attention(nn.Module):
         self,
         embed_dim,
         queries_w,
+        idx,
         device,
     ):
         super(Attention, self).__init__()
         self.embed_dim = embed_dim
         self.values_keys_w = nn.Linear(embed_dim, embed_dim)
         self.queries_w = queries_w
+        self.idx = idx
         self.device = device
 
     def forward(self, input_embedding, mask):
@@ -27,7 +29,8 @@ class Attention(nn.Module):
         attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
         if mask is not None:
             attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
-        attention = F.softmax(attn_logits, dim=-1)
+        attention_concepts = F.softmax(attn_logits, dim=-1)
+        attention = attention_concepts[:, self.idx, :].unsqueeze(dim=1)
         out = torch.matmul(attention, values)
 
         return out, attention
@@ -39,13 +42,14 @@ class TransformerEncoder(nn.Module):
         embed_dim,
         queries_w,
         forward_expansion,
+        idx,
         device
     ):
         super(TransformerEncoder, self).__init__()
         self.embed_dim = embed_dim
         self.device = device
 
-        self.attention = Attention(embed_dim, queries_w, device)
+        self.attention = Attention(embed_dim, queries_w, idx, device)
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(embed_dim)
 
@@ -100,6 +104,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
                 embed_dim=embed_dim,
                 queries_w=self.queries_w,
                 forward_expansion=forward_expansion,
+                idx=idx,
                 device=device,
             )
             for idx in range(out_features)
@@ -134,7 +139,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             mask = self.make_src_mask(input_ids)
 
             embedding, _ = encoder(input_embedding, mask)
-            avg_semantic = embedding.mean(dim=1)
+            avg_semantic = embedding.squeeze(dim=1)
             concept_logit = mlp(avg_semantic)
 
             concept_logits.append(concept_logit)
