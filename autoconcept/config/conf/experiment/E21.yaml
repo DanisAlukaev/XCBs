@@ -20,4 +20,4 @@ devices:
   - 0
 
 model:
-  direct_kl: true
+  direct_kl: false
