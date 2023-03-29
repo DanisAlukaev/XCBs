@@ -82,7 +82,7 @@ def main(cfg: DictConfig):
         )
 
     # Visual
-    top_k = 10
+    top_k = 15
     instance_exploration_lrg = [list() for _ in range(n_concepts)]
     instance_exploration_sml = [list() for _ in range(n_concepts)]
     for batch in tqdm(train_loader):
