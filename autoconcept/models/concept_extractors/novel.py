@@ -112,7 +112,11 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
         self.values_w = nn.Linear(embed_dim, embed_dim)
         self.keys_w = nn.Linear(embed_dim, embed_dim)
-        self.queries_w = nn.Embedding(out_features, embed_dim)
+
+        if not slot_norm:
+            self.queries_w = nn.Embedding(out_features, embed_dim)
+        else:
+            self.queries_w = nn.Embedding(out_features + 1, embed_dim)
 
         self.word_embedding = nn.Embedding(vocab_size, embed_dim)
         self.position_embedding = nn.Embedding(max_length, embed_dim)
