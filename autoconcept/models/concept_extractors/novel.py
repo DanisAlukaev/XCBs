@@ -14,6 +14,7 @@ class Attention(nn.Module):
         queries_w,
         idx,
         device,
+        slot_norm
     ):
         super(Attention, self).__init__()
         self.embed_dim = embed_dim
@@ -22,6 +23,7 @@ class Attention(nn.Module):
         self.queries_w = queries_w
         self.idx = idx
         self.device = device
+        self.slot_norm = slot_norm
 
     def forward(self, input_embedding, mask):
         values = self.values_w(input_embedding)
@@ -32,7 +34,12 @@ class Attention(nn.Module):
         attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
         if mask is not None:
             attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
-        attention_concepts = F.softmax(attn_logits, dim=-1)
+        if not self.slot_norm:
+            attention_concepts = F.softmax(attn_logits, dim=-1)
+        else:
+            attention_concepts = F.softmax(attn_logits, dim=-2)
+            attention_concepts = attention_concepts / \
+                attention_concepts.sum(dim=-1, keepdim=True)
         attention = attention_concepts[:, self.idx, :].unsqueeze(dim=1)
         out = torch.matmul(attention, values)
 
@@ -48,14 +55,15 @@ class TransformerEncoder(nn.Module):
         queries_w,
         forward_expansion,
         idx,
-        device
+        device,
+        slot_norm,
     ):
         super(TransformerEncoder, self).__init__()
         self.embed_dim = embed_dim
         self.device = device
 
         self.attention = Attention(
-            embed_dim, values_w, keys_w, queries_w, idx, device)
+            embed_dim, values_w, keys_w, queries_w, idx, device, slot_norm)
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(embed_dim)
 
@@ -87,6 +95,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         dropout=0.,
         forward_expansion=4,
         device="cuda",
+        slot_norm=False,
     ):
         super().__init__()
 
@@ -99,6 +108,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.dropout = dropout
         self.forward_expansion = forward_expansion
         self.device = device
+        self.slot_norm = slot_norm
 
         self.values_w = nn.Linear(embed_dim, embed_dim)
         self.keys_w = nn.Linear(embed_dim, embed_dim)
@@ -116,6 +126,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
                 forward_expansion=forward_expansion,
                 idx=idx,
                 device=device,
+                slot_norm=slot_norm,
             )
             for idx in range(out_features)
         ])
