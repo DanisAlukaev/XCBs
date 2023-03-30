@@ -5,10 +5,31 @@ from pprint import pprint
 import hydra
 import numpy as np
 import torch
+import torch.nn as nn
 from helpers import set_seed
 from hydra.utils import get_class, instantiate
 from omegaconf import DictConfig
 from tqdm import tqdm
+
+
+class PositionalEncoding(nn.Module):
+
+    def __init__(self, d_model, max_len=5000):
+        super().__init__()
+
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(
+            0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)
+
+        self.register_buffer('pe', pe, persistent=False)
+
+    def forward(self, x):
+        x = x + self.pe[:, :x.size(1)]
+        return x
 
 
 @hydra.main(version_base=None, config_path="config/conf", config_name="config")
@@ -24,7 +45,7 @@ def main(cfg: DictConfig):
     vocab_size = len(dm.dataloader_kwargs['collate_fn'].vocabulary.vocab)
     print(f"Vocab size: {vocab_size}")
 
-    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-03-30/04-41-16/lightning_logs/version_0/checkpoints/last.ckpt"
+    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-03-30/05-25-37/lightning_logs/version_0/checkpoints/epoch021-val_loss0.28261.ckpt"
     target_class = get_class(cfg.model._target_)
     main = instantiate(cfg.model.main)
     inference = target_class.load_from_checkpoint(
@@ -41,10 +62,21 @@ def main(cfg: DictConfig):
         N, seq_length = indices.shape
 
         for encoder_id in range(n_concepts):
-            positions = torch.arange(0, seq_length).expand(
-                N, seq_length).to(inference.main.concept_extractor.device)
-            input_embedding = inference.main.concept_extractor.dropout((inference.main.concept_extractor.word_embedding(
-                indices) + inference.main.concept_extractor.position_embedding(positions)))
+
+            word_embedding = inference.main.concept_extractor.word_embedding(
+                indices)
+            if inference.main.concept_extractor.use_position_encoding:
+                input_embedding = inference.main.concept_extractor.position_embedding(
+                    word_embedding)
+            else:
+                positions = torch.arange(0, seq_length).expand(
+                    N, seq_length).to(inference.main.concept_extractor.device)
+                input_embedding = word_embedding + \
+                    inference.main.concept_extractor.position_embedding(
+                        positions)
+
+            input_embedding = inference.main.concept_extractor.dropout(
+                input_embedding)
             mask = inference.main.concept_extractor.make_src_mask(indices)
 
             _, scores = inference.main.concept_extractor.encoders[encoder_id](

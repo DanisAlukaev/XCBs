@@ -20,6 +20,7 @@ main:
     forward_expansion: 4
     device: cuda
     slot_norm: true
+    use_position_encoding: true
     activation:
       _target_: torch.nn.ReLU
 

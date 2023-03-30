@@ -1,8 +1,30 @@
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models.concept_extractors.base import BaseConceptExtractor
 from models.predictors.mlp import MLPPredictor
+
+
+class PositionalEncoding(nn.Module):
+
+    def __init__(self, d_model, max_len=5000):
+        super().__init__()
+
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(
+            0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)
+
+        self.register_buffer('pe', pe, persistent=False)
+
+    def forward(self, x):
+        x = x + self.pe[:, :x.size(1)]
+        return x
 
 
 class Attention(nn.Module):
@@ -33,7 +55,6 @@ class Attention(nn.Module):
         attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
         attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
         if mask is not None:
-            print(mask)
             attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
         if not self.slot_norm:
             attention_concepts = F.softmax(attn_logits, dim=-1)
@@ -97,6 +118,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         forward_expansion=4,
         device="cuda",
         slot_norm=False,
+        use_position_encoding=False,
     ):
         super().__init__()
 
@@ -110,6 +132,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.forward_expansion = forward_expansion
         self.device = device
         self.slot_norm = slot_norm
+        self.use_position_encoding = use_position_encoding
 
         self.values_w = nn.Linear(embed_dim, embed_dim)
         self.keys_w = nn.Linear(embed_dim, embed_dim)
@@ -120,7 +143,12 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             self.queries_w = nn.Embedding(out_features + 1, embed_dim)
 
         self.word_embedding = nn.Embedding(vocab_size, embed_dim)
-        self.position_embedding = nn.Embedding(max_length, embed_dim)
+
+        if use_position_encoding:
+            self.position_embedding = PositionalEncoding(
+                d_model=embed_dim, max_len=max_length)
+        else:
+            self.position_embedding = nn.Embedding(max_length, embed_dim)
 
         self.encoders = nn.ModuleList([
             TransformerEncoder(
@@ -158,10 +186,16 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         concept_logits = list()
         for _, (encoder, mlp) in enumerate(zip(self.encoders, self.mlps)):
             # regular embedding + positional embedding
-            positions = torch.arange(0, seq_length).expand(
-                N, seq_length).to(self.device)
-            input_embedding = self.dropout((self.word_embedding(
-                input_ids) + self.position_embedding(positions)))
+            word_embedding = self.word_embedding(input_ids)
+            if self.use_position_encoding:
+                input_embedding = self.position_embedding(word_embedding)
+            else:
+                positions = torch.arange(0, seq_length).expand(
+                    N, seq_length).to(self.device)
+                input_embedding = word_embedding + \
+                    self.position_embedding(positions)
+
+            input_embedding = self.dropout(input_embedding)
             mask = self.make_src_mask(input_ids)
 
             embedding, _ = encoder(input_embedding, mask)
