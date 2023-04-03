@@ -21,6 +21,7 @@ devices:
 
 model:
   direct_kl: false
-  main:
-    interim_activation:
-      min_val: 0.5
+  # main:
+  #   interim_activation:
+  #     rate: 0.00000001
+  #     min_val: 0.5

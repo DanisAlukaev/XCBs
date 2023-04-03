@@ -32,6 +32,8 @@ class AutoConceptBottleneckModel(nn.Module):
 
     def forward(self, images, captions, iteration):
         feature_logits = self.feature_extractor(images)
+        print("-" * 100)
+        print("Features: ", feature_logits.min(), feature_logits.max())
         concept_logits = self.concept_extractor(captions)
 
         feature_probs = self.sigmoid(feature_logits / self.T)
@@ -143,8 +145,16 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         opt_tie.zero_grad()
 
         self.manual_backward(loss)
+
+        # for name, param in self.main.named_parameters():
+        #     print(name, torch.isfinite(param.grad).all())
+
+        # nn.utils.clip_grad_value_(self.main.parameters(), clip_value=0.01)
+
         opt_clf.step()
         opt_tie.step()
+
+        torch.autograd.set_detect_anomaly(True)
 
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))

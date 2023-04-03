@@ -38,6 +38,7 @@ class Attention(nn.Module):
         device,
         slot_norm,
         slot_norm_fn1,
+        eps=1e-7,
     ):
         super(Attention, self).__init__()
         self.embed_dim = embed_dim
@@ -48,11 +49,15 @@ class Attention(nn.Module):
         self.device = device
         self.slot_norm = slot_norm
         self.slot_norm_fn1 = slot_norm_fn1
+        self.eps = eps
 
     def forward(self, input_embedding, mask):
         values = self.values_w(input_embedding)
         keys = self.keys_w(input_embedding)
         queries = self.queries_w.weight
+
+        print("Values: ", values.min(), values.max())
+        print("Keys", keys.min(), keys.max())
 
         attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
         attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
@@ -62,10 +67,15 @@ class Attention(nn.Module):
             attention_concepts = F.softmax(attn_logits, dim=-1)
         else:
             attention_concepts = self.slot_norm_fn1(attn_logits)
+            # print(attention_concepts)
+            attention_concepts = attention_concepts + self.eps
             attention_concepts = attention_concepts / \
                 attention_concepts.sum(dim=-1, keepdim=True)
+
         attention = attention_concepts[:, self.idx, :].unsqueeze(dim=1)
+        print("Attention", attention.min(), attention.max())
         out = torch.matmul(attention, values)
+        print("Out", out.min(), out.max())
 
         return out, attention
 
@@ -190,7 +200,17 @@ class ConceptExtractorAttention(BaseConceptExtractor):
     def forward(self, input_ids):
         N, seq_length = input_ids.shape
         concept_logits = list()
-        for _, (encoder, mlp) in enumerate(zip(self.encoders, self.mlps)):
+        print("Queries: ", self.queries_w.weight.min(),
+              self.queries_w.weight.max())
+        print("Embeddings: ", self.word_embedding.weight.min(),
+              self.word_embedding.weight.max())
+        for idx, (encoder, mlp) in enumerate(zip(self.encoders, self.mlps)):
+            weights_encoder = torch.cat([p.flatten()
+                                        for p in encoder.parameters()])
+            weights_mlp = torch.cat([p.flatten() for p in mlp.parameters()])
+            print(f"A-{idx}: ", weights_encoder.min(), weights_encoder.max())
+            print(f"M-{idx}: ", weights_mlp.min(), weights_mlp.max())
+
             # regular embedding + positional embedding
             word_embedding = self.word_embedding(input_ids)
             if self.use_position_encoding:

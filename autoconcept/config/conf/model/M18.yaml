@@ -21,7 +21,7 @@ main:
     device: cuda
     slot_norm: true
     slot_norm_fn1:
-      _target_: entmax.Entmax15
+      _target_: functional.activation.Entmax15
       dim: -2
     use_position_encoding: true
     activation:
@@ -33,12 +33,15 @@ main:
     activation:
       _target_: torch.nn.ReLU
 
+  # interim_activation:
+  #   _target_: functional.gumbel.GumbelSigmoid
+  #   step: 58
+  #   t: 1.0
+  #   rate: 0.001
+  #   min_val: 0.1
+
   interim_activation:
-    _target_: functional.gumbel.GumbelSigmoid
-    step: 58
-    t: 1.0
-    rate: 0.001
-    min_val: 0.1
+    _target_: torch.nn.Sigmoid
 
   temperature: 1.
 
@@ -50,23 +53,23 @@ criterion_tie:
 
 lambda_p: 2
 
-period: 5
+period: 1
 
 optimizer_model_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
-      path: torch.optim.Adadelta
-  lr: 0.25
-  rho: 0.95
+      path: torch.optim.AdamW
+  lr: 0.001
+  weight_decay: 0.0001
 
 optimizer_concept_extractor_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
-      path: torch.optim.Adadelta
-  lr: 0.75
-  rho: 0.95
+      path: torch.optim.AdamW
+  lr: 5e-4
+  weight_decay: 0.0001
 
 scheduler_model_template:
   _target_: functools.partial
