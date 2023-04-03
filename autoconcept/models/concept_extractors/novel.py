@@ -56,8 +56,8 @@ class Attention(nn.Module):
         keys = self.keys_w(input_embedding)
         queries = self.queries_w.weight
 
-        print("Values: ", values.min(), values.max())
-        print("Keys", keys.min(), keys.max())
+        # print("Values: ", values.min(), values.max())
+        # print("Keys", keys.min(), keys.max())
 
         attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
         attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
@@ -73,9 +73,9 @@ class Attention(nn.Module):
                 attention_concepts.sum(dim=-1, keepdim=True)
 
         attention = attention_concepts[:, self.idx, :].unsqueeze(dim=1)
-        print("Attention", attention.min(), attention.max())
+        # print("Attention", attention.min(), attention.max())
         out = torch.matmul(attention, values)
-        print("Out", out.min(), out.max())
+        # print("Out", out.min(), out.max())
 
         return out, attention
 
@@ -200,16 +200,14 @@ class ConceptExtractorAttention(BaseConceptExtractor):
     def forward(self, input_ids):
         N, seq_length = input_ids.shape
         concept_logits = list()
-        print("Queries: ", self.queries_w.weight.min(),
-              self.queries_w.weight.max())
-        print("Embeddings: ", self.word_embedding.weight.min(),
-              self.word_embedding.weight.max())
+        # print("Queries: ", self.queries_w.weight.min(), self.queries_w.weight.max())
+        # print("Embeddings: ", self.word_embedding.weight.min(), self.word_embedding.weight.max())
         for idx, (encoder, mlp) in enumerate(zip(self.encoders, self.mlps)):
             weights_encoder = torch.cat([p.flatten()
                                         for p in encoder.parameters()])
             weights_mlp = torch.cat([p.flatten() for p in mlp.parameters()])
-            print(f"A-{idx}: ", weights_encoder.min(), weights_encoder.max())
-            print(f"M-{idx}: ", weights_mlp.min(), weights_mlp.max())
+            # print(f"A-{idx}: ", weights_encoder.min(), weights_encoder.max())
+            # print(f"M-{idx}: ", weights_mlp.min(), weights_mlp.max())
 
             # regular embedding + positional embedding
             word_embedding = self.word_embedding(input_ids)
