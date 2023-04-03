@@ -21,7 +21,3 @@ devices:
 
 model:
   direct_kl: false
-  main:
-    interim_activation:
-      _target_: functional.gumbel.GumbelSigmoid
-      min_val: 0.5
