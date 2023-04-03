@@ -33,15 +33,15 @@ main:
     activation:
       _target_: torch.nn.ReLU
 
-  # interim_activation:
-  #   _target_: functional.gumbel.GumbelSigmoid
-  #   step: 58
-  #   t: 1.0
-  #   rate: 0.001
-  #   min_val: 0.1
-
   interim_activation:
-    _target_: torch.nn.Sigmoid
+    _target_: functional.gumbel.GumbelSigmoid
+    step: 58
+    t: 1.0
+    rate: 0.005
+    min_val: 0.1
+
+  # interim_activation:
+  #   _target_: torch.nn.Sigmoid
 
   temperature: 1.
 
@@ -53,7 +53,7 @@ criterion_tie:
 
 lambda_p: 4
 
-period: 2
+period: 4
 
 optimizer_model_template:
   _target_: functools.partial

@@ -5,9 +5,9 @@ defaults:
   - override /dataset: shapes
 
 name: E22
-epoch_freeze_backbone: 2
-epoch_reinitialize: 2
-max_epochs: 10
+epoch_freeze_backbone: 4
+epoch_reinitialize: 4
+max_epochs: 12
 dataset:
   collate_fn:
     _target_: datasets.collators.CollateIndices
@@ -23,4 +23,5 @@ model:
   direct_kl: false
   main:
     interim_activation:
+      _target_: functional.gumbel.GumbelSigmoid
       min_val: 0.5
