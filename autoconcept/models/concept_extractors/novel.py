@@ -36,7 +36,8 @@ class Attention(nn.Module):
         queries_w,
         idx,
         device,
-        slot_norm
+        slot_norm,
+        slot_norm_fn1,
     ):
         super(Attention, self).__init__()
         self.embed_dim = embed_dim
@@ -46,6 +47,7 @@ class Attention(nn.Module):
         self.idx = idx
         self.device = device
         self.slot_norm = slot_norm
+        self.slot_norm_fn1 = slot_norm_fn1
 
     def forward(self, input_embedding, mask):
         values = self.values_w(input_embedding)
@@ -59,7 +61,7 @@ class Attention(nn.Module):
         if not self.slot_norm:
             attention_concepts = F.softmax(attn_logits, dim=-1)
         else:
-            attention_concepts = F.softmax(attn_logits, dim=-2)
+            attention_concepts = self.slot_norm_fn1(attn_logits)
             attention_concepts = attention_concepts / \
                 attention_concepts.sum(dim=-1, keepdim=True)
         attention = attention_concepts[:, self.idx, :].unsqueeze(dim=1)
@@ -79,13 +81,14 @@ class TransformerEncoder(nn.Module):
         idx,
         device,
         slot_norm,
+        slot_norm_fn1
     ):
         super(TransformerEncoder, self).__init__()
         self.embed_dim = embed_dim
         self.device = device
 
         self.attention = Attention(
-            embed_dim, values_w, keys_w, queries_w, idx, device, slot_norm)
+            embed_dim, values_w, keys_w, queries_w, idx, device, slot_norm, slot_norm_fn1)
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(embed_dim)
 
@@ -118,6 +121,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         forward_expansion=4,
         device="cuda",
         slot_norm=False,
+        slot_norm_fn1=F.softmax,
         use_position_encoding=False,
     ):
         super().__init__()
@@ -132,6 +136,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.forward_expansion = forward_expansion
         self.device = device
         self.slot_norm = slot_norm
+        self.slot_norm_fn1 = slot_norm_fn1
         self.use_position_encoding = use_position_encoding
 
         self.values_w = nn.Linear(embed_dim, embed_dim)
@@ -160,6 +165,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
                 idx=idx,
                 device=device,
                 slot_norm=slot_norm,
+                slot_norm_fn1=slot_norm_fn1
             )
             for idx in range(out_features)
         ])

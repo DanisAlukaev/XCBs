@@ -20,6 +20,9 @@ main:
     forward_expansion: 4
     device: cuda
     slot_norm: true
+    slot_norm_fn1:
+      _target_: entmax.Entmax15
+      dim: -2
     use_position_encoding: true
     activation:
       _target_: torch.nn.ReLU
@@ -45,7 +48,7 @@ criterion_task:
 criterion_tie:
   _target_: functional.loss.KullbackLeiblerDivergenceLoss
 
-lambda_p: 20
+lambda_p: 2
 
 period: 5
 
