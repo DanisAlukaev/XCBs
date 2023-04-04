@@ -32,8 +32,8 @@ class AutoConceptBottleneckModel(nn.Module):
 
     def forward(self, images, captions, iteration):
         feature_logits = self.feature_extractor(images)
-        # print("-" * 100)
-        # print("Features: ", feature_logits.min(), feature_logits.max())
+        print("-" * 100)
+        print("Features: ", feature_logits.min(), feature_logits.max())
         concept_logits, avg_dist = self.concept_extractor(captions)
 
         feature_probs = self.sigmoid(feature_logits / self.T)
