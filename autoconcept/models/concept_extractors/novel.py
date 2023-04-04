@@ -192,6 +192,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
         self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(dropout)
+        self.cosine_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
 
     def make_src_mask(self, src):
         src_mask = (src != self.src_pad_idx).unsqueeze(1)
@@ -200,6 +201,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
     def forward(self, input_ids):
         N, seq_length = input_ids.shape
         concept_logits = list()
+        embeddings = list()
         # print("Queries: ", self.queries_w.weight.min(), self.queries_w.weight.max())
         # print("Embeddings: ", self.word_embedding.weight.min(), self.word_embedding.weight.max())
         for idx, (encoder, mlp) in enumerate(zip(self.encoders, self.mlps)):
@@ -223,9 +225,18 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             mask = self.make_src_mask(input_ids)
 
             embedding, _ = encoder(input_embedding, mask)
-            avg_semantic = embedding.squeeze(dim=1)
+            avg_semantic = embedding.squeeze(dim=1)  # 64, 100
+            embeddings.append(avg_semantic)
             concept_logit = mlp(avg_semantic)
 
             concept_logits.append(concept_logit)
         concept_logits = torch.stack(concept_logits, dim=1).squeeze(-1)
-        return concept_logits
+
+        dists = list()
+        for idx in range(len(embeddings)):
+            for jdx in range(idx + 1, len(embeddings)):
+                ea, eb = embeddings[idx], embeddings[jdx]
+                dist = self.cosine_sim(ea, eb)
+                dists.append(dist)
+        avg_dist = torch.cat(dists).mean()
+        return concept_logits, avg_dist

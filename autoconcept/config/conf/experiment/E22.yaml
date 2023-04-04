@@ -5,9 +5,9 @@ defaults:
   - override /dataset: shapes
 
 name: E22
-epoch_freeze_backbone: 4
-epoch_reinitialize: 4
-max_epochs: 12
+epoch_freeze_backbone: 2
+epoch_reinitialize: 2
+max_epochs: 10
 dataset:
   collate_fn:
     _target_: datasets.collators.CollateIndices

@@ -34,7 +34,7 @@ class AutoConceptBottleneckModel(nn.Module):
         feature_logits = self.feature_extractor(images)
         # print("-" * 100)
         # print("Features: ", feature_logits.min(), feature_logits.max())
-        concept_logits = self.concept_extractor(captions)
+        concept_logits, avg_dist = self.concept_extractor(captions)
 
         feature_probs = self.sigmoid(feature_logits / self.T)
         concept_probs = self.sigmoid(concept_logits / self.T)
@@ -57,6 +57,7 @@ class AutoConceptBottleneckModel(nn.Module):
             concept_probs=concept_probs,
             feature_activated=feature_activated,
             prediction=prediction,
+            avg_dist=avg_dist,
         )
 
         return out_dict
@@ -83,6 +84,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         scheduler_concept_extractor_template=partial(
             torch.optim.lr_scheduler.StepLR, step_size=30, gamma=0.1),
         lambda_p=10,
+        lambda_d=0.1,
         period=50,
         direct_kl=True,
     ):
@@ -97,6 +99,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.scheduler_model_template = scheduler_model_template
         self.scheduler_concept_extractor_template = scheduler_concept_extractor_template
         self.lambda_p = lambda_p
+        self.lambda_d = lambda_d
         self.period = period
         self.direct_kl = direct_kl
 
@@ -127,6 +130,9 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
         # TODO: lambda_p should be from 0 to 1
         lambda_p = self.lambda_p if self.trainer.current_epoch // self.period > 0 else 0
+        lambda_d = self.lambda_d if self.trainer.current_epoch // self.period > 0 else 0
+
+        loss_dist = - lambda_d * out_dict["avg_dist"]
 
         loss_task = self.criterion_task(prediction, target)
         if self.direct_kl:
@@ -136,8 +142,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             loss_tie = lambda_p * \
                 self.criterion_tie(feature_probs, concept_probs)
 
-        # TODO: multiplier for tie loss
-        loss = loss_task + loss_tie
+        # TODO: multiplier for avg_dist
+        loss = loss_task + loss_tie + loss_dist
 
         opt_clf, opt_tie = self.optimizers()
 
@@ -162,10 +168,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         metrics = {
             "loss/train_task": loss_task,
             "loss/train_tie": loss_tie,
+            "loss/train_dist": loss_dist,
             "loss/train": loss,
             "train/loss": loss,
             "train/loss_task": loss_task,
-            "train/loss_tie": loss_tie
+            "train/loss_tie": loss_tie,
+            "train/loss_dist": loss_dist
         }
         self.log_dict(metrics)
 
@@ -176,6 +184,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             loss=loss,
             loss_task=loss_task,
             loss_tie=loss_tie,
+            loss_dist=loss_dist,
             target=_target,
             prediction=_prediction
         )
@@ -230,6 +239,9 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
         lambda_p = self.lambda_p if self.trainer.current_epoch // self.period > 0 else 0
+        lambda_d = self.lambda_d if self.trainer.current_epoch // self.period > 0 else 0
+
+        loss_dist = - lambda_d * out_dict["avg_dist"]
 
         loss_task = self.criterion_task(prediction, target)
         if self.direct_kl:
@@ -240,7 +252,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
                 self.criterion_tie(feature_probs, concept_probs)
 
         # TODO: multiplier for tie loss
-        loss = loss_task + loss_tie
+        loss = loss_task + loss_tie + loss_dist
 
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))
@@ -248,10 +260,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         metrics = {
             f"loss/{phase}_task": loss_task,
             f"loss/{phase}_tie": loss_tie,
+            f"loss/{phase}_dist": loss_dist,
             f"loss/{phase}": loss,
             f"{phase}/loss": loss,
             f"{phase}/loss_task": loss_task,
-            f"{phase}/loss_tie": loss_tie
+            f"{phase}/loss_tie": loss_tie,
+            f"{phase}/loss_dist": loss_dist
         }
         self.log_dict(metrics)
 
@@ -259,6 +273,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             loss=loss.item(),
             loss_task=loss_task.item(),
             loss_tie=loss_tie.item(),
+            loss_dist=loss_dist.item(),
             target=_target,
             prediction=_prediction
         )
