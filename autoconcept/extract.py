@@ -46,7 +46,7 @@ def main(cfg: DictConfig):
     vocab_size = len(dm.dataloader_kwargs['collate_fn'].vocabulary.vocab)
     print(f"Vocab size: {vocab_size}")
 
-    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-04-04/07-15-50/lightning_logs/version_0/checkpoints/last.ckpt"
+    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-04-04/07-29-42/lightning_logs/version_0/checkpoints/last.ckpt"
     target_class = get_class(cfg.model._target_)
     main = instantiate(cfg.model.main)
     inference = target_class.load_from_checkpoint(
@@ -91,16 +91,22 @@ def main(cfg: DictConfig):
                     distributions[encoder_id][index_np] += scores_np[sample_id][idx_elem]
 
                 if encoder_id == n_concepts - 1:
-                    n_tokens[indices_np] += 1
+                    for idx_elem, index_np in enumerate(indices_np):
+                        n_tokens[index_np] += 1
 
     results = list()
     distributions = np.array(distributions) / n_tokens
     # print(distributions.shape)
-    top_k = 10
+    top_k = 24
     for i in range(n_concepts):
         print(f"Concept #{i}")
         ids = (-distributions[i]).argsort()[:top_k]
-        scores = distributions[i][ids]
+
+        scores = list()
+        for id in ids:
+            scores.append(distributions[i][id])
+        scores = np.array(scores)
+
         itos_map = dm.dataloader_kwargs['collate_fn'].vocabulary.vocab.get_itos(
         )
         tokens = [itos_map[id] for id in ids]
