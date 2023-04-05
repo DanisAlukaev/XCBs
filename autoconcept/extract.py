@@ -46,7 +46,7 @@ def main(cfg: DictConfig):
     vocab_size = len(dm.dataloader_kwargs['collate_fn'].vocabulary.vocab)
     print(f"Vocab size: {vocab_size}")
 
-    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-04-04/10-25-07/lightning_logs/version_0/checkpoints/last.ckpt"
+    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-04-05/11-01-18/lightning_logs/version_0/checkpoints/last.ckpt"
     target_class = get_class(cfg.model._target_)
     main = instantiate(cfg.model.main)
     inference = target_class.load_from_checkpoint(

@@ -129,8 +129,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
         # TODO: lambda_p should be from 0 to 1
-        lambda_p = self.lambda_p if self.trainer.current_epoch // self.period > 0 else 0
-        lambda_d = self.lambda_d if self.trainer.current_epoch // self.period > 0 else 0
+        if self.period:
+            lambda_p = self.lambda_p if self.trainer.current_epoch // self.period > 0 else 0
+            lambda_d = self.lambda_d if self.trainer.current_epoch // self.period > 0 else 0
+        else:
+            lambda_p = self.lambda_p
+            lambda_d = self.lambda_d
 
         loss_dist = - lambda_d * out_dict["avg_dist"]
 
@@ -238,8 +242,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         prediction, feature_probs, concept_probs = out_dict[
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
-        lambda_p = self.lambda_p if self.trainer.current_epoch // self.period > 0 else 0
-        lambda_d = self.lambda_d if self.trainer.current_epoch // self.period > 0 else 0
+        if self.period:
+            lambda_p = self.lambda_p if self.trainer.current_epoch // self.period > 0 else 0
+            lambda_d = self.lambda_d if self.trainer.current_epoch // self.period > 0 else 0
+        else:
+            lambda_p = self.lambda_p
+            lambda_d = self.lambda_d
 
         loss_dist = - lambda_d * out_dict["avg_dist"]
 

@@ -5,7 +5,7 @@ defaults:
   - override /dataset: shapes
 
 name: E22
-epoch_freeze_backbone: 2
+epoch_freeze_backbone: 4
 epoch_reinitialize: null
 max_epochs: 10
 dataset:

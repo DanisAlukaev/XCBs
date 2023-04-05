@@ -35,10 +35,10 @@ main:
 
   interim_activation:
     _target_: functional.gumbel.GumbelSigmoid
-    step: 58
+    step: 15
     t: 1.0
-    rate: 0.01
-    min_val: 0.1
+    rate: 0.007
+    min_val: 0.5
 
   # interim_activation:
   #   _target_: torch.nn.Sigmoid
@@ -51,11 +51,11 @@ criterion_task:
 criterion_tie:
   _target_: functional.loss.KullbackLeiblerDivergenceLoss
 
-lambda_p: 2
+lambda_p: 4
 
-lambda_d: 0.1
+lambda_d: 0
 
-period: 2
+period: null
 
 optimizer_model_template:
   _target_: functools.partial
