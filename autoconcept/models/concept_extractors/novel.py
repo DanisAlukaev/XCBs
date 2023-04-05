@@ -63,7 +63,6 @@ class Attention(nn.Module):
         attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
         if mask is not None:
             attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
-            print(attn_logits)
         if not self.slot_norm:
             attention_concepts = F.softmax(attn_logits, dim=-1)
         else:
