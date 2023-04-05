@@ -63,10 +63,12 @@ class Attention(nn.Module):
         attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
         if mask is not None:
             attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
+            print(attn_logits)
         if not self.slot_norm:
             attention_concepts = F.softmax(attn_logits, dim=-1)
         else:
             attention_concepts = self.slot_norm_fn1(attn_logits)
+            attention_concepts = attention_concepts.masked_fill(mask == 0, 0)
             # print(attention_concepts)
             attention_concepts = attention_concepts + self.eps
             attention_concepts = attention_concepts / \
@@ -158,7 +160,9 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             self.queries_w = nn.Embedding(out_features + 1, embed_dim)
 
         self.word_embedding = nn.Embedding(
-            vocab_size, embed_dim, padding_idx=self.src_pad_idx)
+            vocab_size, embed_dim,
+            # padding_idx=self.src_pad_idx
+        )
 
         if use_position_encoding:
             self.position_embedding = PositionalEncoding(
