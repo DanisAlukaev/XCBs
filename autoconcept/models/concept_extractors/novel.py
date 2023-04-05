@@ -157,7 +157,8 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         else:
             self.queries_w = nn.Embedding(out_features + 1, embed_dim)
 
-        self.word_embedding = nn.Embedding(vocab_size, embed_dim)
+        self.word_embedding = nn.Embedding(
+            vocab_size, embed_dim, padding_idx=self.src_pad_idx)
 
         if use_position_encoding:
             self.position_embedding = PositionalEncoding(

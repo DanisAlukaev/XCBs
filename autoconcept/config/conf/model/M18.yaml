@@ -53,7 +53,7 @@ criterion_tie:
 
 lambda_p: 4
 
-lambda_d: 0
+lambda_d: 0.4
 
 period: null
 
