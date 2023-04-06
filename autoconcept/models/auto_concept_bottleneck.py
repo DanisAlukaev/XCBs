@@ -136,7 +136,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             lambda_p = self.lambda_p
             lambda_d = self.lambda_d
 
-        loss_dist = - lambda_d * out_dict["avg_dist"]
+        loss_dist = lambda_d * out_dict["avg_dist"]
 
         loss_task = self.criterion_task(prediction, target)
         if self.direct_kl:
@@ -249,7 +249,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             lambda_p = self.lambda_p
             lambda_d = self.lambda_d
 
-        loss_dist = - lambda_d * out_dict["avg_dist"]
+        loss_dist = lambda_d * out_dict["avg_dist"]
 
         loss_task = self.criterion_task(prediction, target)
         if self.direct_kl:
