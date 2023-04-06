@@ -12,7 +12,7 @@ main:
   concept_extractor:
     _target_: models.concept_extractors.novel.ConceptExtractorAttention
     vocab_size: 30
-    embed_dim: 100
+    embed_dim: 10
     out_features: 10
     max_length: 50
     src_pad_idx: 0
