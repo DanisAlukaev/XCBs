@@ -51,9 +51,9 @@ criterion_task:
 criterion_tie:
   _target_: functional.loss.KullbackLeiblerDivergenceLoss
 
-lambda_p: 10
+lambda_p: 4
 
-lambda_d: 0.6
+lambda_d: 0.15
 
 period: null
 
