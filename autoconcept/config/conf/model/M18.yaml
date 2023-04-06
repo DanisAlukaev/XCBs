@@ -12,16 +12,16 @@ main:
   concept_extractor:
     _target_: models.concept_extractors.novel.ConceptExtractorAttention
     vocab_size: 30
-    embed_dim: 5
+    embed_dim: 8
     out_features: 10
-    max_length: 30
+    max_length: 50
     src_pad_idx: 0
     dropout: 0.
     forward_expansion: 4
     device: cuda
     slot_norm: true
     norm_fn1:
-      _target_: functional.activation.Entmax15
+      _target_: torch.nn.Softmax # functional.activation.Entmax15
       dim: -2
     use_position_encoding: true
     activation:
