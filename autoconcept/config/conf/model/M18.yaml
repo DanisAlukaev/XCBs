@@ -19,10 +19,10 @@ main:
     dropout: 0.
     forward_expansion: 4
     device: cuda
-    slot_norm: false
+    slot_norm: true
     norm_fn1:
       _target_: functional.activation.Entmax15
-      dim: -1
+      dim: -2
     use_position_encoding: true
     activation:
       _target_: torch.nn.ReLU

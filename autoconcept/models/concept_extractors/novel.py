@@ -160,7 +160,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
         self.word_embedding = nn.Embedding(
             vocab_size, embed_dim,
-            # padding_idx=self.src_pad_idx
+            padding_idx=self.src_pad_idx
         )
 
         if use_position_encoding:
