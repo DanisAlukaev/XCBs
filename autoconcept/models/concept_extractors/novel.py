@@ -241,6 +241,6 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             for jdx in range(idx + 1, len(embeddings)):
                 ea, eb = embeddings[idx], embeddings[jdx]
                 dist = self.cosine_sim(ea, eb)
-                dists.append(dist)
+                dists.append(dist.abs())
         avg_dist = torch.cat(dists).mean()
         return concept_logits, avg_dist
