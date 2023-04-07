@@ -21,7 +21,7 @@ main:
     device: cuda
     slot_norm: true
     norm_fn1:
-      _target_: torch.nn.Softmax # functional.activation.Entmax15
+      _target_: functional.activation.Entmax15
       dim: -2
     use_position_encoding: true
     activation:
@@ -70,7 +70,7 @@ optimizer_concept_extractor_template:
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.AdamW
-  lr: 5e-4
+  lr: 7e-4
   weight_decay: 0.01
 
 scheduler_model_template:

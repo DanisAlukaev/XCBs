@@ -206,6 +206,9 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         N, seq_length = input_ids.shape
         concept_logits = list()
         embeddings = list()
+
+        # print("Dummy: ", self.queries_w.weight[-1].shape, self.queries_w.weight[-1])
+
         # print("Queries: ", self.queries_w.weight.min(), self.queries_w.weight.max())
         # print("Embeddings: ", self.word_embedding.weight.min(), self.word_embedding.weight.max())
         for idx, (encoder, mlp) in enumerate(zip(self.encoders, self.mlps)):
