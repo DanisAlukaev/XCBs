@@ -1,0 +1,92 @@
+_target_: models.auto_concept_bottleneck.LitAutoConceptBottleneckModel
+
+main:
+  _target_: models.auto_concept_bottleneck.AutoConceptBottleneckModel
+
+  feature_extractor:
+    _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
+    model: inception_v3
+    weights: IMAGENET1K_V1
+    out_features: 50
+
+  concept_extractor:
+    _target_: models.concept_extractors.novel.ConceptExtractorAttention
+    vocab_size: 8800
+    embed_dim: 20
+    out_features: 50
+    max_length: 380
+    src_pad_idx: 0
+    dropout: 0.
+    forward_expansion: 4
+    device: cuda
+    slot_norm: true
+    norm_fn1:
+      _target_: functional.activation.Entmax15
+      dim: -2
+      # _target_: torch.nn.Softmax
+      # dim: -1
+    use_position_encoding: true
+    activation:
+      _target_: torch.nn.ReLU
+
+  predictor:
+    _target_: models.predictors.mlp.MLPPredictor
+    layers: [50, 200]
+    activation:
+      _target_: torch.nn.ReLU
+
+  interim_activation:
+    _target_: functional.gumbel.GumbelSigmoid
+    step: 75
+    t: 1.0
+    rate: 0.0002
+    min_val: 0.5
+
+  # interim_activation:
+  #   _target_: torch.nn.Sigmoid
+
+  temperature: 1.
+
+criterion_task:
+  _target_: torch.nn.CrossEntropyLoss
+
+criterion_tie:
+  _target_: functional.loss.KullbackLeiblerDivergenceLoss
+
+lambda_p: 0
+
+lambda_d: 0.6
+
+period: null
+
+optimizer_model_template:
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.Adadelta
+  lr: 0.25
+  rho: 0.95
+
+optimizer_concept_extractor_template:
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.AdamW
+  lr: 2e-3
+  weight_decay: 0.01
+
+scheduler_model_template:
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.lr_scheduler.MultiStepLR
+  milestones: [10, 20]
+  gamma: 0.1
+
+scheduler_concept_extractor_template:
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.lr_scheduler.MultiStepLR
+  milestones: [10, ]
+  gamma: 0.1

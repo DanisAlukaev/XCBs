@@ -77,6 +77,7 @@ class Vocabulary:
 
     def build_vocab(self):
         word_counter = Counter()
+        size_arr = list()
         for _, row in tqdm(self.annotations.iterrows(), total=self.annotations.shape[0]):
             mask_source_captions = [str(label)
                                     for label in eval(row.mask_source_captions)]
@@ -97,11 +98,13 @@ class Vocabulary:
                 mask_source_captions = mask_cub
             text = " ".join(source_captions)
             tokens = self.tokenizer(text)
+            size_arr.append(len(tokens))
             word_counter.update(tokens)
 
         special_symbols = ["<pad>", "<unk>"]
         self.vocab = vocab(word_counter, specials=special_symbols)
         self.vocab.set_default_index(self.vocab["<unk>"])
+        print("Max length: ", max(size_arr))
 
     def read_annotations_file(self):
         filename = self.annotation_path

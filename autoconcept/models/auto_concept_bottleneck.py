@@ -1,4 +1,5 @@
 from functools import partial
+from time import time
 
 import numpy as np
 import psutil
@@ -31,10 +32,16 @@ class AutoConceptBottleneckModel(nn.Module):
         self.bn = nn.BatchNorm1d(feature_extractor.out_features)
 
     def forward(self, images, captions, iteration):
+        start_ = time()
         feature_logits = self.feature_extractor(images)
+        # print("Feature extractor: ", time() - start_)
         # print("-" * 100)
         # print("Features: ", feature_logits.min(), feature_logits.max())
+        start_ = time()
         concept_logits, avg_dist = self.concept_extractor(captions)
+        # print("Concept extractor: ", time() - start_)
+
+        start_ = time()
 
         feature_probs = self.sigmoid(feature_logits / self.T)
         concept_probs = self.sigmoid(concept_logits / self.T)
@@ -59,6 +66,7 @@ class AutoConceptBottleneckModel(nn.Module):
             prediction=prediction,
             avg_dist=avg_dist,
         )
+        # print("Rest: ", time() - start_)
 
         return out_dict
 

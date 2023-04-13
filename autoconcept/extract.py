@@ -1,7 +1,6 @@
 
 import json
 import math
-from pprint import pprint
 
 import hydra
 import numpy as np
@@ -46,7 +45,7 @@ def main(cfg: DictConfig):
     vocab_size = len(dm.dataloader_kwargs['collate_fn'].vocabulary.vocab)
     print(f"Vocab size: {vocab_size}")
 
-    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-04-07/06-08-57/lightning_logs/version_0/checkpoints/last.ckpt"
+    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-04-13/13-37-47/lightning_logs/version_0/checkpoints/last.ckpt"
     target_class = get_class(cfg.model._target_)
     main = instantiate(cfg.model.main)
     inference = target_class.load_from_checkpoint(
@@ -55,33 +54,59 @@ def main(cfg: DictConfig):
     n_concepts = len(inference.main.concept_extractor.encoders)
 
     # Textual
-    distributions = [np.zeros(vocab_size) for _ in range(n_concepts)]
+    distributions = [np.zeros(vocab_size) for _ in range(n_concepts + 1)]
     n_tokens = np.zeros(vocab_size)
 
     for batch in tqdm(train_loader):
         indices = batch["indices"].cuda()
         N, seq_length = indices.shape
 
-        for encoder_id in range(n_concepts):
+        word_embedding = inference.main.concept_extractor.word_embedding(
+            indices)
+        if inference.main.concept_extractor.use_position_encoding:
+            input_embedding = inference.main.concept_extractor.position_embedding(
+                word_embedding)
+        else:
+            positions = torch.arange(0, seq_length).expand(
+                N, seq_length).to(inference.main.concept_extractor.device)
+            input_embedding = word_embedding + \
+                inference.main.concept_extractor.position_embedding(positions)
 
-            word_embedding = inference.main.concept_extractor.word_embedding(
-                indices)
-            if inference.main.concept_extractor.use_position_encoding:
-                input_embedding = inference.main.concept_extractor.position_embedding(
-                    word_embedding)
-            else:
-                positions = torch.arange(0, seq_length).expand(
-                    N, seq_length).to(inference.main.concept_extractor.device)
-                input_embedding = word_embedding + \
-                    inference.main.concept_extractor.position_embedding(
-                        positions)
+        input_embedding = inference.main.concept_extractor.dropout(
+            input_embedding)
+        mask = inference.main.concept_extractor.make_src_mask(indices)
 
-            input_embedding = inference.main.concept_extractor.dropout(
-                input_embedding)
-            mask = inference.main.concept_extractor.make_src_mask(indices)
+        values = inference.main.concept_extractor.values_w(input_embedding)
+        keys = inference.main.concept_extractor.keys_w(input_embedding)
+        queries = inference.main.concept_extractor.queries_w.weight
 
-            _, scores = inference.main.concept_extractor.encoders[encoder_id](
-                input_embedding, mask)
+        attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
+        attn_logits = attn_logits / \
+            (inference.main.concept_extractor.embed_dim ** (1 / 2))
+
+        if mask is not None:
+            attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
+        if not inference.main.concept_extractor.slot_norm:
+            attention_concepts = inference.main.concept_extractor.norm_fn1(
+                attn_logits)
+        else:
+            attention_concepts_ = inference.main.concept_extractor.norm_fn1(
+                attn_logits)
+            attention_concepts_ = attention_concepts_.masked_fill(mask == 0, 0)
+            # print(attention_concepts)
+            attention_concepts = attention_concepts_ + inference.main.concept_extractor.eps
+            attention_concepts = attention_concepts / \
+                attention_concepts.sum(dim=-1, keepdim=True)
+
+        out = torch.matmul(attention_concepts, values)
+
+        for encoder_id in range(n_concepts + 1):
+
+            scores = attention_concepts[:, encoder_id, :]
+
+            if encoder_id == n_concepts:
+                scores = attention_concepts_[:, encoder_id, :]
+
             scores = scores.squeeze()
             scores_np = scores.cpu().detach().numpy()
             for sample_id in range(0, indices.shape[0]):
@@ -98,7 +123,7 @@ def main(cfg: DictConfig):
     distributions = np.array(distributions) / n_tokens
     # print(distributions.shape)
     top_k = 24
-    for i in range(n_concepts):
+    for i in range(n_concepts + 1):
         print(f"Concept #{i}")
         ids = (-distributions[i]).argsort()[:top_k]
 
@@ -165,6 +190,7 @@ def main(cfg: DictConfig):
 
         instance_exploration_lrg = [sorted(a + b, reverse=True, key=lambda x: abs(
             x[1]))[:top_k] for a, b in zip(instance_exploration_lrg, pairs_lrg)]
+
         instance_exploration_sml = [sorted(a + b, reverse=True, key=lambda x: abs(
             x[1]))[:top_k] for a, b in zip(instance_exploration_sml, pairs_sml)]
         # instance_exploration_med = [sorted(a + b, reverse=True, key=lambda x: abs(
@@ -175,7 +201,7 @@ def main(cfg: DictConfig):
 
     for i in range(len(instance_exploration)):
         print(f"Concept #{i}")
-        pprint(instance_exploration[i])
+        # pprint(instance_exploration[i])
         results[i]["feature"] = [(a, b.item())
                                  for a, b in instance_exploration[i]]
         print()

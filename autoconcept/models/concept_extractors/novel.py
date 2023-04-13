@@ -1,4 +1,5 @@
 import math
+from time import time
 
 import torch
 import torch.nn as nn
@@ -51,27 +52,9 @@ class Attention(nn.Module):
         self.norm_fn1 = norm_fn1
         self.eps = eps
 
-    def forward(self, input_embedding, mask):
-        values = self.values_w(input_embedding)
-        keys = self.keys_w(input_embedding)
-        queries = self.queries_w.weight
-
+    def forward(self, values, attention_concepts):
         # print("Values: ", values.min(), values.max())
         # print("Keys", keys.min(), keys.max())
-
-        attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
-        attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
-        if mask is not None:
-            attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
-        if not self.slot_norm:
-            attention_concepts = self.norm_fn1(attn_logits)
-        else:
-            attention_concepts = self.norm_fn1(attn_logits)
-            attention_concepts = attention_concepts.masked_fill(mask == 0, 0)
-            # print(attention_concepts)
-            attention_concepts = attention_concepts + self.eps
-            attention_concepts = attention_concepts / \
-                attention_concepts.sum(dim=-1, keepdim=True)
 
         attention = attention_concepts[:, self.idx, :].unsqueeze(dim=1)
         # print("Attention", attention.min(), attention.max())
@@ -109,12 +92,11 @@ class TransformerEncoder(nn.Module):
             nn.Linear(forward_expansion * embed_dim, embed_dim),
         )
 
-    def forward(self, input_embedding, mask):
-        attention, scores = self.attention(input_embedding, mask)
-
-        x = self.norm1(attention)
-        forward = self.feed_forward(x)
-        out = self.norm2(forward + x)
+    def forward(self, attention, scores):
+        # out = attention
+        out = self.norm1(attention)
+        # forward = self.feed_forward(x)
+        # out = self.norm2(forward + x)
         return out, scores
 
 
@@ -134,6 +116,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         slot_norm=False,
         norm_fn1=F.softmax,
         use_position_encoding=False,
+        eps=1e-7,
     ):
         super().__init__()
 
@@ -149,6 +132,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.slot_norm = slot_norm
         self.norm_fn1 = norm_fn1
         self.use_position_encoding = use_position_encoding
+        self.eps = eps
 
         self.values_w = nn.Linear(embed_dim, embed_dim)
         self.keys_w = nn.Linear(embed_dim, embed_dim)
@@ -186,7 +170,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
         self.mlps = nn.ModuleList([
             MLPPredictor(
-                layers=[embed_dim, 1],
+                layers=[embed_dim, embed_dim // 2, 1],
                 activation=nn.ReLU(),
                 use_batch_norm=True,
                 use_dropout=False,
@@ -203,47 +187,81 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         return src_mask.to(self.device)
 
     def forward(self, input_ids):
+        start_ = time()
         N, seq_length = input_ids.shape
         concept_logits = list()
-        embeddings = list()
+
+        word_embedding = self.word_embedding(input_ids)
+        if self.use_position_encoding:
+            input_embedding = self.position_embedding(word_embedding)
+        else:
+            positions = torch.arange(0, seq_length).expand(
+                N, seq_length).to(self.device)
+            input_embedding = word_embedding + \
+                self.position_embedding(positions)
+
+        input_embedding = self.dropout(input_embedding)
+        mask = self.make_src_mask(input_ids)
+
+        values = self.values_w(input_embedding)
+        keys = self.keys_w(input_embedding)
+        queries = self.queries_w.weight
+
+        attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
+        attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
+
+        if mask is not None:
+            attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
+        if not self.slot_norm:
+            attention_concepts = self.norm_fn1(attn_logits)
+        else:
+            attention_concepts = self.norm_fn1(attn_logits)
+            attention_concepts = attention_concepts.masked_fill(mask == 0, 0)
+            # print(attention_concepts)
+            attention_concepts = attention_concepts + self.eps
+            attention_concepts = attention_concepts / \
+                attention_concepts.sum(dim=-1, keepdim=True)
+
+        out = torch.matmul(attention_concepts, values)
+
+        # print("1: ", time() - start_)
 
         # print("Dummy: ", self.queries_w.weight[-1].shape, self.queries_w.weight[-1])
 
         # print("Queries: ", self.queries_w.weight.min(), self.queries_w.weight.max())
         # print("Embeddings: ", self.word_embedding.weight.min(), self.word_embedding.weight.max())
+        # start_ = time()
+        # start__ = list()
+        # end__ = list()
         for idx, (encoder, mlp) in enumerate(zip(self.encoders, self.mlps)):
-            weights_encoder = torch.cat([p.flatten()
-                                        for p in encoder.parameters()])
-            weights_mlp = torch.cat([p.flatten() for p in mlp.parameters()])
+            # weights_encoder = torch.cat([p.flatten()
+            #                             for p in encoder.parameters()])
+            # weights_mlp = torch.cat([p.flatten() for p in mlp.parameters()])
             # print(f"A-{idx}: ", weights_encoder.min(), weights_encoder.max())
             # print(f"M-{idx}: ", weights_mlp.min(), weights_mlp.max())
 
             # regular embedding + positional embedding
-            word_embedding = self.word_embedding(input_ids)
-            if self.use_position_encoding:
-                input_embedding = self.position_embedding(word_embedding)
-            else:
-                positions = torch.arange(0, seq_length).expand(
-                    N, seq_length).to(self.device)
-                input_embedding = word_embedding + \
-                    self.position_embedding(positions)
 
-            input_embedding = self.dropout(input_embedding)
-            mask = self.make_src_mask(input_ids)
+            # start__.append(time())
+            avg_semantic, _ = encoder(
+                out[:, idx, :], attention_concepts[:, idx, :])
+            # end__.append(time())
 
-            embedding, _ = encoder(input_embedding, mask)
-            avg_semantic = embedding.squeeze(dim=1)  # 64, 100
-            embeddings.append(avg_semantic)
+            # embeddings.append(avg_semantic)
+
             concept_logit = mlp(avg_semantic)
 
             concept_logits.append(concept_logit)
         concept_logits = torch.stack(concept_logits, dim=1).squeeze(-1)
+        # print("2:", time() - start_)
+        # print("3: ", np.array([b - a for a, b in zip(start__, end__)]).sum())
 
-        dists = list()
-        for idx in range(len(embeddings)):
-            for jdx in range(idx + 1, len(embeddings)):
-                ea, eb = embeddings[idx], embeddings[jdx]
-                dist = self.cosine_sim(ea, eb)
-                dists.append(dist.abs())
-        avg_dist = torch.cat(dists).mean()
+        # dists = list()
+        # for idx in range(len(embeddings)):
+        #     for jdx in range(idx + 1, len(embeddings)):
+        #         ea, eb = embeddings[idx], embeddings[jdx]
+        #         dist = self.cosine_sim(ea, eb)
+        #         dists.append(dist.abs())
+        # avg_dist = torch.cat(dists).mean()
+        avg_dist = torch.tensor(0., requires_grad=True)
         return concept_logits, avg_dist
