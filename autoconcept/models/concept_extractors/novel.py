@@ -170,7 +170,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
         self.mlps = nn.ModuleList([
             MLPPredictor(
-                layers=[embed_dim, embed_dim // 2, 1],
+                layers=[embed_dim, embed_dim, embed_dim, 1],
                 activation=nn.ReLU(),
                 use_batch_norm=True,
                 use_dropout=False,
@@ -264,4 +264,5 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         #         dists.append(dist.abs())
         # avg_dist = torch.cat(dists).mean()
         avg_dist = torch.tensor(0., requires_grad=True)
+
         return concept_logits, avg_dist

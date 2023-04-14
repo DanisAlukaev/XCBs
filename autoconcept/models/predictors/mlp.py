@@ -49,7 +49,6 @@ class MLPPredictor(BasePredictor):
             main.extend(modules)
 
         main = nn.Sequential(*main)
-
         return main
 
     def forward(self, x):

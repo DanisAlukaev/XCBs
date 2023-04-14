@@ -49,7 +49,7 @@ criterion_task:
   _target_: torch.nn.CrossEntropyLoss
 
 criterion_tie:
-  _target_: functional.loss.KullbackLeiblerDivergenceLoss
+  _target_: functional.loss.JensenShannonDivergenceLoss
 
 lambda_p: 4
 
