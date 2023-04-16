@@ -46,6 +46,14 @@ class AutoConceptBottleneckModel(nn.Module):
         feature_probs = self.sigmoid(feature_logits / self.T)
         concept_probs = self.sigmoid(concept_logits / self.T)
 
+        # print(feature_probs.min(), feature_probs.max())
+        # print(concept_probs.min(), concept_probs.max())
+
+        print((concept_logits - feature_logits).mean())
+
+        print(concept_logits.min(), concept_logits.max())
+        print(feature_logits.min(), feature_logits.max())
+
         args = [feature_logits]
         if self.has_gumbel_sigmoid:
             args.append(iteration)

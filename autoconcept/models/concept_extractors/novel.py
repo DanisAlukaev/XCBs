@@ -143,9 +143,14 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             self.queries_w = nn.Embedding(out_features + 1, embed_dim)
 
         self.word_embedding = nn.Embedding(
-            vocab_size, embed_dim,
+            vocab_size            # + out_features
+            , embed_dim,
             padding_idx=self.src_pad_idx
         )
+
+        self.dummy_tokens = nn.Embedding(out_features, embed_dim)
+
+        # self.dummy_token_ids = torch.tensor([[vocab_size + j for j in range(out_features)]])
 
         if use_position_encoding:
             self.position_embedding = PositionalEncoding(
@@ -174,8 +179,13 @@ class ConceptExtractorAttention(BaseConceptExtractor):
                 activation=nn.ReLU(),
                 use_batch_norm=True,
                 use_dropout=False,
+                use_layer_norm=False
             )
             for _ in range(out_features)
+        ])
+
+        self.layer_norms = nn.ModuleList([
+            nn.LayerNorm(embed_dim) for _ in range(out_features)
         ])
 
         self.sigmoid = nn.Sigmoid()
@@ -190,6 +200,9 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         start_ = time()
         N, seq_length = input_ids.shape
         concept_logits = list()
+
+        # dummy_ids = torch.cat(N * [self.dummy_token_ids], dim=0).to(device=self.device)
+        # input_ids_dummy = torch.cat((input_ids, dummy_ids), dim=1)
 
         word_embedding = self.word_embedding(input_ids)
         if self.use_position_encoding:
@@ -207,8 +220,25 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         keys = self.keys_w(input_embedding)
         queries = self.queries_w.weight
 
+        dummy_tokens = self.dummy_tokens.weight
+
         attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
         attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
+
+        attn_dummy_logits = torch.matmul(
+            queries, dummy_tokens.transpose(-2, -1)).unsqueeze(dim=0)
+        # attn_dummy_logits = torch.diagonal(attn_dummy_logits, 0)
+        # attn_dummy_logits = torch.cat((attn_dummy_logits, torch.tensor([0.])))
+        zeros_ = torch.zeros(attn_dummy_logits.shape[1]).unsqueeze(
+            1).unsqueeze(0).to(self.device)
+
+        # TODO: do this after first normalization (otherwise it is always 1)
+        # mask_dummy = torch.zeros_like(attn_logits)
+        # mask_dummy[:, :, : seq_length] = torch.ones((self.out_features + 1, seq_length))
+        # mask_dummy[:, : self.out_features, seq_length:] = torch.eye(self.out_features)
+        # mask_dummy = mask_dummy.to(self.device)
+        # # print(mask_dummy[0])
+        # attn_logits = attn_logits.masked_fill(mask_dummy == 0, -9e15)
 
         if mask is not None:
             attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
@@ -216,11 +246,25 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             attention_concepts = self.norm_fn1(attn_logits)
         else:
             attention_concepts = self.norm_fn1(attn_logits)
+            attention_dummy = self.norm_fn1(attn_dummy_logits)
+
+            # print(attention_dummy.shape, zeros_.shape)
+            attention_dummy = torch.cat((attention_dummy, zeros_), dim=2)
+            attention_dummy = torch.diagonal(attention_dummy, 0)
+            attention_dummy = attention_dummy.expand(N, -1, -1)
+
             attention_concepts = attention_concepts.masked_fill(mask == 0, 0)
-            # print(attention_concepts)
+            attention_concepts = torch.cat(
+                (attention_concepts, attention_dummy), dim=2)
+            # print(attention_concepts.shape)
+
             attention_concepts = attention_concepts + self.eps
             attention_concepts = attention_concepts / \
                 attention_concepts.sum(dim=-1, keepdim=True)
+
+            attention_concepts = attention_concepts[:, :, :seq_length]
+
+        # print(attention_concepts.shape, values.shape)
 
         out = torch.matmul(attention_concepts, values)
 
@@ -233,7 +277,8 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         # start_ = time()
         # start__ = list()
         # end__ = list()
-        for idx, (encoder, mlp) in enumerate(zip(self.encoders, self.mlps)):
+        embeddings = list()
+        for idx, (encoder, mlp, layer_norm) in enumerate(zip(self.encoders, self.mlps, self.layer_norms)):
             # weights_encoder = torch.cat([p.flatten()
             #                             for p in encoder.parameters()])
             # weights_mlp = torch.cat([p.flatten() for p in mlp.parameters()])
@@ -247,7 +292,9 @@ class ConceptExtractorAttention(BaseConceptExtractor):
                 out[:, idx, :], attention_concepts[:, idx, :])
             # end__.append(time())
 
-            # embeddings.append(avg_semantic)
+            embeddings.append(avg_semantic)
+
+            avg_semantic = layer_norm(avg_semantic)
 
             concept_logit = mlp(avg_semantic)
 
@@ -256,13 +303,13 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         # print("2:", time() - start_)
         # print("3: ", np.array([b - a for a, b in zip(start__, end__)]).sum())
 
-        # dists = list()
-        # for idx in range(len(embeddings)):
-        #     for jdx in range(idx + 1, len(embeddings)):
-        #         ea, eb = embeddings[idx], embeddings[jdx]
-        #         dist = self.cosine_sim(ea, eb)
-        #         dists.append(dist.abs())
-        # avg_dist = torch.cat(dists).mean()
-        avg_dist = torch.tensor(0., requires_grad=True)
+        dists = list()
+        for idx in range(len(embeddings)):
+            for jdx in range(idx + 1, len(embeddings)):
+                ea, eb = embeddings[idx], embeddings[jdx]
+                dist = self.cosine_sim(ea, eb)
+                dists.append(dist.abs())
+        avg_dist = torch.cat(dists).mean()
+        # avg_dist = torch.tensor(0., requires_grad=True)
 
         return concept_logits, avg_dist

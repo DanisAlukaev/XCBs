@@ -45,7 +45,7 @@ def main(cfg: DictConfig):
     vocab_size = len(dm.dataloader_kwargs['collate_fn'].vocabulary.vocab)
     print(f"Vocab size: {vocab_size}")
 
-    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-04-14/07-02-01/lightning_logs/version_0/checkpoints/last.ckpt"
+    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-04-16/17-29-11/lightning_logs/version_0/checkpoints/epoch009-val_loss0.53648.ckpt"
     target_class = get_class(cfg.model._target_)
     main = instantiate(cfg.model.main)
     inference = target_class.load_from_checkpoint(
@@ -80,9 +80,16 @@ def main(cfg: DictConfig):
         keys = inference.main.concept_extractor.keys_w(input_embedding)
         queries = inference.main.concept_extractor.queries_w.weight
 
+        dummy_tokens = inference.main.concept_extractor.dummy_tokens.weight
+
         attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
         attn_logits = attn_logits / \
             (inference.main.concept_extractor.embed_dim ** (1 / 2))
+
+        attn_dummy_logits = torch.matmul(
+            queries, dummy_tokens.transpose(-2, -1)).unsqueeze(dim=0)
+        zeros_ = torch.zeros(attn_dummy_logits.shape[1]).unsqueeze(
+            1).unsqueeze(0).to(inference.main.concept_extractor.device)
 
         if mask is not None:
             attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
@@ -92,11 +99,23 @@ def main(cfg: DictConfig):
         else:
             attention_concepts_ = inference.main.concept_extractor.norm_fn1(
                 attn_logits)
+            attention_dummy = inference.main.concept_extractor.norm_fn1(
+                attn_dummy_logits)
+
+            attention_dummy = torch.cat((attention_dummy, zeros_), dim=2)
+            attention_dummy = torch.diagonal(attention_dummy, 0)
+            attention_dummy = attention_dummy.expand(N, -1, -1)
+
             attention_concepts_ = attention_concepts_.masked_fill(mask == 0, 0)
+            attention_concepts_ = torch.cat(
+                (attention_concepts_, attention_dummy), dim=2)
+
             # print(attention_concepts)
             attention_concepts = attention_concepts_ + inference.main.concept_extractor.eps
             attention_concepts = attention_concepts / \
                 attention_concepts.sum(dim=-1, keepdim=True)
+
+            attention_concepts = attention_concepts[:, :, :seq_length]
 
         out = torch.matmul(attention_concepts, values)
 
