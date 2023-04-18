@@ -6,7 +6,7 @@ defaults:
 
 name: E22
 epoch_freeze_backbone: null
-epoch_reinitialize: null
+epoch_reinitialize: 0
 max_epochs: 10
 dataset:
   collate_fn:
@@ -19,6 +19,3 @@ dataset:
 
 devices:
   - 0
-
-model:
-  direct_kl: false

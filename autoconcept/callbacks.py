@@ -25,9 +25,9 @@ class ReinitializeBottleneckCallback(Callback):
         super().__init__()
         self.epoch_reinitialize = epoch_reinitialize
 
-    def on_train_epoch_end(self, trainer, pl_module):
+    def on_train_epoch_start(self, trainer, pl_module):
         if hasattr(pl_module.main, 'feature_extractor'):
-            if trainer.current_epoch == self.epoch_reinitialize - 1:
+            if trainer.current_epoch == self.epoch_reinitialize:
                 pl_module.main.feature_extractor.main.fc.reset_parameters()
                 print(
                     f"Bottleneck was re-initialized on {trainer.current_epoch} epoch!")

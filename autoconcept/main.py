@@ -46,7 +46,8 @@ def run(cfg):
     if cfg.early_stopper:
         trainer_callbacks += [instantiate(cfg.early_stopper)]
 
-    if cfg.epoch_reinitialize:
+    print("CONFIG: ", cfg.epoch_reinitialize)
+    if isinstance(cfg.epoch_reinitialize, int):
         trainer_callbacks += [
             ReinitializeBottleneckCallback(cfg.epoch_reinitialize)]
 

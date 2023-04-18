@@ -1,5 +1,4 @@
 import math
-from time import time
 
 import torch
 import torch.nn as nn
@@ -10,13 +9,13 @@ from models.predictors.mlp import MLPPredictor
 
 class PositionalEncoding(nn.Module):
 
-    def __init__(self, d_model, max_len=5000):
+    def __init__(self, embed_dim, max_len=5000):
         super().__init__()
 
-        pe = torch.zeros(max_len, d_model)
+        pe = torch.zeros(max_len, embed_dim)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(
-            0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+            0, embed_dim, 2).float() * (-math.log(10000.0) / embed_dim))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)
@@ -28,78 +27,6 @@ class PositionalEncoding(nn.Module):
         return x
 
 
-class Attention(nn.Module):
-    def __init__(
-        self,
-        embed_dim,
-        values_w,
-        keys_w,
-        queries_w,
-        idx,
-        device,
-        slot_norm,
-        norm_fn1,
-        eps=1e-7,
-    ):
-        super(Attention, self).__init__()
-        self.embed_dim = embed_dim
-        self.values_w = values_w
-        self.keys_w = keys_w
-        self.queries_w = queries_w
-        self.idx = idx
-        self.device = device
-        self.slot_norm = slot_norm
-        self.norm_fn1 = norm_fn1
-        self.eps = eps
-
-    def forward(self, values, attention_concepts):
-        # print("Values: ", values.min(), values.max())
-        # print("Keys", keys.min(), keys.max())
-
-        attention = attention_concepts[:, self.idx, :].unsqueeze(dim=1)
-        # print("Attention", attention.min(), attention.max())
-        out = torch.matmul(attention, values)
-        # print("Out", out.min(), out.max())
-
-        return out, attention
-
-
-class TransformerEncoder(nn.Module):
-    def __init__(
-        self,
-        embed_dim,
-        values_w,
-        keys_w,
-        queries_w,
-        forward_expansion,
-        idx,
-        device,
-        slot_norm,
-        norm_fn1
-    ):
-        super(TransformerEncoder, self).__init__()
-        self.embed_dim = embed_dim
-        self.device = device
-
-        self.attention = Attention(
-            embed_dim, values_w, keys_w, queries_w, idx, device, slot_norm, norm_fn1)
-        self.norm1 = nn.LayerNorm(embed_dim)
-        self.norm2 = nn.LayerNorm(embed_dim)
-
-        self.feed_forward = nn.Sequential(
-            nn.Linear(embed_dim, forward_expansion * embed_dim),
-            nn.ReLU(),
-            nn.Linear(forward_expansion * embed_dim, embed_dim),
-        )
-
-    def forward(self, attention, scores):
-        # out = attention
-        out = self.norm1(attention)
-        # forward = self.feed_forward(x)
-        # out = self.norm2(forward + x)
-        return out, scores
-
-
 class ConceptExtractorAttention(BaseConceptExtractor):
 
     def __init__(
@@ -109,14 +36,17 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         out_features=512,
         activation=nn.ReLU(),
         src_pad_idx=0,
-        max_length=350,
+        max_len=350,
         dropout=0.,
-        forward_expansion=4,
         device="cuda",
-        slot_norm=False,
+        use_slot_norm=False,
         norm_fn1=F.softmax,
+        norm_fn2=F.softmax,
         use_position_encoding=False,
         eps=1e-7,
+        regularize_distance=True,
+        mlp_depth=1,
+        use_dummy_attention=True,
     ):
         super().__init__()
 
@@ -125,67 +55,56 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.out_features = out_features
         self.activation = activation
         self.src_pad_idx = src_pad_idx
-        self.max_length = max_length
+        self.max_len = max_len
         self.dropout = dropout
-        self.forward_expansion = forward_expansion
         self.device = device
-        self.slot_norm = slot_norm
+        self.use_slot_norm = use_slot_norm
         self.norm_fn1 = norm_fn1
+        self.norm_fn2 = norm_fn2
         self.use_position_encoding = use_position_encoding
         self.eps = eps
+        self.regularize_distance = regularize_distance
+        self.mlp_depth = mlp_depth
+        self.use_dummy_attention = use_dummy_attention
+
+        self.mlp_layers = [self.embed_dim] * (mlp_depth - 1) + [1]
+        if use_dummy_attention:
+            self.mlp_layers[0] += 1
 
         self.values_w = nn.Linear(embed_dim, embed_dim)
         self.keys_w = nn.Linear(embed_dim, embed_dim)
 
-        if not slot_norm:
-            self.queries_w = nn.Embedding(out_features, embed_dim)
-        else:
-            self.queries_w = nn.Embedding(out_features + 1, embed_dim)
+        queries_n = out_features
+        if use_slot_norm:
+            dummy_query_n = 1
+            queries_n += dummy_query_n
+        self.queries_w = nn.Embedding(queries_n, embed_dim)
 
         self.word_embedding = nn.Embedding(
-            vocab_size            # + out_features
-            , embed_dim,
+            vocab_size,
+            embed_dim,
             padding_idx=self.src_pad_idx
         )
 
-        self.dummy_tokens = nn.Embedding(out_features, embed_dim)
+        dummy_tokens_n = queries_n
+        self.dummy_tokens = nn.Embedding(dummy_tokens_n, embed_dim)
 
-        # self.dummy_token_ids = torch.tensor([[vocab_size + j for j in range(out_features)]])
-
+        self.position_embedding = nn.Embedding(max_len, embed_dim)
         if use_position_encoding:
             self.position_embedding = PositionalEncoding(
-                d_model=embed_dim, max_len=max_length)
-        else:
-            self.position_embedding = nn.Embedding(max_length, embed_dim)
-
-        self.encoders = nn.ModuleList([
-            TransformerEncoder(
                 embed_dim=embed_dim,
-                values_w=self.values_w,
-                keys_w=self.keys_w,
-                queries_w=self.queries_w,
-                forward_expansion=forward_expansion,
-                idx=idx,
-                device=device,
-                slot_norm=slot_norm,
-                norm_fn1=norm_fn1
+                max_len=max_len
             )
-            for idx in range(out_features)
-        ])
 
         self.mlps = nn.ModuleList([
             MLPPredictor(
-                layers=[embed_dim, embed_dim, embed_dim, 1],
+                layers=self.mlp_layers,
                 activation=nn.ReLU(),
                 use_batch_norm=True,
                 use_dropout=False,
                 use_layer_norm=False
             )
             for _ in range(out_features)
-        ])
-
-        self.layer_norms = nn.ModuleList([
-            nn.LayerNorm(embed_dim) for _ in range(out_features)
         ])
 
         self.sigmoid = nn.Sigmoid()
@@ -197,24 +116,20 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         return src_mask.to(self.device)
 
     def forward(self, input_ids):
-        start_ = time()
-        N, seq_length = input_ids.shape
-        concept_logits = list()
+        concept_logits, concept_semantics = list(), list()
 
-        # dummy_ids = torch.cat(N * [self.dummy_token_ids], dim=0).to(device=self.device)
-        # input_ids_dummy = torch.cat((input_ids, dummy_ids), dim=1)
+        N, seq_length = input_ids.shape
+        mask = self.make_src_mask(input_ids)
 
         word_embedding = self.word_embedding(input_ids)
         if self.use_position_encoding:
             input_embedding = self.position_embedding(word_embedding)
         else:
-            positions = torch.arange(0, seq_length).expand(
-                N, seq_length).to(self.device)
-            input_embedding = word_embedding + \
-                self.position_embedding(positions)
-
+            positions = torch.arange(0, seq_length)
+            positions = positions.expand(N, seq_length).to(self.device)
+            position_embedding = self.position_embedding(positions)
+            input_embedding = word_embedding + position_embedding
         input_embedding = self.dropout(input_embedding)
-        mask = self.make_src_mask(input_ids)
 
         values = self.values_w(input_embedding)
         keys = self.keys_w(input_embedding)
@@ -222,94 +137,67 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
         dummy_tokens = self.dummy_tokens.weight
 
-        attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
-        attn_logits = attn_logits / (self.embed_dim ** (1 / 2))
-
+        norm_factor = (self.embed_dim ** (1 / 2))
+        attn_logits = torch.matmul(
+            queries,
+            keys.transpose(-2, -1)
+        )
         attn_dummy_logits = torch.matmul(
-            queries, dummy_tokens.transpose(-2, -1)).unsqueeze(dim=0)
-        # attn_dummy_logits = torch.diagonal(attn_dummy_logits, 0)
-        # attn_dummy_logits = torch.cat((attn_dummy_logits, torch.tensor([0.])))
-        zeros_ = torch.zeros(attn_dummy_logits.shape[1]).unsqueeze(
-            1).unsqueeze(0).to(self.device)
+            queries,
+            dummy_tokens.transpose(-2, -1)
+        ).unsqueeze(dim=0)
 
-        # TODO: do this after first normalization (otherwise it is always 1)
-        # mask_dummy = torch.zeros_like(attn_logits)
-        # mask_dummy[:, :, : seq_length] = torch.ones((self.out_features + 1, seq_length))
-        # mask_dummy[:, : self.out_features, seq_length:] = torch.eye(self.out_features)
-        # mask_dummy = mask_dummy.to(self.device)
-        # # print(mask_dummy[0])
-        # attn_logits = attn_logits.masked_fill(mask_dummy == 0, -9e15)
+        attn_logits = attn_logits / norm_factor
+        attn_dummy_logits = attn_dummy_logits / norm_factor
 
         if mask is not None:
             attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
-        if not self.slot_norm:
-            attention_concepts = self.norm_fn1(attn_logits)
+
+        if self.use_slot_norm:
+            scores = self.norm_fn1(attn_logits)
+            scores_dummy = self.norm_fn1(attn_dummy_logits)
+
+            scores_dummy = torch.diagonal(scores_dummy, 0)
+            scores_dummy = scores_dummy.expand(N, -1, -1)
+
+            scores = scores.masked_fill(mask == 0, 0)
+            scores = torch.cat((scores, scores_dummy), dim=2)
+
+            scores = scores + self.eps
+            scores = self.norm_fn2(scores)
+
+            # TODO: use entire sequence with dummy tokens (or add it as additional feature)
+            scores = scores[:, :, :seq_length]
         else:
-            attention_concepts = self.norm_fn1(attn_logits)
-            attention_dummy = self.norm_fn1(attn_dummy_logits)
+            scores = self.norm_fn1(attn_logits)
 
-            # print(attention_dummy.shape, zeros_.shape)
-            attention_dummy = torch.cat((attention_dummy, zeros_), dim=2)
-            attention_dummy = torch.diagonal(attention_dummy, 0)
-            attention_dummy = attention_dummy.expand(N, -1, -1)
+        # TODO: move interpretation part to main.py
+        semantic = torch.matmul(scores, values)
 
-            attention_concepts = attention_concepts.masked_fill(mask == 0, 0)
-            attention_concepts = torch.cat(
-                (attention_concepts, attention_dummy), dim=2)
-            # print(attention_concepts.shape)
+        for idx, mlp in enumerate(self.mlps):
+            concept_semantic = semantic[:, idx, :]
+            if self.use_dummy_attention:
+                score_dummy = scores_dummy[:, idx, :]
+                concept_semantic = torch.cat(
+                    (concept_semantic, score_dummy), dim=1)
+            concept_logit = mlp(concept_semantic)
 
-            attention_concepts = attention_concepts + self.eps
-            attention_concepts = attention_concepts / \
-                attention_concepts.sum(dim=-1, keepdim=True)
-
-            attention_concepts = attention_concepts[:, :, :seq_length]
-
-        # print(attention_concepts.shape, values.shape)
-
-        out = torch.matmul(attention_concepts, values)
-
-        # print("1: ", time() - start_)
-
-        # print("Dummy: ", self.queries_w.weight[-1].shape, self.queries_w.weight[-1])
-
-        # print("Queries: ", self.queries_w.weight.min(), self.queries_w.weight.max())
-        # print("Embeddings: ", self.word_embedding.weight.min(), self.word_embedding.weight.max())
-        # start_ = time()
-        # start__ = list()
-        # end__ = list()
-        embeddings = list()
-        for idx, (encoder, mlp, layer_norm) in enumerate(zip(self.encoders, self.mlps, self.layer_norms)):
-            # weights_encoder = torch.cat([p.flatten()
-            #                             for p in encoder.parameters()])
-            # weights_mlp = torch.cat([p.flatten() for p in mlp.parameters()])
-            # print(f"A-{idx}: ", weights_encoder.min(), weights_encoder.max())
-            # print(f"M-{idx}: ", weights_mlp.min(), weights_mlp.max())
-
-            # regular embedding + positional embedding
-
-            # start__.append(time())
-            avg_semantic, _ = encoder(
-                out[:, idx, :], attention_concepts[:, idx, :])
-            # end__.append(time())
-
-            embeddings.append(avg_semantic)
-
-            avg_semantic = layer_norm(avg_semantic)
-
-            concept_logit = mlp(avg_semantic)
-
+            concept_semantics.append(concept_semantic)
             concept_logits.append(concept_logit)
+
         concept_logits = torch.stack(concept_logits, dim=1).squeeze(-1)
-        # print("2:", time() - start_)
-        # print("3: ", np.array([b - a for a, b in zip(start__, end__)]).sum())
+        out_dict = dict(
+            concept_logits=concept_logits,
+        )
 
-        dists = list()
-        for idx in range(len(embeddings)):
-            for jdx in range(idx + 1, len(embeddings)):
-                ea, eb = embeddings[idx], embeddings[jdx]
-                dist = self.cosine_sim(ea, eb)
-                dists.append(dist.abs())
-        avg_dist = torch.cat(dists).mean()
-        # avg_dist = torch.tensor(0., requires_grad=True)
+        if self.regularize_distance:
+            similarities = list()
+            for idx in range(len(concept_semantics)):
+                for jdx in range(idx + 1, len(concept_semantics)):
+                    similarity = self.cosine_sim(
+                        concept_semantics[idx], concept_semantics[jdx]).abs()
+                    similarities.append(similarity)
+            avg_similarity = torch.cat(similarities).mean()
+            out_dict["loss_dist"] = avg_similarity
 
-        return concept_logits, avg_dist
+        return out_dict
