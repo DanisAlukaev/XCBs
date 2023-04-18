@@ -12,6 +12,7 @@ class MLPPredictor(BasePredictor):
         activation=nn.ReLU(),
         use_batch_norm=True,
         use_dropout=False,
+        use_layer_norm=False,
     ):
         super().__init__()
 
@@ -19,11 +20,12 @@ class MLPPredictor(BasePredictor):
         self.activation = activation
         self.use_batch_norm = use_batch_norm
         self.use_dropout = use_dropout
+        self.use_layer_norm = use_layer_norm
 
         self.main = self.__build(
-            layers, activation, use_batch_norm, use_dropout)
+            layers, activation, use_batch_norm, use_dropout, use_layer_norm)
 
-    def __build(self, layers, activation, use_batch_norm, use_dropout):
+    def __build(self, layers, activation, use_batch_norm, use_dropout, use_layer_norm):
         main = list()
         n_layers = len(layers)
         for layer_idx in range(n_layers - 1):
@@ -35,6 +37,10 @@ class MLPPredictor(BasePredictor):
             if use_batch_norm:
                 batch_norm = nn.BatchNorm1d(out_dim)
                 modules.append(batch_norm)
+
+            if use_layer_norm:
+                layer_norm = nn.LayerNorm(out_dim)
+                modules.append(layer_norm)
 
             if layer_idx == n_layers - 2:
                 main.extend(modules)
@@ -49,7 +55,6 @@ class MLPPredictor(BasePredictor):
             main.extend(modules)
 
         main = nn.Sequential(*main)
-
         return main
 
     def forward(self, x):

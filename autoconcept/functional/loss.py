@@ -14,6 +14,10 @@ class KullbackLeiblerDivergenceLoss(nn.Module):
     def forward(self, P, Q):
         P = torch.clamp(P, min=0.0+self.eps, max=1.0-self.eps)
         Q = torch.clamp(Q, min=0.0+self.eps, max=1.0-self.eps)
+        # print("P: ", P.min(), P.max())
+        # print("Q: ", Q.min(), Q.max())
+        # if torch.isnan(Q).any():
+        #     print("Q (entire): ", Q)
         loss = (P * torch.log(P / Q) + (1 - P) *
                 torch.log((1 - P) / (1 - Q))).mean()
         return loss

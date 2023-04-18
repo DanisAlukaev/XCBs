@@ -27,7 +27,7 @@ class JointDataset(Dataset):
         self.read_annotations_file()
 
         if debug_sample is not None:
-            self.annotations = self.annotations.iloc[:debug_sample]
+            self.annotations = self.annotations.sample(n=debug_sample)
 
         if self.transforms:
             self.transforms = A.Compose(transforms,)

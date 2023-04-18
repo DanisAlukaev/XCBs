@@ -32,7 +32,9 @@ class AutoConceptBottleneckModel(nn.Module):
 
     def forward(self, images, captions, iteration):
         feature_logits = self.feature_extractor(images)
-        concept_logits = self.concept_extractor(captions)
+
+        concept_extractor_dict = self.concept_extractor(captions)
+        concept_logits = concept_extractor_dict["concept_logits"]
 
         feature_probs = self.sigmoid(feature_logits / self.T)
         concept_probs = self.sigmoid(concept_logits / self.T)
@@ -57,6 +59,9 @@ class AutoConceptBottleneckModel(nn.Module):
             prediction=prediction,
         )
 
+        if self.concept_extractor.regularize_distance:
+            out_dict["loss_dist"] = concept_extractor_dict["loss_dist"]
+
         return out_dict
 
 
@@ -80,9 +85,10 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             torch.optim.lr_scheduler.StepLR, step_size=30, gamma=0.1),
         scheduler_concept_extractor_template=partial(
             torch.optim.lr_scheduler.StepLR, step_size=30, gamma=0.1),
-        lambda_p=10,
-        period=50,
-        direct_kl=True,
+        tie_weight=10,
+        dist_weight=0.1,
+        mix_tie_epoch=50,
+        tie_loss_wrt_concepts=True,
     ):
         super().__init__()
         self.save_hyperparameters(ignore=['main'], logger=False)
@@ -94,9 +100,10 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.optimizer_concept_extractor_template = optimizer_concept_extractor_template
         self.scheduler_model_template = scheduler_model_template
         self.scheduler_concept_extractor_template = scheduler_concept_extractor_template
-        self.lambda_p = lambda_p
-        self.period = period
-        self.direct_kl = direct_kl
+        self.tie_weight = tie_weight
+        self.dist_weight = dist_weight
+        self.mix_tie_epoch = mix_tie_epoch
+        self.tie_loss_wrt_concepts = tie_loss_wrt_concepts
 
         self.automatic_optimization = False
 
@@ -123,22 +130,25 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         prediction, feature_probs, concept_probs = out_dict[
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
-        # TODO: lambda_p should be from 0 to 1
-        lambda_p = self.lambda_p if self.trainer.current_epoch // self.period > 0 else 0
+        tie_weight, dist_weight = self.tie_weight, self.dist_weight
+        if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
+            tie_weight, dist_weight = 0, 0
 
         loss_task = self.criterion_task(prediction, target)
-        if self.direct_kl:
-            loss_tie = lambda_p * \
-                self.criterion_tie(concept_probs, feature_probs)
-        else:
-            loss_tie = lambda_p * \
-                self.criterion_tie(feature_probs, concept_probs)
 
-        # TODO: multiplier for tie loss
+        tie_criterion_args = [feature_probs, concept_probs]
+        if not self.tie_loss_wrt_concepts:
+            tie_criterion_args = tie_criterion_args[::-1]
+        loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
+
         loss = loss_task + loss_tie
 
-        opt_clf, opt_tie = self.optimizers()
+        loss_dist = torch.tensor(0.)
+        if self.main.concept_extractor.regularize_distance:
+            loss_dist = dist_weight * out_dict["loss_dist"]
+            loss += loss_dist
 
+        opt_clf, opt_tie = self.optimizers()
         opt_clf.zero_grad()
         opt_tie.zero_grad()
 
@@ -152,10 +162,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         metrics = {
             "loss/train_task": loss_task,
             "loss/train_tie": loss_tie,
+            "loss/train_dist": loss_dist,
             "loss/train": loss,
             "train/loss": loss,
             "train/loss_task": loss_task,
-            "train/loss_tie": loss_tie
+            "train/loss_tie": loss_tie,
+            "train/loss_dist": loss_dist
         }
         self.log_dict(metrics)
 
@@ -166,6 +178,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             loss=loss,
             loss_task=loss_task,
             loss_tie=loss_tie,
+            loss_dist=loss_dist,
             target=_target,
             prediction=_prediction
         )
@@ -219,18 +232,23 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         prediction, feature_probs, concept_probs = out_dict[
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
-        lambda_p = self.lambda_p if self.trainer.current_epoch // self.period > 0 else 0
+        tie_weight, dist_weight = self.tie_weight, self.dist_weight
+        if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
+            tie_weight, dist_weight = 0, 0
 
         loss_task = self.criterion_task(prediction, target)
-        if self.direct_kl:
-            loss_tie = lambda_p * \
-                self.criterion_tie(concept_probs, feature_probs)
-        else:
-            loss_tie = lambda_p * \
-                self.criterion_tie(feature_probs, concept_probs)
 
-        # TODO: multiplier for tie loss
+        tie_criterion_args = [feature_probs, concept_probs]
+        if not self.tie_loss_wrt_concepts:
+            tie_criterion_args = tie_criterion_args[::-1]
+        loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
+
         loss = loss_task + loss_tie
+
+        loss_dist = torch.tensor(0.)
+        if self.main.concept_extractor.regularize_distance:
+            loss_dist = dist_weight * out_dict["loss_dist"]
+            loss += loss_dist
 
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))
@@ -238,17 +256,21 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         metrics = {
             f"loss/{phase}_task": loss_task,
             f"loss/{phase}_tie": loss_tie,
+            f"loss/{phase}_dist": loss_dist,
             f"loss/{phase}": loss,
             f"{phase}/loss": loss,
             f"{phase}/loss_task": loss_task,
-            f"{phase}/loss_tie": loss_tie
+            f"{phase}/loss_tie": loss_tie,
+            f"{phase}/loss_dist": loss_dist
         }
+
         self.log_dict(metrics)
 
         iter_dict = dict(
             loss=loss.item(),
             loss_task=loss_task.item(),
             loss_tie=loss_tie.item(),
+            loss_dist=loss_dist.item(),
             target=_target,
             prediction=_prediction
         )

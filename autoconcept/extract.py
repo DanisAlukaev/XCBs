@@ -1,14 +1,35 @@
 
 import json
-from pprint import pprint
+import math
 
 import hydra
 import numpy as np
 import torch
+import torch.nn as nn
 from helpers import set_seed
 from hydra.utils import get_class, instantiate
 from omegaconf import DictConfig
 from tqdm import tqdm
+
+
+class PositionalEncoding(nn.Module):
+
+    def __init__(self, d_model, max_len=5000):
+        super().__init__()
+
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(
+            0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)
+
+        self.register_buffer('pe', pe, persistent=False)
+
+    def forward(self, x):
+        x = x + self.pe[:, :x.size(1)]
+        return x
 
 
 @hydra.main(version_base=None, config_path="config/conf", config_name="config")
@@ -24,7 +45,7 @@ def main(cfg: DictConfig):
     vocab_size = len(dm.dataloader_kwargs['collate_fn'].vocabulary.vocab)
     print(f"Vocab size: {vocab_size}")
 
-    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-03-28/20-08-02/lightning_logs/version_0/checkpoints/last.ckpt"
+    checkpoint_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/outputs/2023-04-17/18-46-12/lightning_logs/version_0/checkpoints/epoch009-val_loss0.70913.ckpt"
     target_class = get_class(cfg.model._target_)
     main = instantiate(cfg.model.main)
     inference = target_class.load_from_checkpoint(
@@ -33,22 +54,78 @@ def main(cfg: DictConfig):
     n_concepts = len(inference.main.concept_extractor.encoders)
 
     # Textual
-    distributions = [np.zeros(vocab_size) for _ in range(n_concepts)]
+    distributions = [np.zeros(vocab_size) for _ in range(n_concepts + 1)]
     n_tokens = np.zeros(vocab_size)
 
     for batch in tqdm(train_loader):
         indices = batch["indices"].cuda()
         N, seq_length = indices.shape
 
-        for encoder_id in range(n_concepts):
+        word_embedding = inference.main.concept_extractor.word_embedding(
+            indices)
+        if inference.main.concept_extractor.use_position_encoding:
+            input_embedding = inference.main.concept_extractor.position_embedding(
+                word_embedding)
+        else:
             positions = torch.arange(0, seq_length).expand(
                 N, seq_length).to(inference.main.concept_extractor.device)
-            input_embedding = inference.main.concept_extractor.dropout((inference.main.concept_extractor.word_embedding(
-                indices) + inference.main.concept_extractor.position_embedding(positions)))
-            mask = inference.main.concept_extractor.make_src_mask(indices)
+            input_embedding = word_embedding + \
+                inference.main.concept_extractor.position_embedding(positions)
 
-            _, scores = inference.main.concept_extractor.encoders[encoder_id](
-                input_embedding, mask)
+        input_embedding = inference.main.concept_extractor.dropout(
+            input_embedding)
+        mask = inference.main.concept_extractor.make_src_mask(indices)
+
+        values = inference.main.concept_extractor.values_w(input_embedding)
+        keys = inference.main.concept_extractor.keys_w(input_embedding)
+        queries = inference.main.concept_extractor.queries_w.weight
+
+        dummy_tokens = inference.main.concept_extractor.dummy_tokens.weight
+
+        attn_logits = torch.matmul(queries, keys.transpose(-2, -1))
+        attn_logits = attn_logits / \
+            (inference.main.concept_extractor.embed_dim ** (1 / 2))
+
+        attn_dummy_logits = torch.matmul(
+            queries, dummy_tokens.transpose(-2, -1)).unsqueeze(dim=0)
+        zeros_ = torch.zeros(attn_dummy_logits.shape[1]).unsqueeze(
+            1).unsqueeze(0).to(inference.main.concept_extractor.device)
+
+        if mask is not None:
+            attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
+        if not inference.main.concept_extractor.slot_norm:
+            attention_concepts = inference.main.concept_extractor.norm_fn1(
+                attn_logits)
+        else:
+            attention_concepts_ = inference.main.concept_extractor.norm_fn1(
+                attn_logits)
+            attention_dummy = inference.main.concept_extractor.norm_fn1(
+                attn_dummy_logits)
+
+            attention_dummy = torch.cat((attention_dummy, zeros_), dim=2)
+            attention_dummy = torch.diagonal(attention_dummy, 0)
+            attention_dummy = attention_dummy.expand(N, -1, -1)
+
+            attention_concepts_ = attention_concepts_.masked_fill(mask == 0, 0)
+            attention_concepts_ = torch.cat(
+                (attention_concepts_, attention_dummy), dim=2)
+
+            # print(attention_concepts)
+            attention_concepts = attention_concepts_ + inference.main.concept_extractor.eps
+            attention_concepts = attention_concepts / \
+                attention_concepts.sum(dim=-1, keepdim=True)
+
+            attention_concepts = attention_concepts[:, :, :seq_length]
+
+        out = torch.matmul(attention_concepts, values)
+
+        for encoder_id in range(n_concepts + 1):
+
+            scores = attention_concepts[:, encoder_id, :]
+
+            if encoder_id == n_concepts:
+                scores = attention_concepts_[:, encoder_id, :]
+
             scores = scores.squeeze()
             scores_np = scores.cpu().detach().numpy()
             for sample_id in range(0, indices.shape[0]):
@@ -58,16 +135,22 @@ def main(cfg: DictConfig):
                     distributions[encoder_id][index_np] += scores_np[sample_id][idx_elem]
 
                 if encoder_id == n_concepts - 1:
-                    n_tokens[indices_np] += 1
+                    for idx_elem, index_np in enumerate(indices_np):
+                        n_tokens[index_np] += 1
 
     results = list()
     distributions = np.array(distributions) / n_tokens
     # print(distributions.shape)
-    top_k = 10
-    for i in range(n_concepts):
+    top_k = 24
+    for i in range(n_concepts + 1):
         print(f"Concept #{i}")
         ids = (-distributions[i]).argsort()[:top_k]
-        scores = distributions[i][ids]
+
+        scores = list()
+        for id in ids:
+            scores.append(distributions[i][id])
+        scores = np.array(scores)
+
         itos_map = dm.dataloader_kwargs['collate_fn'].vocabulary.vocab.get_itos(
         )
         tokens = [itos_map[id] for id in ids]
@@ -85,6 +168,7 @@ def main(cfg: DictConfig):
     top_k = 15
     instance_exploration_lrg = [list() for _ in range(n_concepts)]
     instance_exploration_sml = [list() for _ in range(n_concepts)]
+    instance_exploration_med = [list() for _ in range(n_concepts)]
     for batch in tqdm(train_loader):
         images = batch["image"].cuda()
         filenames = batch["img_path"]
@@ -92,16 +176,17 @@ def main(cfg: DictConfig):
 
         logits = logits.cpu().detach()
 
-        topk_lrg = torch.topk(logits, k=top_k, dim=0, largest=True)
-        topk_sml = torch.topk(logits, k=top_k, dim=0, largest=False)
+        topk_lrg = torch.topk(logits.T, k=top_k, dim=1, largest=True)
+        topk_sml = torch.topk(logits.T, k=top_k, dim=1, largest=False)
+        # topk_med = torch.topk(logits.abs().T, k=top_k, dim=1, largest=False)
 
-        lg_max_lrg = topk_lrg.values.t()
-        lg_max_sml = topk_sml.values.t()
-        # lg_max = torch.cat((lg_max_lrg, lg_max_sml), 1)
+        lg_max_lrg = topk_lrg.values
+        lg_max_sml = topk_sml.values
+        # lg_max_med = topk_med.values
 
-        ids_lrg = topk_lrg.indices.t()
-        ids_sml = topk_sml.indices.t()
-        # ids = torch.cat((ids_lrg, ids_sml), 1)
+        ids_lrg = topk_lrg.indices
+        ids_sml = topk_sml.indices
+        # ids_med = topk_med.indices
 
         filenames_topk_lrg = np.array([filenames[id]
                                        for id in ids_lrg.flatten().tolist()])
@@ -111,22 +196,31 @@ def main(cfg: DictConfig):
                                        for id in ids_sml.flatten().tolist()])
         filenames_topk_sml = filenames_topk_sml.reshape(ids_sml.shape)
 
+        # filenames_topk_med = np.array([filenames[id]
+        #                                for id in ids_med.flatten().tolist()])
+        # filenames_topk_med = filenames_topk_med.reshape(ids_med.shape)
+
         pairs_lrg = [list(zip(filenames_topk_lrg[_], lg_max_lrg[_]))
                      for _ in range(n_concepts)]
         pairs_sml = [list(zip(filenames_topk_sml[_], lg_max_sml[_]))
                      for _ in range(n_concepts)]
+        # pairs_med = [list(zip(filenames_topk_med[_], lg_max_med[_]))
+        #              for _ in range(n_concepts)]
 
         instance_exploration_lrg = [sorted(a + b, reverse=True, key=lambda x: abs(
             x[1]))[:top_k] for a, b in zip(instance_exploration_lrg, pairs_lrg)]
+
         instance_exploration_sml = [sorted(a + b, reverse=True, key=lambda x: abs(
             x[1]))[:top_k] for a, b in zip(instance_exploration_sml, pairs_sml)]
+        # instance_exploration_med = [sorted(a + b, reverse=True, key=lambda x: abs(
+        #     x[1]))[:top_k] for a, b in zip(instance_exploration_med, pairs_med)]
 
     instance_exploration = [
         a + b for a, b in zip(instance_exploration_lrg, instance_exploration_sml)]
 
     for i in range(len(instance_exploration)):
         print(f"Concept #{i}")
-        pprint(instance_exploration[i])
+        # pprint(instance_exploration[i])
         results[i]["feature"] = [(a, b.item())
                                  for a, b in instance_exploration[i]]
         print()

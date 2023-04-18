@@ -1,0 +1,23 @@
+# @package _global_
+
+defaults:
+  - override /model: M18
+  - override /dataset: shapes
+
+name: E21
+epoch_freeze_backbone: 5
+epoch_reinitialize: null
+max_epochs: 25
+dataset:
+  collate_fn:
+    _target_: datasets.collators.CollateIndices
+    vocabulary:
+      _target_: datasets.utils.VocabularyShapes
+      annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes/captions.csv
+  num_workers: 10
+  batch_size: 64
+devices:
+  - 0
+
+model:
+  direct_kl: false
