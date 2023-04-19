@@ -171,7 +171,6 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         else:
             scores = self.norm_fn1(attn_logits)
 
-        # TODO: move interpretation part to main.py
         semantic = torch.matmul(scores, values)
 
         for idx, mlp in enumerate(self.mlps):
@@ -188,6 +187,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         concept_logits = torch.stack(concept_logits, dim=1).squeeze(-1)
         out_dict = dict(
             concept_logits=concept_logits,
+            scores=scores,
         )
 
         if self.regularize_distance:
