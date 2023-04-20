@@ -169,7 +169,13 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             # TODO: use entire sequence with dummy tokens (or add it as additional feature)
             scores = scores[:, :, :seq_length]
         else:
+            attn_dummy_logits = torch.diagonal(attn_dummy_logits, 0)
+            attn_dummy_logits = attn_dummy_logits.expand(N, -1, -1)
+            attn_logits = torch.cat((attn_logits, attn_dummy_logits), dim=2)
+
             scores = self.norm_fn1(attn_logits)
+
+            scores = scores[:, :, :seq_length]
 
         semantic = torch.matmul(scores, values)
 
