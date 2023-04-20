@@ -57,6 +57,7 @@ class AutoConceptBottleneckModel(nn.Module):
             concept_probs=concept_probs,
             feature_activated=feature_activated,
             prediction=prediction,
+            scores=concept_extractor_dict["scores"]
         )
 
         if self.concept_extractor.regularize_distance:
