@@ -167,14 +167,18 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             scores = self.norm_fn2(scores)
 
             # TODO: use entire sequence with dummy tokens (or add it as additional feature)
+            scores_aux = scores
             scores = scores[:, :, :seq_length]
         else:
             attn_dummy_logits = torch.diagonal(attn_dummy_logits, 0)
             attn_dummy_logits = attn_dummy_logits.expand(N, -1, -1)
             attn_logits = torch.cat((attn_logits, attn_dummy_logits), dim=2)
 
+            attn_logits += self.eps
+
             scores = self.norm_fn1(attn_logits)
 
+            scores_aux = scores
             scores = scores[:, :, :seq_length]
 
         semantic = torch.matmul(scores, values)
@@ -194,12 +198,15 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         out_dict = dict(
             concept_logits=concept_logits,
             scores=scores,
+            scores_aux=scores_aux
         )
 
         if self.regularize_distance:
             similarities = list()
             for idx in range(len(concept_semantics)):
                 for jdx in range(idx + 1, len(concept_semantics)):
+                    print(concept_semantics[idx].shape,
+                          concept_semantics[jdx].shape)
                     similarity = self.cosine_sim(
                         concept_semantics[idx], concept_semantics[jdx]).abs()
                     similarities.append(similarity)
