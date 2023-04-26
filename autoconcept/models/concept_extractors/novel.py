@@ -1,4 +1,5 @@
 import math
+import random
 
 import torch
 import torch.nn as nn
@@ -45,6 +46,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         use_position_encoding=False,
         eps=1e-7,
         regularize_distance=True,
+        regularize_distance_apply_p=1.0,
         mlp_depth=1,
         use_dummy_attention=True,
     ):
@@ -64,12 +66,14 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.use_position_encoding = use_position_encoding
         self.eps = eps
         self.regularize_distance = regularize_distance
+        self.regularize_distance_apply_p = regularize_distance_apply_p
         self.mlp_depth = mlp_depth
         self.use_dummy_attention = use_dummy_attention
 
         self.mlp_layers = [self.embed_dim] * (mlp_depth - 1) + [1]
-        if use_dummy_attention:
-            self.mlp_layers[0] += 1
+
+        # if use_dummy_attention:
+        # self.mlp_layers[0] += 1
 
         self.values_w = nn.Linear(embed_dim, embed_dim)
         self.keys_w = nn.Linear(embed_dim, embed_dim)
@@ -179,6 +183,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             scores = self.norm_fn1(attn_logits)
 
             scores_aux = scores
+            scores_dummy = scores[:, :, -1].unsqueeze(-1)
             scores = scores[:, :, :seq_length]
 
         semantic = torch.matmul(scores, values)
@@ -187,8 +192,12 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             concept_semantic = semantic[:, idx, :]
             if self.use_dummy_attention:
                 score_dummy = scores_dummy[:, idx, :]
-                concept_semantic = torch.cat(
-                    (concept_semantic, score_dummy), dim=1)
+                dummy_embedding = dummy_tokens[idx]
+
+                concept_semantic = concept_semantic + score_dummy * dummy_embedding
+
+                # concept_semantic = torch.cat(
+                #     (concept_semantic, score_dummy), dim=1)
             concept_logit = mlp(concept_semantic)
 
             concept_semantics.append(concept_semantic)
@@ -205,11 +214,14 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             similarities = list()
             for idx in range(len(concept_semantics)):
                 for jdx in range(idx + 1, len(concept_semantics)):
-                    print(concept_semantics[idx].shape,
-                          concept_semantics[jdx].shape)
-                    similarity = self.cosine_sim(
-                        concept_semantics[idx], concept_semantics[jdx]).abs()
-                    similarities.append(similarity)
+
+                    if random.random() < self.regularize_distance_apply_p:
+                        similarity = self.cosine_sim(
+                            concept_semantics[idx],
+                            concept_semantics[jdx]
+                        ).abs()
+                        similarities.append(similarity)
+
             avg_similarity = torch.cat(similarities).mean()
             out_dict["loss_dist"] = avg_similarity
 

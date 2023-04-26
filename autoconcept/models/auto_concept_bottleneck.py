@@ -33,6 +33,8 @@ class AutoConceptBottleneckModel(nn.Module):
     def forward(self, images, captions, iteration):
         feature_logits = self.feature_extractor(images)
 
+        # print(feature_logits.min(), feature_logits.max())
+
         concept_extractor_dict = self.concept_extractor(captions)
         concept_logits = concept_extractor_dict["concept_logits"]
 
@@ -57,7 +59,8 @@ class AutoConceptBottleneckModel(nn.Module):
             concept_probs=concept_probs,
             feature_activated=feature_activated,
             prediction=prediction,
-            scores=concept_extractor_dict["scores"]
+            scores=concept_extractor_dict["scores"],
+            scores_aux=concept_extractor_dict["scores_aux"]
         )
 
         if self.concept_extractor.regularize_distance:
@@ -152,6 +155,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         opt_clf, opt_tie = self.optimizers()
         opt_clf.zero_grad()
         opt_tie.zero_grad()
+
+        torch.autograd.set_detect_anomaly(True)
 
         self.manual_backward(loss)
         opt_clf.step()

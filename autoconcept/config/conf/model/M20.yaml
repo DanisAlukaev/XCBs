@@ -10,28 +10,12 @@ main:
     out_features: 10
 
   concept_extractor:
-    _target_: models.concept_extractors.novel.ConceptExtractorAttention
+    _target_: models.concept_extractors.cnn.ConceptExtractorSingleCNN
     vocab_size: 30
     embed_dim: 8
+    n_filters: 512
+    filter_size: 5
     out_features: 10
-    max_len: 50
-    src_pad_idx: 0
-    dropout: 0.
-    use_slot_norm: true
-    norm_fn1:
-      _target_: functional.activation.Entmax15
-      # _target_: torch.nn.Softmax
-      dim: -2
-    norm_fn2:
-      _target_: functional.operations.ScalerSum
-      dim: -1
-    regularize_distance: true
-    use_position_encoding: true
-    mlp_depth: 4
-    use_dummy_attention: true
-    activation:
-      _target_: torch.nn.ReLU
-    device: cuda
 
   predictor:
     _target_: models.predictors.mlp.MLPPredictor
