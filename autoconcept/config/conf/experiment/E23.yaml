@@ -5,9 +5,9 @@ defaults:
   - override /dataset: public
 
 name: E23
-epoch_freeze_backbone: null
+epoch_freeze_backbone: 10
 epoch_reinitialize: null
-max_epochs: 200
+max_epochs: 50
 dataset:
   collate_fn:
     _target_: datasets.collators.CollateIndices
@@ -19,6 +19,3 @@ dataset:
   batch_size: 64
 devices:
   - 0
-
-model:
-  direct_kl: false

@@ -149,18 +149,28 @@ class JointDataModule(LightningDataModule):
 
     def train_dataloader(self):
         train_dataset = self.train_dataset
-        return DataLoader(train_dataset, shuffle=self.shuffle_train, **self.dataloader_kwargs,
-                          pin_memory=True)
+        return DataLoader(
+            train_dataset,
+            shuffle=self.shuffle_train,
+            **self.dataloader_kwargs,
+            # pin_memory=True
+        )
 
     def val_dataloader(self):
         val_dataset = self.val_dataset
-        return DataLoader(val_dataset, **self.dataloader_kwargs,
-                          pin_memory=True)
+        return DataLoader(
+            val_dataset,
+            **self.dataloader_kwargs,
+            # pin_memory=True
+        )
 
     def test_dataloader(self):
         test_dataset = self.test_dataset
-        return DataLoader(test_dataset, **self.dataloader_kwargs,
-                          pin_memory=True)
+        return DataLoader(
+            test_dataset,
+            **self.dataloader_kwargs,
+            # pin_memory=True
+        )
 
 
 if __name__ == '__main__':

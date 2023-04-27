@@ -14,20 +14,25 @@ main:
     vocab_size: 8800
     embed_dim: 20
     out_features: 50
-    max_length: 380
+    max_len: 380
     src_pad_idx: 0
     dropout: 0.
-    forward_expansion: 4
-    device: cuda
-    slot_norm: true
+    use_slot_norm: true
     norm_fn1:
       _target_: functional.activation.Entmax15
-      dim: -2
       # _target_: torch.nn.Softmax
-      # dim: -1
+      dim: -2
+    norm_fn2:
+      _target_: functional.operations.ScalerSum
+      dim: -1
+    regularize_distance: true
+    regularize_distance_apply_p: 0.1
     use_position_encoding: true
+    mlp_depth: 4
+    use_dummy_attention: true
     activation:
       _target_: torch.nn.ReLU
+    device: cuda
 
   predictor:
     _target_: models.predictors.mlp.MLPPredictor
@@ -39,25 +44,24 @@ main:
     _target_: functional.gumbel.GumbelSigmoid
     step: 75
     t: 1.0
-    rate: 0.0002
+    rate: 0.001
     min_val: 0.5
 
-  # interim_activation:
-  #   _target_: torch.nn.Sigmoid
-
   temperature: 1.
+
+dist_weight: 1.5
 
 criterion_task:
   _target_: torch.nn.CrossEntropyLoss
 
 criterion_tie:
-  _target_: functional.loss.KullbackLeiblerDivergenceLoss
+  _target_: functional.loss.JensenShannonDivergenceLoss
+  # _target_: functional.loss.KullbackLeiblerDivergenceLoss
+tie_weight: 80.0
 
-lambda_p: 0
+mix_tie_epoch: 10
 
-lambda_d: 0.6
-
-period: null
+tie_loss_wrt_concepts: true
 
 optimizer_model_template:
   _target_: functools.partial
@@ -80,13 +84,13 @@ scheduler_model_template:
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.lr_scheduler.MultiStepLR
-  milestones: [10, 20]
-  gamma: 0.1
+  milestones: [20, 30, 35, 40]
+  gamma: 0.3
 
 scheduler_concept_extractor_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.lr_scheduler.MultiStepLR
-  milestones: [10, ]
-  gamma: 0.1
+  milestones: [25, 40]
+  gamma: 0.2

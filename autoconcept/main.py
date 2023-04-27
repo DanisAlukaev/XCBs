@@ -5,6 +5,7 @@ import hydra
 import pytorch_lightning as pl
 from callbacks import FreezingCallback, ReinitializeBottleneckCallback
 from clearml import Task
+from extract import trace_interpretations
 from helpers import pretty_cfg, report_to_telegram, set_seed
 from hydra.utils import get_class, instantiate
 from omegaconf import DictConfig
@@ -46,7 +47,6 @@ def run(cfg):
     if cfg.early_stopper:
         trainer_callbacks += [instantiate(cfg.early_stopper)]
 
-    print("CONFIG: ", cfg.epoch_reinitialize)
     if isinstance(cfg.epoch_reinitialize, int):
         trainer_callbacks += [
             ReinitializeBottleneckCallback(cfg.epoch_reinitialize)]
@@ -66,6 +66,9 @@ def run(cfg):
     inference = target_class.load_from_checkpoint(checkpoint_path, main=main)
     f1_test = trainer.test(inference, test_loader)[
         0]['test/weighted_avg/f1-score']
+
+    trace_interpretations(dm, inference)
+
     return f1_test
 
 
