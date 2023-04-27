@@ -127,14 +127,18 @@ class VocabularyShapes:
 
     def build_vocab(self):
         word_counter = Counter()
+        lens = list()
         for _, row in tqdm(self.annotations.iterrows(), total=self.annotations.shape[0]):
             text = row[2]
             tokens = self.tokenizer(text)
+            lens.append(len(tokens))
             word_counter.update(tokens)
 
         special_symbols = ["<pad>", "<unk>"]
         self.vocab = vocab(word_counter, specials=special_symbols)
         self.vocab.set_default_index(self.vocab["<unk>"])
+        print("Len of vocab: ", len(self.vocab))
+        print("Max len of caption: ", max(lens))
 
     def read_annotations_file(self):
         filename = self.annotation_path

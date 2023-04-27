@@ -198,9 +198,11 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
                 # concept_semantic = torch.cat(
                 #     (concept_semantic, score_dummy), dim=1)
-            concept_logit = mlp(concept_semantic)
 
             concept_semantics.append(concept_semantic)
+
+            concept_logit = mlp(concept_semantic)
+
             concept_logits.append(concept_logit)
 
         concept_logits = torch.stack(concept_logits, dim=1).squeeze(-1)
