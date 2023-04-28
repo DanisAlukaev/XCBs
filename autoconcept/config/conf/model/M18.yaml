@@ -28,7 +28,7 @@ main:
     regularize_distance: true
     use_position_encoding: false
     mlp_depth: 4
-    use_dummy_attention: true
+    use_dummy_attention: false
     activation:
       _target_: torch.nn.ReLU
     device: cuda

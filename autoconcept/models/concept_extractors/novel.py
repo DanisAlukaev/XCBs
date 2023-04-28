@@ -126,15 +126,14 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         mask = self.make_src_mask(input_ids)
 
         word_embedding = self.word_embedding(input_ids)
-        # if self.use_position_encoding:
-        #     input_embedding = self.position_embedding(word_embedding)
-        # else:
-        #     positions = torch.arange(0, seq_length)
-        #     positions = positions.expand(N, seq_length).to(self.device)
-        #     position_embedding = self.position_embedding(positions)
-        #     input_embedding = word_embedding + position_embedding
+        if self.use_position_encoding:
+            input_embedding = self.position_embedding(word_embedding)
+        else:
+            positions = torch.arange(0, seq_length)
+            positions = positions.expand(N, seq_length).to(self.device)
+            position_embedding = self.position_embedding(positions)
+            input_embedding = word_embedding + position_embedding
 
-        input_embedding = word_embedding
         input_embedding = self.dropout(input_embedding)
 
         values = self.values_w(input_embedding)
@@ -161,20 +160,23 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
         if self.use_slot_norm:
             scores = self.norm_fn1(attn_logits)
-            scores_dummy = self.norm_fn1(attn_dummy_logits)
+            if self.use_dummy_attention:
+                scores_dummy = self.norm_fn1(attn_dummy_logits)
 
-            scores_dummy = torch.diagonal(scores_dummy, 0)
-            scores_dummy = scores_dummy.expand(N, -1, -1)
+                scores_dummy = torch.diagonal(scores_dummy, 0)
+                scores_dummy = scores_dummy.expand(N, -1, -1)
 
-            scores = scores.masked_fill(mask == 0, 0)
-            scores = torch.cat((scores, scores_dummy), dim=2)
+                scores = scores.masked_fill(mask == 0, 0)
+                scores = torch.cat((scores, scores_dummy), dim=2)
 
             scores = scores + self.eps
             scores = self.norm_fn2(scores)
 
             # TODO: use entire sequence with dummy tokens (or add it as additional feature)
             scores_aux = scores
-            scores = scores[:, :, :seq_length]
+
+            if self.use_dummy_attention:
+                scores = scores[:, :, :seq_length]
         else:
             attn_dummy_logits = torch.diagonal(attn_dummy_logits, 0)
             attn_dummy_logits = attn_dummy_logits.expand(N, -1, -1)
