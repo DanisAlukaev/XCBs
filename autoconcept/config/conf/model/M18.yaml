@@ -26,7 +26,7 @@ main:
       _target_: functional.operations.ScalerSum
       dim: -1
     regularize_distance: true
-    use_position_encoding: true
+    use_position_encoding: false
     mlp_depth: 4
     use_dummy_attention: true
     activation:
@@ -45,7 +45,7 @@ main:
     step: 15
     t: 1.0
     rate: 0.007
-    min_val: 0.5
+    min_val: 0.001
 
   temperature: 1.
 
