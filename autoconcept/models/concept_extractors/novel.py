@@ -161,7 +161,9 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         if self.use_slot_norm:
             scores = self.norm_fn1(attn_logits)
             if self.use_dummy_attention:
-                scores_dummy = 1 - scores.max(dim=-1)
+                scores_max, _ = torch.max(scores, 2)
+                scores_dummy = 1 - scores_max
+                # print(scores_dummy)
                 scores_dummy = scores_dummy.unsqueeze(-1)
 
                 # scores_dummy = self.norm_fn1(attn_dummy_logits)
@@ -196,6 +198,8 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
         for idx, mlp in enumerate(self.mlps):
             concept_semantic = semantic[:, idx, :]
+            concept_semantics.append(concept_semantic)
+
             if self.use_dummy_attention:
                 score_dummy = scores_dummy[:, idx, :]
                 dummy_embedding = dummy_tokens[idx]
@@ -204,8 +208,6 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
                 # concept_semantic = torch.cat(
                 #     (concept_semantic, score_dummy), dim=1)
-
-            concept_semantics.append(concept_semantic)
 
             concept_logit = mlp(concept_semantic)
 
