@@ -12,6 +12,7 @@ See https://arxiv.org/pdf/1602.02068.
 import torch
 import torch.nn as nn
 from torch.autograd import Function
+from torch.nn.parameter import Parameter
 
 
 def _make_ix_like(X, dim):
@@ -282,3 +283,14 @@ class Entmax15(nn.Module):
 
     def forward(self, X):
         return entmax15(X, dim=self.dim, k=self.k)
+
+
+class SigmoidP(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.c1 = Parameter(torch.tensor(1.0))
+        self.c2 = Parameter(torch.tensor(0.0))
+
+    def forward(self, X):
+        return 1 / (1 + torch.exp(-self.c1 * (X - self.c2)))

@@ -4,6 +4,7 @@ import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from functional.activation import SigmoidP
 from models.concept_extractors.base import BaseConceptExtractor
 from models.predictors.mlp import MLPPredictor
 
@@ -112,6 +113,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         ])
 
         self.sigmoid = nn.Sigmoid()
+        self.sigmoid_parametrized = SigmoidP()
         self.dropout = nn.Dropout(dropout)
         self.cosine_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
 
@@ -166,8 +168,11 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
                 # scores_dummy = 1 - (scores_max + scores_mean)
 
-                scores_dummy = 1 - torch.norm(scores, dim=-1)
-                scores_dummy = torch.nn.functional.relu(scores_dummy)
+                # scores_dummy = 1 - torch.norm(scores, dim=-1)
+                # scores_dummy = torch.nn.functional.relu(scores_dummy)
+
+                scores_mean = scores.mean(dim=-1)
+                scores_dummy = 1 - self.sigmoid_parametrized(scores_mean)
 
                 print(scores_dummy)
 
@@ -209,8 +214,8 @@ class ConceptExtractorAttention(BaseConceptExtractor):
                 score_dummy = scores_dummy[:, idx, :]
 
                 # TODO: use only one dummy embedding
-                # dummy_embedding = dummy_tokens[idx]
-                dummy_embedding = dummy_tokens[0]
+                dummy_embedding = dummy_tokens[idx]
+                # dummy_embedding = dummy_tokens[0]
 
                 concept_semantic = concept_semantic + score_dummy * dummy_embedding
 
