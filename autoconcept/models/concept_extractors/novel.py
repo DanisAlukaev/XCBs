@@ -161,10 +161,12 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         if self.use_slot_norm:
             scores = self.norm_fn1(attn_logits)
             if self.use_dummy_attention:
-                scores_max, _ = torch.max(scores, 2)
-                scores_mean = scores.mean(dim=-1)
+                # scores_max, _ = torch.max(scores, 2)
+                # scores_mean = scores.mean(dim=-1)
 
-                scores_dummy = 1 - (scores_max + scores_mean)
+                # scores_dummy = 1 - (scores_max + scores_mean)
+
+                scores_dummy = 1 - torch.norm(scores, dim=-1)
                 scores_dummy = torch.nn.functional.relu(scores_dummy)
 
                 print(scores_dummy)
