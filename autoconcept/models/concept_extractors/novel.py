@@ -175,7 +175,8 @@ class ConceptExtractorAttention(BaseConceptExtractor):
                 # print(scores_norm)
                 scores_dummy = 1 - self.sigmoid_parametrized(scores_norm)
 
-                # print(self.sigmoid_parametrized.c1, self.sigmoid_parametrized.c2)
+                print(self.sigmoid_parametrized.c1,
+                      self.sigmoid_parametrized.c2)
 
                 scores_dummy = scores_dummy.unsqueeze(-1)
 
