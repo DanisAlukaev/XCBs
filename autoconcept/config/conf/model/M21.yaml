@@ -26,7 +26,7 @@ main:
       _target_: functional.operations.ScalerSum
       dim: -1
     regularize_distance: true
-    use_position_encoding: false
+    use_position_encoding: true
     mlp_depth: 4
     use_dummy_attention: true
     activation:

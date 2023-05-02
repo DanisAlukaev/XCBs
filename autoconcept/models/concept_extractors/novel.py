@@ -205,7 +205,10 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             concept_semantic = semantic[:, idx, :]
             if self.use_dummy_attention:
                 score_dummy = scores_dummy[:, idx, :]
-                dummy_embedding = dummy_tokens[idx]
+
+                # TODO: use only one dummy embedding
+                # dummy_embedding = dummy_tokens[idx]
+                dummy_embedding = dummy_tokens[0]
 
                 concept_semantic = concept_semantic + score_dummy * dummy_embedding
 
