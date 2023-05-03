@@ -80,6 +80,31 @@ class AutoConceptBottleneckModel(nn.Module):
 
         return out_dict
 
+    def inference(self, images, iteration=None):
+        feature_logits = self.feature_extractor(images)
+        feature_probs = self.sigmoid(feature_logits / self.T)
+
+        args = [feature_logits]
+        if self.has_gumbel_sigmoid:
+            args.append(iteration)
+
+        feature_activated = feature_logits
+        if self.interim_activation:
+            feature_activated = self.interim_activation(*args)
+
+        feature_activated = self.bn(feature_activated)
+
+        prediction = self.predictor(feature_activated)
+
+        out_dict = dict(
+            feature_logits=feature_logits,
+            feature_probs=feature_probs,
+            feature_activated=feature_activated,
+            prediction=prediction,
+        )
+
+        return out_dict
+
 
 class LitAutoConceptBottleneckModel(pl.LightningModule):
 
