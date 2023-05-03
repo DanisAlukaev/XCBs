@@ -30,6 +30,7 @@ class AutoConceptBottleneckModel(nn.Module):
         self.has_gumbel_sigmoid = isinstance(interim_activation, GumbelSigmoid)
         self.sigmoid = nn.Sigmoid()
         self.bn = nn.BatchNorm1d(feature_extractor.out_features)
+        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, images, captions, iteration):
         feature_logits = self.feature_extractor(images)
@@ -79,6 +80,23 @@ class AutoConceptBottleneckModel(nn.Module):
             out_dict["loss_dist"] = concept_extractor_dict["loss_dist"]
 
         return out_dict
+
+    def inference(self, images, iteration=None):
+        feature_logits = self.feature_extractor(images)
+        feature_probs = self.sigmoid(feature_logits / self.T)
+
+        args = [feature_logits]
+        if self.has_gumbel_sigmoid:
+            args.append(iteration)
+
+        feature_activated = feature_logits
+        if self.interim_activation:
+            feature_activated = self.interim_activation(*args)
+
+        feature_activated = self.bn(feature_activated)
+        prediction = self.predictor(feature_activated)
+
+        return self.softmax(prediction)
 
 
 class LitAutoConceptBottleneckModel(pl.LightningModule):
