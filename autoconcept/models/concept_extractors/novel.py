@@ -171,9 +171,11 @@ class ConceptExtractorAttention(BaseConceptExtractor):
                 # scores_dummy = 1 - torch.norm(scores, dim=-1)
                 # scores_dummy = torch.nn.functional.relu(scores_dummy)
 
-                scores_norm = scores.norm(dim=-1)
+                # scores_norm = scores.norm(dim=-1)
                 # print(scores_norm)
-                scores_dummy = 1 - self.sigmoid_parametrized(scores_norm)
+                scores_mean = scores.mean(dim=-1)
+                print(scores_mean.min(), scores_mean.max())
+                scores_dummy = 1 - self.sigmoid_parametrized(scores_mean)
 
                 print(self.sigmoid_parametrized.c1,
                       self.sigmoid_parametrized.c2)
