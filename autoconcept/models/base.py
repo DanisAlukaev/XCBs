@@ -24,6 +24,7 @@ class BaseModel(nn.Module):
         self.has_gumbel_sigmoid = isinstance(interim_activation, GumbelSigmoid)
         self.sigmoid = nn.Sigmoid()
         self.bn = nn.BatchNorm1d(extractor.out_features)
+        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x, iteration):
         concept_logits = self.extractor(x)
@@ -48,6 +49,9 @@ class BaseModel(nn.Module):
         )
 
         return out_dict
+
+    def inference(self, x, iteration=None):
+        return self.softmax(self.forward(x, iteration)["prediction"])
 
 
 class LitBaseModel(pl.LightningModule):

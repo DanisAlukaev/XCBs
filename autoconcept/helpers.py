@@ -6,6 +6,7 @@ import numpy as np
 import requests
 import torch
 from dotenv import load_dotenv
+from hydra.utils import get_class, instantiate
 from omegaconf import OmegaConf
 
 load_dotenv()
@@ -35,3 +36,28 @@ def pretty_cfg(cfg):
     cfg_dict = OmegaConf.to_container(cfg, resolve=True)
     cfg_json = json.dumps(cfg_dict, indent=2)
     return cfg_json
+
+
+def load_experiment(path):
+    print("Fetching configuration...")
+    cfg_path = os.path.join(path, ".hydra/config.yaml")
+    cfg = OmegaConf.load(cfg_path)
+
+    print("Loading datamodule...")
+    dm = instantiate(cfg.dataset)
+    dm.setup()
+
+    print("Loading model")
+    checkpoints_dir = os.path.join(
+        path, "lightning_logs", "version_0", "checkpoints")
+    checkpoint_name = [n for n in os.listdir(
+        checkpoints_dir) if n != "last.ckpt"][0]
+    checkpoint_path = os.path.join(checkpoints_dir, checkpoint_name)
+
+    target_class = get_class(cfg.model._target_)
+    main = instantiate(cfg.model.main)
+    model = target_class.load_from_checkpoint(
+        checkpoint_path, main=main).cuda()
+    model = model.eval()
+
+    return dm, model
