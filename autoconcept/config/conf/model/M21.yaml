@@ -19,14 +19,14 @@ main:
     dropout: 0.
     use_slot_norm: true
     norm_fn1:
-      # _target_: functional.activation.Entmax15
-      _target_: torch.nn.Softmax
+      _target_: functional.activation.Entmax15
+      # _target_: torch.nn.Softmax
       dim: -2
     norm_fn2:
       _target_: functional.operations.ScalerSum
       dim: -1
     regularize_distance: true
-    use_position_encoding: false
+    use_position_encoding: true
     mlp_depth: 4
     use_dummy_attention: true
     activation:
@@ -49,7 +49,11 @@ main:
 
   temperature: 1.
 
-  predictor_aux: null
+  predictor_aux:
+    _target_: models.predictors.mlp.MLPPredictor
+    layers: [10, 9]
+    activation:
+      _target_: torch.nn.ReLU
 
 dist_weight: 1.0
 

@@ -4,6 +4,7 @@ import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from functional.activation import SigmoidP
 from models.concept_extractors.base import BaseConceptExtractor
 from models.predictors.mlp import MLPPredictor
 
@@ -112,6 +113,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         ])
 
         self.sigmoid = nn.Sigmoid()
+        self.sigmoid_parametrized = SigmoidP()
         self.dropout = nn.Dropout(dropout)
         self.cosine_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
 
@@ -161,10 +163,28 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         if self.use_slot_norm:
             scores = self.norm_fn1(attn_logits)
             if self.use_dummy_attention:
-                scores_dummy = self.norm_fn1(attn_dummy_logits)
+                # scores_max, _ = torch.max(scores, 2)
+                # scores_mean = scores.mean(dim=-1)
 
-                scores_dummy = torch.diagonal(scores_dummy, 0)
-                scores_dummy = scores_dummy.expand(N, -1, -1)
+                # scores_dummy = 1 - (scores_max + scores_mean)
+
+                # scores_dummy = 1 - torch.norm(scores, dim=-1)
+                # scores_dummy = torch.nn.functional.relu(scores_dummy)
+
+                # scores_norm = scores.norm(dim=-1)
+                # print(scores_norm)
+                scores_mean = scores.mean(dim=-1)
+                print(scores_mean.min(), scores_mean.max())
+                scores_dummy = 1 - self.sigmoid_parametrized(scores_mean)
+
+                print(self.sigmoid_parametrized.c1,
+                      self.sigmoid_parametrized.c2)
+
+                scores_dummy = scores_dummy.unsqueeze(-1)
+
+                # scores_dummy = self.norm_fn1(attn_dummy_logits)
+                # scores_dummy = torch.diagonal(scores_dummy, 0)
+                # scores_dummy = scores_dummy.expand(N, -1, -1)
 
                 scores = scores.masked_fill(mask == 0, 0)
                 scores = torch.cat((scores, scores_dummy), dim=2)
@@ -196,7 +216,10 @@ class ConceptExtractorAttention(BaseConceptExtractor):
             concept_semantic = semantic[:, idx, :]
             if self.use_dummy_attention:
                 score_dummy = scores_dummy[:, idx, :]
+
+                # TODO: use only one dummy embedding
                 dummy_embedding = dummy_tokens[idx]
+                # dummy_embedding = dummy_tokens[0]
 
                 concept_semantic = concept_semantic + score_dummy * dummy_embedding
 

@@ -15,7 +15,7 @@ from models.predictors.mlp import MLPPredictor
 
 class AutoConceptBottleneckModel(nn.Module):
 
-    def __init__(self, feature_extractor, concept_extractor, predictor, interim_activation, temperature=1.):
+    def __init__(self, feature_extractor, concept_extractor, predictor, interim_activation, temperature=1., predictor_aux=None):
         super().__init__()
         assert feature_extractor.out_features == predictor.layers[0]
         assert concept_extractor.out_features == predictor.layers[0]
@@ -23,6 +23,7 @@ class AutoConceptBottleneckModel(nn.Module):
         self.feature_extractor = feature_extractor
         self.concept_extractor = concept_extractor
         self.predictor = predictor
+        self.predictor_aux = predictor_aux
         self.interim_activation = interim_activation
         self.T = temperature
 
@@ -33,8 +34,6 @@ class AutoConceptBottleneckModel(nn.Module):
     def forward(self, images, captions, iteration):
         feature_logits = self.feature_extractor(images)
 
-        # print(feature_logits.min(), feature_logits.max())
-
         concept_extractor_dict = self.concept_extractor(captions)
         concept_logits = concept_extractor_dict["concept_logits"]
 
@@ -42,15 +41,25 @@ class AutoConceptBottleneckModel(nn.Module):
         concept_probs = self.sigmoid(concept_logits / self.T)
 
         args = [feature_logits]
+        args_aux = [concept_logits]
         if self.has_gumbel_sigmoid:
             args.append(iteration)
+            args_aux.append(iteration)
 
         feature_activated = feature_logits
+        concept_activated = concept_logits
         if self.interim_activation:
             feature_activated = self.interim_activation(*args)
+            concept_activated = self.interim_activation(*args_aux)
 
         feature_activated = self.bn(feature_activated)
+        concept_activated = self.bn(concept_activated)
+
         prediction = self.predictor(feature_activated)
+
+        prediction_aux = None
+        if self.predictor_aux:
+            prediction_aux = self.predictor_aux(concept_activated)
 
         out_dict = dict(
             feature_logits=feature_logits,
@@ -62,6 +71,9 @@ class AutoConceptBottleneckModel(nn.Module):
             scores=concept_extractor_dict["scores"],
             scores_aux=concept_extractor_dict["scores_aux"]
         )
+
+        if self.predictor_aux:
+            out_dict["prediction_aux"] = prediction_aux
 
         if self.concept_extractor.regularize_distance:
             out_dict["loss_dist"] = concept_extractor_dict["loss_dist"]
@@ -79,6 +91,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             predictor=MLPPredictor(),
             interim_activation=nn.ReLU(),
             temperature=1.,
+            predictor_aux=None,
         ),
         criterion_task=nn.CrossEntropyLoss(),
         criterion_tie=KullbackLeiblerDivergenceLoss(),
@@ -118,8 +131,13 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
     def configure_optimizers(self):
         optimizer_model = self.optimizer_model_template(
             [*self.main.feature_extractor.parameters(), *self.main.predictor.parameters()])
+
+        parameters_textual = [*self.main.concept_extractor.parameters()]
+        if self.main.predictor_aux:
+            parameters_textual += [*self.main.predictor_aux.parameters()]
         optimizer_concept_extractor = self.optimizer_concept_extractor_template(
-            self.main.concept_extractor.parameters())
+            parameters_textual)
+
         scheduler_model = self.scheduler_model_template(optimizer_model)
         scheduler_concept_extractor = self.scheduler_concept_extractor_template(
             optimizer_concept_extractor)
@@ -134,11 +152,18 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         prediction, feature_probs, concept_probs = out_dict[
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
+        prediction_aux = None
+        if "prediction_aux" in out_dict:
+            prediction_aux = out_dict["prediction_aux"]
+
         tie_weight, dist_weight = self.tie_weight, self.dist_weight
         if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
             tie_weight, dist_weight = 0, 0
 
         loss_task = self.criterion_task(prediction, target)
+        loss_task_aux = None
+        if prediction_aux is not None:
+            loss_task_aux = self.criterion_task(prediction_aux, target)
 
         tie_criterion_args = [feature_probs, concept_probs]
         if not self.tie_loss_wrt_concepts:
@@ -146,6 +171,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
 
         loss = loss_task + loss_tie
+        if loss_task_aux is not None:
+            loss += loss_task_aux
 
         loss_dist = torch.tensor(0.)
         if self.main.concept_extractor.regularize_distance:
@@ -165,6 +192,10 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))
 
+        _prediction_aux = None
+        if "prediction_aux" in out_dict:
+            _prediction_aux = retrieve(prediction_aux.argmax(dim=1))
+
         metrics = {
             "loss/train_task": loss_task,
             "loss/train_tie": loss_tie,
@@ -175,6 +206,9 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             "train/loss_tie": loss_tie,
             "train/loss_dist": loss_dist
         }
+        if loss_task_aux is not None:
+            metrics["loss/train_task_aux"] = loss_task_aux
+            metrics["train/loss_task_aux"] = loss_task_aux
         self.log_dict(metrics)
 
         if self.main.has_gumbel_sigmoid:
@@ -183,10 +217,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         iter_dict = dict(
             loss=loss,
             loss_task=loss_task,
+            loss_task_aux=loss_task_aux,
             loss_tie=loss_tie,
             loss_dist=loss_dist,
             target=_target,
-            prediction=_prediction
+            prediction=_prediction,
+            prediction_aux=_prediction_aux,
         )
 
         return iter_dict
@@ -218,7 +254,15 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
         metrics = AllMulticlassClfMetrics()(
             all_target, all_prediction, f'{phase}')
-        self.log_dict(metrics)
+
+        all_metrics = metrics.copy()
+        if self.main.predictor_aux:
+            all_prediction_aux = np.concatenate(
+                [i['prediction_aux'] for i in outputs])
+            metrics_aux = AllMulticlassClfMetrics()(
+                all_target, all_prediction_aux, f'{phase}_aux')
+            all_metrics.update(metrics_aux)
+        self.log_dict(all_metrics)
 
         mem = {
             'memory/gpu': torch.cuda.memory_allocated() / 1e9,
@@ -238,11 +282,18 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         prediction, feature_probs, concept_probs = out_dict[
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
+        prediction_aux = None
+        if "prediction_aux" in out_dict:
+            prediction_aux = out_dict["prediction_aux"]
+
         tie_weight, dist_weight = self.tie_weight, self.dist_weight
         if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
             tie_weight, dist_weight = 0, 0
 
         loss_task = self.criterion_task(prediction, target)
+        loss_task_aux = None
+        if prediction_aux is not None:
+            loss_task_aux = self.criterion_task(prediction_aux, target)
 
         tie_criterion_args = [feature_probs, concept_probs]
         if not self.tie_loss_wrt_concepts:
@@ -250,6 +301,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
 
         loss = loss_task + loss_tie
+        if loss_task_aux is not None:
+            loss += loss_task_aux
 
         loss_dist = torch.tensor(0.)
         if self.main.concept_extractor.regularize_distance:
@@ -258,6 +311,10 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))
+
+        _prediction_aux = None
+        if "prediction_aux" in out_dict:
+            _prediction_aux = retrieve(prediction_aux.argmax(dim=1))
 
         metrics = {
             f"loss/{phase}_task": loss_task,
@@ -269,16 +326,24 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             f"{phase}/loss_tie": loss_tie,
             f"{phase}/loss_dist": loss_dist
         }
+        if loss_task_aux is not None:
+            metrics[f"loss/{phase}_task_aux"] = loss_task_aux
+            metrics[f"{phase}/loss_task_aux"] = loss_task_aux
 
         self.log_dict(metrics)
+
+        if loss_task_aux is not None:
+            loss_task_aux = loss_task_aux.item()
 
         iter_dict = dict(
             loss=loss.item(),
             loss_task=loss_task.item(),
+            loss_task_aux=loss_task_aux,
             loss_tie=loss_tie.item(),
             loss_dist=loss_dist.item(),
             target=_target,
-            prediction=_prediction
+            prediction=_prediction,
+            prediction_aux=_prediction_aux,
         )
 
         return iter_dict
