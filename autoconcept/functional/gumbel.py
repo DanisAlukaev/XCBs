@@ -36,6 +36,7 @@ class GumbelSigmoid(nn.Module):
         y = self._gumbel_sigmoid_sample(x, t)
         if not self.hard:
             return y
+
         indices = (y > self.threshold).nonzero(as_tuple=True)
         y_hard = torch.zeros_like(
             x, memory_format=torch.legacy_contiguous_format)
