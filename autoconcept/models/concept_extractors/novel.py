@@ -248,7 +248,7 @@ class ConceptExtractorAttention(BaseConceptExtractor):
                         similarity = self.cosine_sim(
                             concept_semantics[idx],
                             concept_semantics[jdx]
-                        ).abs()
+                        )  # .abs()
                         similarities.append(similarity)
 
             avg_similarity = torch.cat(similarities).mean()
