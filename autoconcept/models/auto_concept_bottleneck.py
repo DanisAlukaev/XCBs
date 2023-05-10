@@ -29,7 +29,8 @@ class AutoConceptBottleneckModel(nn.Module):
 
         self.has_gumbel_sigmoid = isinstance(interim_activation, GumbelSigmoid)
         self.sigmoid = nn.Sigmoid()
-        self.bn = nn.BatchNorm1d(feature_extractor.out_features)
+        self.bn_visual = nn.BatchNorm1d(feature_extractor.out_features)
+        self.bn_textual = nn.BatchNorm1d(feature_extractor.out_features)
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, images, captions, iteration):
@@ -38,8 +39,8 @@ class AutoConceptBottleneckModel(nn.Module):
         concept_extractor_dict = self.concept_extractor(captions)
         concept_logits = concept_extractor_dict["concept_logits"]
 
-        feature_probs = self.sigmoid(feature_logits / self.T)
-        concept_probs = self.sigmoid(concept_logits / self.T)
+        feature_probs = self.sigmoid(feature_logits)
+        concept_probs = self.sigmoid(concept_logits)
 
         args = [feature_logits]
         args_aux = [concept_logits]
@@ -53,8 +54,8 @@ class AutoConceptBottleneckModel(nn.Module):
             feature_activated = self.interim_activation(*args)
             concept_activated = self.interim_activation(*args_aux)
 
-        feature_activated = self.bn(feature_activated)
-        concept_activated = self.bn(concept_activated)
+        feature_activated = self.bn_visual(feature_activated)
+        concept_activated = self.bn_textual(concept_activated)
 
         prediction = self.predictor(feature_activated)
 
@@ -83,7 +84,7 @@ class AutoConceptBottleneckModel(nn.Module):
 
     def inference(self, images, iteration=None):
         feature_logits = self.feature_extractor(images)
-        feature_probs = self.sigmoid(feature_logits / self.T)
+        feature_probs = self.sigmoid(feature_logits)
 
         args = [feature_logits]
         if self.has_gumbel_sigmoid:
@@ -93,7 +94,7 @@ class AutoConceptBottleneckModel(nn.Module):
         if self.interim_activation:
             feature_activated = self.interim_activation(*args)
 
-        feature_activated = self.bn(feature_activated)
+        feature_activated = self.bn_visual(feature_activated)
         prediction = self.predictor(feature_activated)
 
         return self.softmax(prediction), feature_probs
@@ -148,9 +149,10 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer_model = self.optimizer_model_template(
-            [*self.main.feature_extractor.parameters(), *self.main.predictor.parameters()])
+            [*self.main.feature_extractor.parameters(), *self.main.bn_visual.parameters(), *self.main.predictor.parameters()])
 
-        parameters_textual = [*self.main.concept_extractor.parameters()]
+        parameters_textual = [
+            *self.main.concept_extractor.parameters(), *self.main.bn_textual.parameters()]
         if self.main.predictor_aux:
             parameters_textual += [*self.main.predictor_aux.parameters()]
         optimizer_concept_extractor = self.optimizer_concept_extractor_template(
