@@ -15,70 +15,70 @@ from models.predictors.mlp import MLPPredictor
 
 class AutoConceptBottleneckModel(nn.Module):
 
-    def __init__(self, feature_extractor, concept_extractor, predictor, interim_activation, temperature=1., predictor_aux=None):
+    def __init__(self, feature_extractor, concept_extractor, predictor, interim_activation, predictor_aux=None):
         super().__init__()
         assert feature_extractor.out_features == predictor.layers[0]
-        assert concept_extractor.out_features == predictor.layers[0]
+        # assert concept_extractor.out_features == predictor.layers[0]
 
         self.feature_extractor = feature_extractor
-        self.concept_extractor = concept_extractor
+        # self.concept_extractor = concept_extractor
         self.predictor = predictor
-        self.predictor_aux = predictor_aux
+        # self.predictor_aux = predictor_aux
         self.interim_activation = interim_activation
-        self.T = temperature
+        # self.interim_activation_aux = copy.deepcopy(interim_activation)
 
         self.has_gumbel_sigmoid = isinstance(interim_activation, GumbelSigmoid)
         self.sigmoid = nn.Sigmoid()
         self.bn_visual = nn.BatchNorm1d(feature_extractor.out_features)
-        self.bn_textual = nn.BatchNorm1d(feature_extractor.out_features)
+        # self.bn_textual = nn.BatchNorm1d(feature_extractor.out_features)
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, images, captions, iteration):
         feature_logits = self.feature_extractor(images)
 
-        concept_extractor_dict = self.concept_extractor(captions)
-        concept_logits = concept_extractor_dict["concept_logits"]
+        # concept_extractor_dict = self.concept_extractor(captions)
+        # concept_logits = concept_extractor_dict["concept_logits"]
 
         feature_probs = self.sigmoid(feature_logits)
-        concept_probs = self.sigmoid(concept_logits)
+        # concept_probs = self.sigmoid(concept_logits)
 
         args = [feature_logits]
-        args_aux = [concept_logits]
+        # args_aux = [concept_logits]
         if self.has_gumbel_sigmoid:
             args.append(iteration)
-            args_aux.append(iteration)
+            # args_aux.append(iteration)
 
         feature_activated = feature_logits
-        concept_activated = concept_logits
+        # concept_activated = concept_logits
         if self.interim_activation:
             feature_activated = self.interim_activation(*args)
-            concept_activated = self.interim_activation(*args_aux)
+            # concept_activated = self.interim_activation_aux(*args_aux)
 
-        feature_activated = self.bn_visual(feature_activated)
-        concept_activated = self.bn_textual(concept_activated)
+        feature_activated_bn = self.bn_visual(feature_activated)
+        # concept_activated_bn = self.bn_textual(concept_activated)
 
-        prediction = self.predictor(feature_activated)
+        prediction = self.predictor(feature_activated_bn)
 
-        prediction_aux = None
-        if self.predictor_aux:
-            prediction_aux = self.predictor_aux(concept_activated)
+        # prediction_aux = None
+        # if self.predictor_aux:
+        #     prediction_aux = self.predictor_aux(concept_activated_bn)
 
         out_dict = dict(
             feature_logits=feature_logits,
-            concept_logits=concept_logits,
+            # concept_logits=concept_logits,
             feature_probs=feature_probs,
-            concept_probs=concept_probs,
+            # concept_probs=concept_probs,
             feature_activated=feature_activated,
             prediction=prediction,
-            scores=concept_extractor_dict["scores"],
-            scores_aux=concept_extractor_dict["scores_aux"]
+            # scores=concept_extractor_dict["scores"],
+            # scores_aux=concept_extractor_dict["scores_aux"]
         )
 
-        if self.predictor_aux:
-            out_dict["prediction_aux"] = prediction_aux
+        # if self.predictor_aux:
+        #     out_dict["prediction_aux"] = prediction_aux
 
-        if self.concept_extractor.regularize_distance:
-            out_dict["loss_dist"] = concept_extractor_dict["loss_dist"]
+        # if self.concept_extractor.regularize_distance:
+        #     out_dict["loss_dist"] = concept_extractor_dict["loss_dist"]
 
         return out_dict
 
@@ -109,7 +109,6 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             concept_extractor=ConceptExtractorAttention(vocab_size=100),
             predictor=MLPPredictor(),
             interim_activation=nn.ReLU(),
-            temperature=1.,
             predictor_aux=None,
         ),
         criterion_task=nn.CrossEntropyLoss(),
@@ -141,27 +140,31 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.mix_tie_epoch = mix_tie_epoch
         self.tie_loss_wrt_concepts = tie_loss_wrt_concepts
 
-        self.automatic_optimization = False
+        # self.automatic_optimization = False
+        # print("Predictor: ", self.main.predictor.main[0].weight)
 
     def forward(self, images, indices, iteration=None):
         out_dict = self.main(images, indices, iteration=iteration)
         return out_dict
 
     def configure_optimizers(self):
-        optimizer_model = self.optimizer_model_template(
-            [*self.main.feature_extractor.parameters(), *self.main.bn_visual.parameters(), *self.main.predictor.parameters()])
+        # optimizer_model = self.optimizer_model_template(
+        #     [*self.main.feature_extractor.parameters(), *self.main.bn_visual.parameters(), *self.main.predictor.parameters()])
 
-        parameters_textual = [
-            *self.main.concept_extractor.parameters(), *self.main.bn_textual.parameters()]
-        if self.main.predictor_aux:
-            parameters_textual += [*self.main.predictor_aux.parameters()]
-        optimizer_concept_extractor = self.optimizer_concept_extractor_template(
-            parameters_textual)
+        optimizer_model = self.optimizer_model_template(self.parameters())
+
+        # parameters_textual = [
+        #     *self.main.concept_extractor.parameters(), *self.main.bn_textual.parameters()]
+        # if self.main.predictor_aux:
+        #     parameters_textual += [*self.main.predictor_aux.parameters()]
+        # optimizer_concept_extractor = self.optimizer_concept_extractor_template(
+        #     parameters_textual)
 
         scheduler_model = self.scheduler_model_template(optimizer_model)
-        scheduler_concept_extractor = self.scheduler_concept_extractor_template(
-            optimizer_concept_extractor)
-        return [optimizer_model, optimizer_concept_extractor], [scheduler_model, scheduler_concept_extractor]
+        # scheduler_concept_extractor = self.scheduler_concept_extractor_template(
+        # optimizer_concept_extractor)
+        # return [optimizer_model, optimizer_concept_extractor], [scheduler_model, scheduler_concept_extractor]
+        return [optimizer_model], [scheduler_model]
 
     def training_step(self, batch, batch_idx):
         images, indices, target = batch["image"], batch["indices"], batch["target"]
@@ -169,66 +172,68 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         iteration = self.trainer.global_step
         out_dict = self(images, indices, iteration=iteration)
 
-        prediction, feature_probs, concept_probs = out_dict[
-            "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
+        # prediction, feature_probs, concept_probs = out_dict[
+        #     "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
-        prediction_aux = None
-        if "prediction_aux" in out_dict:
-            prediction_aux = out_dict["prediction_aux"]
+        prediction, feature_probs = out_dict["prediction"], out_dict["feature_probs"]
 
-        tie_weight, dist_weight = self.tie_weight, self.dist_weight
-        if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
-            tie_weight, dist_weight = 0, 0
+        # prediction_aux = None
+        # if "prediction_aux" in out_dict:
+        #     prediction_aux = out_dict["prediction_aux"]
+
+        # tie_weight, dist_weight = self.tie_weight, self.dist_weight
+        # if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
+        #     tie_weight, dist_weight = 0, 0
 
         loss_task = self.criterion_task(prediction, target)
-        loss_task_aux = None
-        if prediction_aux is not None:
-            loss_task_aux = self.criterion_task(prediction_aux, target)
+        # loss_task_aux = None
+        # if prediction_aux is not None:
+        #     loss_task_aux = self.criterion_task(prediction_aux, target)
 
-        tie_criterion_args = [feature_probs, concept_probs]
-        if not self.tie_loss_wrt_concepts:
-            tie_criterion_args = tie_criterion_args[::-1]
-        loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
+        # tie_criterion_args = [feature_probs, concept_probs]
+        # if not self.tie_loss_wrt_concepts:
+        #     tie_criterion_args = tie_criterion_args[::-1]
+        # loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
 
-        loss = loss_task + loss_tie
-        if loss_task_aux is not None:
-            loss += loss_task_aux
+        loss = loss_task  # + loss_tie
+        # if loss_task_aux is not None:
+        #     loss += loss_task_aux
 
-        loss_dist = torch.tensor(0.)
-        if self.main.concept_extractor.regularize_distance:
-            loss_dist = dist_weight * out_dict["loss_dist"]
-            loss += loss_dist
+        # loss_dist = torch.tensor(0.)
+        # if self.main.concept_extractor.regularize_distance:
+        #     loss_dist = dist_weight * out_dict["loss_dist"]
+        #     loss += loss_dist
 
-        opt_clf, opt_tie = self.optimizers()
-        opt_clf.zero_grad()
-        opt_tie.zero_grad()
+        # opt_clf, opt_tie = self.optimizers()
+        # opt_clf.zero_grad()
+        # opt_tie.zero_grad()
 
-        torch.autograd.set_detect_anomaly(True)
+        # torch.autograd.set_detect_anomaly(True)
 
-        self.manual_backward(loss)
-        opt_clf.step()
-        opt_tie.step()
+        # self.manual_backward(loss)
+        # opt_clf.step()
+        # opt_tie.step()
 
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))
 
-        _prediction_aux = None
-        if "prediction_aux" in out_dict:
-            _prediction_aux = retrieve(prediction_aux.argmax(dim=1))
+        # _prediction_aux = None
+        # if "prediction_aux" in out_dict:
+        #     _prediction_aux = retrieve(prediction_aux.argmax(dim=1))
 
         metrics = {
             "loss/train_task": loss_task,
-            "loss/train_tie": loss_tie,
-            "loss/train_dist": loss_dist,
+            # "loss/train_tie": loss_tie,
+            # "loss/train_dist": loss_dist,
             "loss/train": loss,
             "train/loss": loss,
             "train/loss_task": loss_task,
-            "train/loss_tie": loss_tie,
-            "train/loss_dist": loss_dist
+            # "train/loss_tie": loss_tie,
+            # "train/loss_dist": loss_dist
         }
-        if loss_task_aux is not None:
-            metrics["loss/train_task_aux"] = loss_task_aux
-            metrics["train/loss_task_aux"] = loss_task_aux
+        # if loss_task_aux is not None:
+        #     metrics["loss/train_task_aux"] = loss_task_aux
+        #     metrics["train/loss_task_aux"] = loss_task_aux
         self.log_dict(metrics)
 
         if self.main.has_gumbel_sigmoid:
@@ -237,12 +242,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         iter_dict = dict(
             loss=loss,
             loss_task=loss_task,
-            loss_task_aux=loss_task_aux,
-            loss_tie=loss_tie,
-            loss_dist=loss_dist,
+            # loss_task_aux=loss_task_aux,
+            # loss_tie=loss_tie,
+            # loss_dist=loss_dist,
             target=_target,
             prediction=_prediction,
-            prediction_aux=_prediction_aux,
+            # prediction_aux=_prediction_aux,
         )
 
         return iter_dict
@@ -256,9 +261,9 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         return metrics
 
     def training_epoch_end(self, outputs):
-        sch_clf, sch_tie = self.lr_schedulers()
-        sch_clf.step()
-        sch_tie.step()
+        # sch_clf, sch_tie = self.lr_schedulers()
+        # sch_clf.step()
+        # sch_tie.step()
 
         self._validation_epoch_end(outputs, 'train')
 
@@ -276,12 +281,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             all_target, all_prediction, f'{phase}')
 
         all_metrics = metrics.copy()
-        if self.main.predictor_aux:
-            all_prediction_aux = np.concatenate(
-                [i['prediction_aux'] for i in outputs])
-            metrics_aux = AllMulticlassClfMetrics()(
-                all_target, all_prediction_aux, f'{phase}_aux')
-            all_metrics.update(metrics_aux)
+        # if self.main.predictor_aux:
+        #     all_prediction_aux = np.concatenate(
+        #         [i['prediction_aux'] for i in outputs])
+        #     metrics_aux = AllMulticlassClfMetrics()(
+        #         all_target, all_prediction_aux, f'{phase}_aux')
+        #     all_metrics.update(metrics_aux)
         self.log_dict(all_metrics)
 
         mem = {
@@ -299,71 +304,73 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         iteration = self.trainer.global_step
         out_dict = self(images, indices, iteration=iteration)
 
-        prediction, feature_probs, concept_probs = out_dict[
-            "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
+        # prediction, feature_probs, concept_probs = out_dict[
+        #     "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
 
-        prediction_aux = None
-        if "prediction_aux" in out_dict:
-            prediction_aux = out_dict["prediction_aux"]
+        prediction, feature_probs = out_dict["prediction"], out_dict["feature_probs"]
 
-        tie_weight, dist_weight = self.tie_weight, self.dist_weight
-        if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
-            tie_weight, dist_weight = 0, 0
+        # prediction_aux = None
+        # if "prediction_aux" in out_dict:
+        #     prediction_aux = out_dict["prediction_aux"]
+
+        # tie_weight, dist_weight = self.tie_weight, self.dist_weight
+        # if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
+        #     tie_weight, dist_weight = 0, 0
 
         loss_task = self.criterion_task(prediction, target)
-        loss_task_aux = None
-        if prediction_aux is not None:
-            loss_task_aux = self.criterion_task(prediction_aux, target)
+        # loss_task_aux = None
+        # if prediction_aux is not None:
+        #     loss_task_aux = self.criterion_task(prediction_aux, target)
 
-        tie_criterion_args = [feature_probs, concept_probs]
-        if not self.tie_loss_wrt_concepts:
-            tie_criterion_args = tie_criterion_args[::-1]
-        loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
+        # tie_criterion_args = [feature_probs, concept_probs]
+        # if not self.tie_loss_wrt_concepts:
+        #     tie_criterion_args = tie_criterion_args[::-1]
+        # loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
 
-        loss = loss_task + loss_tie
-        if loss_task_aux is not None:
-            loss += loss_task_aux
+        loss = loss_task  # + loss_tie
+        # if loss_task_aux is not None:
+        #     loss += loss_task_aux
 
-        loss_dist = torch.tensor(0.)
-        if self.main.concept_extractor.regularize_distance:
-            loss_dist = dist_weight * out_dict["loss_dist"]
-            loss += loss_dist
+        # loss_dist = torch.tensor(0.)
+        # if self.main.concept_extractor.regularize_distance:
+        #     loss_dist = dist_weight * out_dict["loss_dist"]
+        #     loss += loss_dist
 
         _target = retrieve(target)
         _prediction = retrieve(prediction.argmax(dim=1))
 
-        _prediction_aux = None
-        if "prediction_aux" in out_dict:
-            _prediction_aux = retrieve(prediction_aux.argmax(dim=1))
+        # _prediction_aux = None
+        # if "prediction_aux" in out_dict:
+        #     _prediction_aux = retrieve(prediction_aux.argmax(dim=1))
 
         metrics = {
             f"loss/{phase}_task": loss_task,
-            f"loss/{phase}_tie": loss_tie,
-            f"loss/{phase}_dist": loss_dist,
+            # f"loss/{phase}_tie": loss_tie,
+            # f"loss/{phase}_dist": loss_dist,
             f"loss/{phase}": loss,
             f"{phase}/loss": loss,
             f"{phase}/loss_task": loss_task,
-            f"{phase}/loss_tie": loss_tie,
-            f"{phase}/loss_dist": loss_dist
+            # f"{phase}/loss_tie": loss_tie,
+            # f"{phase}/loss_dist": loss_dist
         }
-        if loss_task_aux is not None:
-            metrics[f"loss/{phase}_task_aux"] = loss_task_aux
-            metrics[f"{phase}/loss_task_aux"] = loss_task_aux
+        # if loss_task_aux is not None:
+        #     metrics[f"loss/{phase}_task_aux"] = loss_task_aux
+        #     metrics[f"{phase}/loss_task_aux"] = loss_task_aux
 
         self.log_dict(metrics)
 
-        if loss_task_aux is not None:
-            loss_task_aux = loss_task_aux.item()
+        # if loss_task_aux is not None:
+        #     loss_task_aux = loss_task_aux.item()
 
         iter_dict = dict(
             loss=loss.item(),
             loss_task=loss_task.item(),
-            loss_task_aux=loss_task_aux,
-            loss_tie=loss_tie.item(),
-            loss_dist=loss_dist.item(),
+            # loss_task_aux=loss_task_aux,
+            # loss_tie=loss_tie.item(),
+            # loss_dist=loss_dist.item(),
             target=_target,
             prediction=_prediction,
-            prediction_aux=_prediction_aux,
+            # prediction_aux=_prediction_aux,
         )
 
         return iter_dict

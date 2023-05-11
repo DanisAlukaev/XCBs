@@ -45,9 +45,7 @@ main:
     step: 15
     t: 1.0
     rate: 0.007
-    min_val: 0.0
-
-  temperature: 1.
+    min_val: 0.001
 
   predictor_aux:
     _target_: models.predictors.mlp.MLPPredictor

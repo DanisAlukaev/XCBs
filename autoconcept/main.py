@@ -3,7 +3,8 @@ import traceback
 
 import hydra
 import pytorch_lightning as pl
-from callbacks import FreezingCallback, ReinitializeBottleneckCallback
+from callbacks import (FreezingCallback, InitializePredictorCallback,
+                       ReinitializeBottleneckCallback)
 from clearml import Task
 from extract import trace_interpretations
 from helpers import pretty_cfg, report_to_telegram, set_seed
@@ -19,6 +20,8 @@ def run(cfg):
     task.upload_artifact(
         'outputs', artifact_object=os.path.abspath(os.getcwd()))
     set_seed(cfg.seed)
+
+    pl.seed_everything(cfg.seed, workers=True)
 
     dm = instantiate(cfg.dataset)
     dm.setup()
@@ -41,11 +44,16 @@ def run(cfg):
         checkpoint_callback,
         LearningRateMonitor(logging_interval="step"),
         DeviceStatsMonitor(),
-        FreezingCallback(cfg.epoch_freeze_backbone),
+        InitializePredictorCallback(),
     ]
 
     if cfg.early_stopper:
         trainer_callbacks += [instantiate(cfg.early_stopper)]
+
+    if isinstance(cfg.epoch_freeze_backbone, int):
+        print("Freezing callback activated ")
+        trainer_callbacks += [
+            FreezingCallback(cfg.epoch_freeze_backbone)]
 
     if isinstance(cfg.epoch_reinitialize, int):
         trainer_callbacks += [
@@ -57,6 +65,7 @@ def run(cfg):
         accelerator=cfg.accelerator,
         devices=cfg.devices,
         log_every_n_steps=cfg.log_every_n_steps,
+        deterministic=True
     )
     trainer.fit(model, train_loader, val_loader)
 
