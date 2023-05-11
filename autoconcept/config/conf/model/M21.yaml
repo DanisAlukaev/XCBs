@@ -44,7 +44,7 @@ main:
     _target_: functional.gumbel.GumbelSigmoid
     step: 15
     t: 1.0
-    rate: 0.007
+    rate: 0.0035
     min_val: 0.001
 
   predictor_aux:
@@ -81,7 +81,7 @@ optimizer_concept_extractor_template:
     - _target_: hydra.utils.get_class
       path: torch.optim.AdamW
   lr: 6e-3
-  weight_decay: 0.03
+  # weight_decay: 0.03
 
 scheduler_model_template:
   _target_: functools.partial
