@@ -1,13 +1,13 @@
 # @package _global_
 
 defaults:
-  - override /model: M21
+  - override /model: M23
   - override /dataset: shapes
 
 name: E29
 epoch_freeze_backbone: null
 epoch_reinitialize: 0
-max_epochs: 10
+max_epochs: 15
 dataset:
   annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes-hard-2/captions.csv
   collate_fn:

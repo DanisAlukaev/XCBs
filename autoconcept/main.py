@@ -4,7 +4,7 @@ import traceback
 import hydra
 import pytorch_lightning as pl
 from callbacks import (FreezingCallback, InitializePredictorCallback,
-                       ReinitializeBottleneckCallback)
+                       ReinitializeBottleneckCallback, ReinitializeTextualMLP)
 from clearml import Task
 from extract import trace_interpretations
 from helpers import pretty_cfg, report_to_telegram, set_seed
@@ -45,6 +45,7 @@ def run(cfg):
         LearningRateMonitor(logging_interval="step"),
         DeviceStatsMonitor(),
         InitializePredictorCallback(),
+        ReinitializeTextualMLP(cfg.model.pretrain_embeddings_epoch)
     ]
 
     if cfg.early_stopper:

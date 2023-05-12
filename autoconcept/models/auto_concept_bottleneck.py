@@ -135,6 +135,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         tie_weight=10,
         dist_weight=0.1,
         mix_tie_epoch=50,
+        pretrain_embeddings_epoch=50,
         tie_loss_wrt_concepts=True,
     ):
         super().__init__()
@@ -150,6 +151,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.tie_weight = tie_weight
         self.dist_weight = dist_weight
         self.mix_tie_epoch = mix_tie_epoch
+        self.pretrain_embeddings_epoch = pretrain_embeddings_epoch
         self.tie_loss_wrt_concepts = tie_loss_wrt_concepts
 
         self.automatic_optimization = False
@@ -195,10 +197,17 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
             tie_weight, dist_weight = 0, 0
 
-        loss_task = self.criterion_task(prediction, target)
+        task_weight, task_aux_weight = 1.0, 0.0
+        if not self.pretrain_embeddings_epoch:
+            task_aux_weight = 1.0
+        if self.pretrain_embeddings_epoch and self.trainer.current_epoch // self.pretrain_embeddings_epoch == 0:
+            task_weight, task_aux_weight = 0, 1.0
+
+        loss_task = task_weight * self.criterion_task(prediction, target)
         loss_task_aux = None
         if prediction_aux is not None:
-            loss_task_aux = self.criterion_task(prediction_aux, target)
+            loss_task_aux = task_aux_weight * \
+                self.criterion_task(prediction_aux, target)
 
         tie_criterion_args = [feature_logits, concept_logits]
         if not self.tie_loss_wrt_concepts:
@@ -325,10 +334,17 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
             tie_weight, dist_weight = 0, 0
 
-        loss_task = self.criterion_task(prediction, target)
+        task_weight, task_aux_weight = 1.0, 0.0
+        if not self.pretrain_embeddings_epoch:
+            task_aux_weight = 1.0
+        if self.pretrain_embeddings_epoch and self.trainer.current_epoch // self.pretrain_embeddings_epoch == 0:
+            task_weight, task_aux_weight = 0, 1.0
+        loss_task = task_weight * self.criterion_task(prediction, target)
+
         loss_task_aux = None
         if prediction_aux is not None:
-            loss_task_aux = self.criterion_task(prediction_aux, target)
+            loss_task_aux = task_aux_weight * \
+                self.criterion_task(prediction_aux, target)
 
         tie_criterion_args = [feature_logits, concept_logits]
         if not self.tie_loss_wrt_concepts:
