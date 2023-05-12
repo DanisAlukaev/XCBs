@@ -17,7 +17,7 @@ class BaseModel(nn.Module):
         super().__init__()
         assert extractor.out_features == predictor.layers[0]
 
-        self.extractor = extractor
+        self.feature_extractor = extractor
         self.predictor = predictor
         self.interim_activation = interim_activation
 
@@ -27,7 +27,7 @@ class BaseModel(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x, iteration):
-        concept_logits = self.extractor(x)
+        concept_logits = self.feature_extractor(x)
         concept_probs = self.sigmoid(concept_logits)
 
         args = [concept_logits]
@@ -38,8 +38,8 @@ class BaseModel(nn.Module):
         if self.interim_activation:
             concept_activated = self.interim_activation(*args)
 
-        concept_activated = self.bn(concept_activated)
-        prediction = self.predictor(concept_activated)
+        concept_activated_bn = self.bn(concept_activated)
+        prediction = self.predictor(concept_activated_bn)
 
         out_dict = dict(
             concept_logits=concept_logits,
@@ -77,6 +77,8 @@ class LitBaseModel(pl.LightningModule):
         self.optimizer_template = optimizer_template
         self.scheduler_template = scheduler_template
         self.field = field
+
+        # print("Predictor: ", self.main.predictor.main[0].weight)
 
     def forward(self, x, iteration=None):
         out_dict = self.main(x, iteration=iteration)

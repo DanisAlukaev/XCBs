@@ -1,3 +1,4 @@
+import copy
 from functools import partial
 
 import numpy as np
@@ -15,7 +16,7 @@ from models.predictors.mlp import MLPPredictor
 
 class AutoConceptBottleneckModel(nn.Module):
 
-    def __init__(self, feature_extractor, concept_extractor, predictor, interim_activation, temperature=1., predictor_aux=None):
+    def __init__(self, feature_extractor, concept_extractor, predictor, interim_activation, predictor_aux=None):
         super().__init__()
         assert feature_extractor.out_features == predictor.layers[0]
         assert concept_extractor.out_features == predictor.layers[0]
@@ -25,11 +26,12 @@ class AutoConceptBottleneckModel(nn.Module):
         self.predictor = predictor
         self.predictor_aux = predictor_aux
         self.interim_activation = interim_activation
-        self.T = temperature
+        self.interim_activation_aux = copy.deepcopy(interim_activation)
 
         self.has_gumbel_sigmoid = isinstance(interim_activation, GumbelSigmoid)
         self.sigmoid = nn.Sigmoid()
-        self.bn = nn.BatchNorm1d(feature_extractor.out_features)
+        self.bn_visual = nn.BatchNorm1d(feature_extractor.out_features)
+        self.bn_textual = nn.BatchNorm1d(feature_extractor.out_features)
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, images, captions, iteration):
@@ -38,8 +40,18 @@ class AutoConceptBottleneckModel(nn.Module):
         concept_extractor_dict = self.concept_extractor(captions)
         concept_logits = concept_extractor_dict["concept_logits"]
 
-        feature_probs = self.sigmoid(feature_logits / self.T)
-        concept_probs = self.sigmoid(concept_logits / self.T)
+        print((feature_logits.min(), concept_logits.min()),
+              (feature_logits.max(), concept_logits.max()),
+              (feature_logits.abs().min(), concept_logits.abs().min())
+              )
+
+        # print("Features", torch.topk(
+        #     feature_logits.flatten().abs(), 10, largest=False))
+        # print("Concepts", torch.topk(
+        #     concept_logits.flatten().abs(), 10, largest=False))
+
+        feature_probs = self.sigmoid(feature_logits)
+        concept_probs = self.sigmoid(concept_logits)
 
         args = [feature_logits]
         args_aux = [concept_logits]
@@ -51,16 +63,16 @@ class AutoConceptBottleneckModel(nn.Module):
         concept_activated = concept_logits
         if self.interim_activation:
             feature_activated = self.interim_activation(*args)
-            concept_activated = self.interim_activation(*args_aux)
+            concept_activated = self.interim_activation_aux(*args_aux)
 
-        feature_activated = self.bn(feature_activated)
-        concept_activated = self.bn(concept_activated)
+        feature_activated_bn = self.bn_visual(feature_activated)
+        concept_activated_bn = self.bn_textual(concept_activated)
 
-        prediction = self.predictor(feature_activated)
+        prediction = self.predictor(feature_activated_bn)
 
         prediction_aux = None
         if self.predictor_aux:
-            prediction_aux = self.predictor_aux(concept_activated)
+            prediction_aux = self.predictor_aux(concept_activated_bn)
 
         out_dict = dict(
             feature_logits=feature_logits,
@@ -68,6 +80,7 @@ class AutoConceptBottleneckModel(nn.Module):
             feature_probs=feature_probs,
             concept_probs=concept_probs,
             feature_activated=feature_activated,
+            concept_activated=concept_activated,
             prediction=prediction,
             scores=concept_extractor_dict["scores"],
             scores_aux=concept_extractor_dict["scores_aux"]
@@ -83,7 +96,7 @@ class AutoConceptBottleneckModel(nn.Module):
 
     def inference(self, images, iteration=None):
         feature_logits = self.feature_extractor(images)
-        feature_probs = self.sigmoid(feature_logits / self.T)
+        feature_probs = self.sigmoid(feature_logits)
 
         args = [feature_logits]
         if self.has_gumbel_sigmoid:
@@ -93,10 +106,10 @@ class AutoConceptBottleneckModel(nn.Module):
         if self.interim_activation:
             feature_activated = self.interim_activation(*args)
 
-        feature_activated = self.bn(feature_activated)
+        feature_activated = self.bn_visual(feature_activated)
         prediction = self.predictor(feature_activated)
 
-        return self.softmax(prediction)
+        return self.softmax(prediction), feature_probs
 
 
 class LitAutoConceptBottleneckModel(pl.LightningModule):
@@ -108,7 +121,6 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
             concept_extractor=ConceptExtractorAttention(vocab_size=100),
             predictor=MLPPredictor(),
             interim_activation=nn.ReLU(),
-            temperature=1.,
             predictor_aux=None,
         ),
         criterion_task=nn.CrossEntropyLoss(),
@@ -141,6 +153,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.tie_loss_wrt_concepts = tie_loss_wrt_concepts
 
         self.automatic_optimization = False
+        # print("Predictor: ", self.main.predictor.main[0].weight)
 
     def forward(self, images, indices, iteration=None):
         out_dict = self.main(images, indices, iteration=iteration)
@@ -148,9 +161,12 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer_model = self.optimizer_model_template(
-            [*self.main.feature_extractor.parameters(), *self.main.predictor.parameters()])
+            [*self.main.feature_extractor.parameters(), *self.main.bn_visual.parameters(), *self.main.predictor.parameters()])
 
-        parameters_textual = [*self.main.concept_extractor.parameters()]
+        # optimizer_model = self.optimizer_model_template(self.parameters())
+
+        parameters_textual = [
+            *self.main.concept_extractor.parameters(), *self.main.bn_textual.parameters()]
         if self.main.predictor_aux:
             parameters_textual += [*self.main.predictor_aux.parameters()]
         optimizer_concept_extractor = self.optimizer_concept_extractor_template(
@@ -160,6 +176,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         scheduler_concept_extractor = self.scheduler_concept_extractor_template(
             optimizer_concept_extractor)
         return [optimizer_model, optimizer_concept_extractor], [scheduler_model, scheduler_concept_extractor]
+        # return [optimizer_model], [scheduler_model]
 
     def training_step(self, batch, batch_idx):
         images, indices, target = batch["image"], batch["indices"], batch["target"]
@@ -169,6 +186,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
         prediction, feature_probs, concept_probs = out_dict[
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
+
+        # prediction, feature_probs = out_dict["prediction"], out_dict["feature_probs"]
 
         prediction_aux = None
         if "prediction_aux" in out_dict:
@@ -201,7 +220,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         opt_clf.zero_grad()
         opt_tie.zero_grad()
 
-        torch.autograd.set_detect_anomaly(True)
+        # torch.autograd.set_detect_anomaly(True)
 
         self.manual_backward(loss)
         opt_clf.step()
@@ -299,6 +318,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
         prediction, feature_probs, concept_probs = out_dict[
             "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
+
+        prediction, feature_probs = out_dict["prediction"], out_dict["feature_probs"]
 
         prediction_aux = None
         if "prediction_aux" in out_dict:

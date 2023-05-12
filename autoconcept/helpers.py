@@ -3,6 +3,7 @@ import os
 import random
 
 import numpy as np
+import pytorch_lightning as pl
 import requests
 import torch
 from dotenv import load_dotenv
@@ -42,6 +43,9 @@ def load_experiment(path):
     print("Fetching configuration...")
     cfg_path = os.path.join(path, ".hydra/config.yaml")
     cfg = OmegaConf.load(cfg_path)
+
+    set_seed(cfg.seed)
+    pl.seed_everything(cfg.seed, workers=True)
 
     print("Loading datamodule...")
     dm = instantiate(cfg.dataset)
