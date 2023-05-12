@@ -40,8 +40,14 @@ class AutoConceptBottleneckModel(nn.Module):
         concept_extractor_dict = self.concept_extractor(captions)
         concept_logits = concept_extractor_dict["concept_logits"]
 
-        print((feature_logits.min(), concept_logits.min()),
-              (feature_logits.max(), concept_logits.max()))
+        # print((feature_logits.min(), concept_logits.min()),
+        #       (feature_logits.max(), concept_logits.max()),
+        #       (feature_logits.abs().min(), concept_logits.abs().min()))
+
+        print("Features", torch.topk(
+            feature_logits.flatten().abs(), 10, largest=False))
+        print("Concepts", torch.topk(
+            concept_logits.flatten().abs(), 10, largest=False))
 
         feature_probs = self.sigmoid(feature_logits)
         concept_probs = self.sigmoid(concept_logits)
