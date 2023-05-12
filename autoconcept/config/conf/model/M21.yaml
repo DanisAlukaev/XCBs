@@ -61,6 +61,7 @@ criterion_task:
 criterion_tie:
   _target_: functional.loss.JensenShannonDivergenceLoss
   # _target_: functional.loss.KullbackLeiblerDivergenceLoss
+  # _target_: torch.nn.L1Loss
 tie_weight: 10.0
 
 mix_tie_epoch: null

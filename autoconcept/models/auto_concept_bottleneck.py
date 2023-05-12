@@ -184,10 +184,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         iteration = self.trainer.global_step
         out_dict = self(images, indices, iteration=iteration)
 
-        prediction, feature_probs, concept_probs = out_dict[
-            "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
-
-        # prediction, feature_probs = out_dict["prediction"], out_dict["feature_probs"]
+        prediction, feature_logits, concept_logits = out_dict[
+            "prediction"], out_dict["feature_logits"], out_dict["concept_logits"]
 
         prediction_aux = None
         if "prediction_aux" in out_dict:
@@ -202,7 +200,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         if prediction_aux is not None:
             loss_task_aux = self.criterion_task(prediction_aux, target)
 
-        tie_criterion_args = [feature_probs, concept_probs]
+        tie_criterion_args = [feature_logits, concept_logits]
         if not self.tie_loss_wrt_concepts:
             tie_criterion_args = tie_criterion_args[::-1]
         loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
@@ -316,10 +314,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         iteration = self.trainer.global_step
         out_dict = self(images, indices, iteration=iteration)
 
-        prediction, feature_probs, concept_probs = out_dict[
-            "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
-
-        prediction, feature_probs = out_dict["prediction"], out_dict["feature_probs"]
+        prediction, feature_logits, concept_logits = out_dict[
+            "prediction"], out_dict["feature_logits"], out_dict["concept_logits"]
 
         prediction_aux = None
         if "prediction_aux" in out_dict:
@@ -334,7 +330,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         if prediction_aux is not None:
             loss_task_aux = self.criterion_task(prediction_aux, target)
 
-        tie_criterion_args = [feature_probs, concept_probs]
+        tie_criterion_args = [feature_logits, concept_logits]
         if not self.tie_loss_wrt_concepts:
             tie_criterion_args = tie_criterion_args[::-1]
         loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
