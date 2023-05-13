@@ -153,6 +153,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.mix_tie_epoch = mix_tie_epoch
         self.pretrain_embeddings_epoch = pretrain_embeddings_epoch
         self.tie_loss_wrt_concepts = tie_loss_wrt_concepts
+        self.last_iteration = 0
 
         self.automatic_optimization = False
         # print("Predictor: ", self.main.predictor.main[0].weight)
@@ -184,6 +185,11 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         images, indices, target = batch["image"], batch["indices"], batch["target"]
 
         iteration = self.trainer.global_step
+        if self.pretrain_embeddings_epoch:
+            if self.trainer.current_epoch // self.pretrain_embeddings_epoch == 0:
+                self.last_iteration = iteration
+            else:
+                iteration = max(0, iteration - self.last_iteration)
         out_dict = self(images, indices, iteration=iteration)
 
         prediction, feature_logits, concept_logits = out_dict[
@@ -321,6 +327,11 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         images, indices, target = batch["image"], batch["indices"], batch["target"]
 
         iteration = self.trainer.global_step
+        if self.pretrain_embeddings_epoch:
+            if self.trainer.current_epoch // self.pretrain_embeddings_epoch == 0:
+                self.last_iteration = iteration
+            else:
+                iteration = max(0, iteration - self.last_iteration)
         out_dict = self(images, indices, iteration=iteration)
 
         prediction, feature_logits, concept_logits = out_dict[

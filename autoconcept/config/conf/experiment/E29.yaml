@@ -7,7 +7,7 @@ defaults:
 name: E29
 epoch_freeze_backbone: null
 epoch_reinitialize: 0
-max_epochs: 15
+max_epochs: 18
 dataset:
   annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes-hard-2/captions.csv
   collate_fn:

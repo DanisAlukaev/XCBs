@@ -64,6 +64,13 @@ class ReinitializeTextualMLP(Callback):
     def on_train_epoch_end(self, trainer, pl_module):
         if trainer.current_epoch == self.epoch:
             if hasattr(pl_module.main, 'concept_extractor'):
+                torch.nn.init.xavier_uniform_(
+                    pl_module.main.concept_extractor.queries_w.weight)
+                torch.nn.init.xavier_uniform_(
+                    pl_module.main.concept_extractor.values_w.weight)
+                torch.nn.init.xavier_uniform_(
+                    pl_module.main.concept_extractor.keys_w.weight)
+
                 for mlp in pl_module.main.concept_extractor.mlps:
                     for l in mlp.main:
                         if isinstance(l, torch.nn.Linear):

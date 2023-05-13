@@ -64,9 +64,9 @@ criterion_tie:
   # _target_: torch.nn.L1Loss
 tie_weight: 10.0
 
-mix_tie_epoch: 4
+mix_tie_epoch: 6
 
-pretrain_embeddings_epoch: 4
+pretrain_embeddings_epoch: 6
 
 tie_loss_wrt_concepts: true
 
@@ -92,7 +92,7 @@ scheduler_model_template:
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.lr_scheduler.MultiStepLR
-  milestones: [9, 11]
+  milestones: [11, 14]
   gamma: 0.1
 
 scheduler_concept_extractor_template:
@@ -100,5 +100,5 @@ scheduler_concept_extractor_template:
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.lr_scheduler.MultiStepLR
-  milestones: [10, 12]
+  milestones: [12, 15]
   gamma: 0.3
