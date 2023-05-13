@@ -45,8 +45,11 @@ def run(cfg):
         LearningRateMonitor(logging_interval="step"),
         DeviceStatsMonitor(),
         InitializePredictorCallback(),
-        ReinitializeTextualMLP(cfg.model.pretrain_embeddings_epoch)
     ]
+
+    if hasattr(cfg.model, 'pretrain_embeddings_epoch'):
+        trainer_callbacks.append(ReinitializeTextualMLP(
+            cfg.model.pretrain_embeddings_epoch))
 
     if cfg.early_stopper:
         trainer_callbacks += [instantiate(cfg.early_stopper)]
