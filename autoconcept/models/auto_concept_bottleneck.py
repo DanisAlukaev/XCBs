@@ -109,7 +109,7 @@ class AutoConceptBottleneckModel(nn.Module):
         feature_activated = self.bn_visual(feature_activated)
         prediction = self.predictor(feature_activated)
 
-        return self.softmax(prediction), feature_probs
+        return self.softmax(prediction), feature_probs, feature_logits
 
 
 class LitAutoConceptBottleneckModel(pl.LightningModule):
