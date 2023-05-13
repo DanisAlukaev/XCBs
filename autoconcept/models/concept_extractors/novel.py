@@ -174,11 +174,11 @@ class ConceptExtractorAttention(BaseConceptExtractor):
                 # scores_norm = scores.norm(dim=-1)
                 # print(scores_norm)
                 scores_mean = scores.mean(dim=-1)
-                print(scores_mean.min(), scores_mean.max())
+                # print(scores_mean.min(), scores_mean.max())
                 scores_dummy = 1 - self.sigmoid_parametrized(scores_mean)
 
-                print(self.sigmoid_parametrized.c1,
-                      self.sigmoid_parametrized.c2)
+                # print(self.sigmoid_parametrized.c1,
+                #       self.sigmoid_parametrized.c2)
 
                 scores_dummy = scores_dummy.unsqueeze(-1)
 

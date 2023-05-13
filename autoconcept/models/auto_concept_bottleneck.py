@@ -111,6 +111,11 @@ class AutoConceptBottleneckModel(nn.Module):
 
         return self.softmax(prediction), feature_probs, feature_logits
 
+    def inference_textual(self, indices, iteration=None):
+        concept_extractor_dict = self.concept_extractor(indices)
+        concept_logits = concept_extractor_dict["concept_logits"]
+        return concept_logits
+
 
 class LitAutoConceptBottleneckModel(pl.LightningModule):
 
