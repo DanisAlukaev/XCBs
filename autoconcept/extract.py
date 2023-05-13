@@ -20,6 +20,7 @@ def trace_interpretations(dm, model):
 
     # textual part
     distributions = [np.zeros(vocab_size) for _ in range(n_concepts)]
+    dummy_distributions = [0. for _ in range(n_concepts)]
     n_tokens = np.zeros(vocab_size)
 
     itos_map = dm.dataloader_kwargs['collate_fn'].vocabulary.vocab.get_itos()
@@ -30,14 +31,21 @@ def trace_interpretations(dm, model):
         N, _ = input_ids.shape
         out_dict = model.main.concept_extractor(input_ids)
         scores = out_dict["scores"]
+        scores_aux = out_dict["scores_aux"]
+        no_dummy_tokens = scores.shape == scores_aux.shape
 
         for concept_idx in range(n_concepts):
             concept_score = scores[:, concept_idx, :]
+            concept_score_aux = scores_aux[:, concept_idx, -1]
             concept_score = concept_score.squeeze().cpu().detach().numpy()
+            concept_score_aux = concept_score_aux.squeeze().cpu().detach().numpy()
 
             for sample_idx in range(N):
                 sample_token_ids = input_ids[sample_idx]
                 sample_scores = concept_score[sample_idx]
+
+                sample_score_aux = concept_score_aux[sample_idx]
+                dummy_distributions[concept_idx] += sample_score_aux
 
                 for token_idx, token_id in enumerate(sample_token_ids):
                     distributions[concept_idx][token_id] += sample_scores[token_idx]
@@ -45,7 +53,9 @@ def trace_interpretations(dm, model):
                     if concept_idx == n_concepts - 1:
                         n_tokens[token_id] += 1
 
-    distributions = np.array(distributions) / n_tokens
+    dummy_distributions = np.array(
+        dummy_distributions) / len(train_loader.dataset)
+    distributions = np.nan_to_num(np.array(distributions) / n_tokens)
 
     print("Export results...")
     for concept_idx in tqdm(range(n_concepts)):
@@ -58,6 +68,13 @@ def trace_interpretations(dm, model):
             token = itos_map[token_id]
             scores_per_token.append([token, token_score])
 
+        if not no_dummy_tokens:
+            scores_per_token.append(
+                [f"<d{concept_idx}>", dummy_distributions[concept_idx]])
+
+        scores_per_token = sorted(scores_per_token, key=lambda x: x[1])
+        scores_per_token = sorted(
+            scores_per_token, key=lambda x: x[1], reverse=True)
         results[concept_idx]["concept"] = scores_per_token
 
     # visual part
