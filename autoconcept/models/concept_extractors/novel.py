@@ -173,18 +173,18 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
                 # scores_norm = scores.norm(dim=-1)
                 # print(scores_norm)
-                scores_mean = scores.mean(dim=-1)
+                # scores_mean = scores.mean(dim=-1)
                 # print(scores_mean.min(), scores_mean.max())
-                scores_dummy = 1 - self.sigmoid_parametrized(scores_mean)
+                # scores_dummy = 1 - self.sigmoid_parametrized(scores_mean)
 
                 # print(self.sigmoid_parametrized.c1,
                 #       self.sigmoid_parametrized.c2)
 
-                scores_dummy = scores_dummy.unsqueeze(-1)
+                # scores_dummy = scores_dummy.unsqueeze(-1)
 
-                # scores_dummy = self.norm_fn1(attn_dummy_logits)
-                # scores_dummy = torch.diagonal(scores_dummy, 0)
-                # scores_dummy = scores_dummy.expand(N, -1, -1)
+                scores_dummy = self.norm_fn1(attn_dummy_logits)
+                scores_dummy = torch.diagonal(scores_dummy, 0)
+                scores_dummy = scores_dummy.expand(N, -1, -1)
 
                 scores = scores.masked_fill(mask == 0, 0)
                 scores = torch.cat((scores, scores_dummy), dim=2)
