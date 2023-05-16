@@ -36,14 +36,15 @@ class AutoConceptBottleneckModel(nn.Module):
 
     def forward(self, images, captions, iteration):
         feature_logits = self.feature_extractor(images)
+        print(feature_logits[:, 0].min(), feature_logits[:, 0].max())
 
         concept_extractor_dict = self.concept_extractor(captions)
         concept_logits = concept_extractor_dict["concept_logits"]
 
-        print((feature_logits.min(), concept_logits.min()),
-              (feature_logits.max(), concept_logits.max()),
-              (feature_logits.abs().min(), concept_logits.abs().min())
-              )
+        # print((feature_logits.min(), concept_logits.min()),
+        #       (feature_logits.max(), concept_logits.max()),
+        #       (feature_logits.abs().min(), concept_logits.abs().min())
+        #       )
 
         # print("Features", torch.topk(
         #     feature_logits.flatten().abs(), 10, largest=False))
