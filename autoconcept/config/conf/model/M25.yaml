@@ -6,7 +6,7 @@ main:
   feature_extractor:
     _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
     model: inception_v3
-    weights: IMAGENET1K_V1
+    weights: null
     out_features: 10
 
   concept_extractor:
@@ -17,7 +17,7 @@ main:
     max_len: 30
     src_pad_idx: 0
     dropout: 0.
-    use_slot_norm: true
+    use_slot_norm: false
     norm_fn1:
       # _target_: functional.activation.Entmax15
       _target_: torch.nn.Softmax
@@ -25,7 +25,7 @@ main:
     norm_fn2:
       _target_: functional.operations.ScalerSum
       dim: -1
-    regularize_distance: true
+    regularize_distance: false
     use_position_encoding: true
     mlp_depth: 4
     use_dummy_attention: true
@@ -53,7 +53,7 @@ main:
     activation:
       _target_: torch.nn.ReLU
 
-dist_weight: 1.0
+dist_weight: 0.0
 
 criterion_task:
   _target_: torch.nn.CrossEntropyLoss

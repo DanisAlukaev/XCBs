@@ -53,3 +53,28 @@ class InitializePredictorCallback(Callback):
                         print(l.weight)
                 print(
                     f"Predictor was initialized on {trainer.current_epoch} epoch!")
+
+
+class ReinitializeTextualMLP(Callback):
+
+    def __init__(self, epoch):
+        super().__init__()
+        self.epoch = epoch
+
+    def on_train_epoch_end(self, trainer, pl_module):
+        if trainer.current_epoch == self.epoch:
+            if hasattr(pl_module.main, 'concept_extractor'):
+                torch.nn.init.xavier_uniform_(
+                    pl_module.main.concept_extractor.queries_w.weight)
+                torch.nn.init.xavier_uniform_(
+                    pl_module.main.concept_extractor.values_w.weight)
+                torch.nn.init.xavier_uniform_(
+                    pl_module.main.concept_extractor.keys_w.weight)
+
+                for mlp in pl_module.main.concept_extractor.mlps:
+                    for l in mlp.main:
+                        if isinstance(l, torch.nn.Linear):
+                            torch.nn.init.xavier_uniform_(l.weight)
+                            print(l.weight)
+                    print(
+                        f"MLPs in concept extractor was re-initialized on {trainer.current_epoch} epoch!")

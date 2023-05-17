@@ -4,11 +4,11 @@ import traceback
 import hydra
 import pytorch_lightning as pl
 from callbacks import (FreezingCallback, InitializePredictorCallback,
-                       ReinitializeBottleneckCallback)
+                       ReinitializeBottleneckCallback, ReinitializeTextualMLP)
 from clearml import Task
 from extract import trace_interpretations
-from helpers import pretty_cfg, report_to_telegram, set_seed
-from hydra.utils import get_class, instantiate
+from helpers import load_experiment, pretty_cfg, report_to_telegram, set_seed
+from hydra.utils import instantiate
 from omegaconf import DictConfig
 from pytorch_lightning.callbacks import (DeviceStatsMonitor,
                                          LearningRateMonitor, ModelCheckpoint)
@@ -47,6 +47,10 @@ def run(cfg):
         InitializePredictorCallback(),
     ]
 
+    if hasattr(cfg.model, 'pretrain_embeddings_epoch'):
+        trainer_callbacks.append(ReinitializeTextualMLP(
+            cfg.model.pretrain_embeddings_epoch))
+
     if cfg.early_stopper:
         trainer_callbacks += [instantiate(cfg.early_stopper)]
 
@@ -69,14 +73,20 @@ def run(cfg):
     )
     trainer.fit(model, train_loader, val_loader)
 
-    checkpoint_path = checkpoint_callback.best_model_path
-    target_class = get_class(cfg.model._target_)
-    main = instantiate(cfg.model.main)
-    inference = target_class.load_from_checkpoint(checkpoint_path, main=main)
-    f1_test = trainer.test(inference, test_loader)[
-        0]['test/weighted_avg/f1-score']
+    dm, inference = load_experiment(".")
 
     trace_interpretations(dm, inference)
+
+    # checkpoint_path = checkpoint_callback.best_model_path
+
+    # target_class = get_class(cfg.model._target_)
+    # main = instantiate(cfg.model.main)
+    # inference = target_class.load_from_checkpoint(
+    #     checkpoint_path, main=main).cuda()
+    # inference = inference.eval()
+
+    f1_test = trainer.test(inference, test_loader)[
+        0]['test/weighted_avg/f1-score']
 
     return f1_test
 

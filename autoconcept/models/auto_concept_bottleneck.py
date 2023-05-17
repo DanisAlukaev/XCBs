@@ -36,14 +36,15 @@ class AutoConceptBottleneckModel(nn.Module):
 
     def forward(self, images, captions, iteration):
         feature_logits = self.feature_extractor(images)
+        print(feature_logits[:, 0].min(), feature_logits[:, 0].max())
 
         concept_extractor_dict = self.concept_extractor(captions)
         concept_logits = concept_extractor_dict["concept_logits"]
 
-        print((feature_logits.min(), concept_logits.min()),
-              (feature_logits.max(), concept_logits.max()),
-              (feature_logits.abs().min(), concept_logits.abs().min())
-              )
+        # print((feature_logits.min(), concept_logits.min()),
+        #       (feature_logits.max(), concept_logits.max()),
+        #       (feature_logits.abs().min(), concept_logits.abs().min())
+        #       )
 
         # print("Features", torch.topk(
         #     feature_logits.flatten().abs(), 10, largest=False))
@@ -109,7 +110,12 @@ class AutoConceptBottleneckModel(nn.Module):
         feature_activated = self.bn_visual(feature_activated)
         prediction = self.predictor(feature_activated)
 
-        return self.softmax(prediction), feature_probs
+        return self.softmax(prediction), feature_probs, feature_logits
+
+    def inference_textual(self, indices, iteration=None):
+        concept_extractor_dict = self.concept_extractor(indices)
+        concept_logits = concept_extractor_dict["concept_logits"]
+        return concept_logits
 
 
 class LitAutoConceptBottleneckModel(pl.LightningModule):
@@ -135,6 +141,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         tie_weight=10,
         dist_weight=0.1,
         mix_tie_epoch=50,
+        pretrain_embeddings_epoch=50,
         tie_loss_wrt_concepts=True,
     ):
         super().__init__()
@@ -150,7 +157,9 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.tie_weight = tie_weight
         self.dist_weight = dist_weight
         self.mix_tie_epoch = mix_tie_epoch
+        self.pretrain_embeddings_epoch = pretrain_embeddings_epoch
         self.tie_loss_wrt_concepts = tie_loss_wrt_concepts
+        self.last_iteration = 0
 
         self.automatic_optimization = False
         # print("Predictor: ", self.main.predictor.main[0].weight)
@@ -182,12 +191,15 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         images, indices, target = batch["image"], batch["indices"], batch["target"]
 
         iteration = self.trainer.global_step
+        if self.pretrain_embeddings_epoch:
+            if self.trainer.current_epoch // self.pretrain_embeddings_epoch == 0:
+                self.last_iteration = iteration
+            else:
+                iteration = max(0, iteration - self.last_iteration)
         out_dict = self(images, indices, iteration=iteration)
 
-        prediction, feature_probs, concept_probs = out_dict[
-            "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
-
-        # prediction, feature_probs = out_dict["prediction"], out_dict["feature_probs"]
+        prediction, feature_logits, concept_logits = out_dict[
+            "prediction"], out_dict["feature_logits"], out_dict["concept_logits"]
 
         prediction_aux = None
         if "prediction_aux" in out_dict:
@@ -197,12 +209,19 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
             tie_weight, dist_weight = 0, 0
 
-        loss_task = self.criterion_task(prediction, target)
+        task_weight, task_aux_weight = 1.0, 0.0
+        if not self.pretrain_embeddings_epoch:
+            task_aux_weight = 1.0
+        if self.pretrain_embeddings_epoch and self.trainer.current_epoch // self.pretrain_embeddings_epoch == 0:
+            task_weight, task_aux_weight = 0, 1.0
+
+        loss_task = task_weight * self.criterion_task(prediction, target)
         loss_task_aux = None
         if prediction_aux is not None:
-            loss_task_aux = self.criterion_task(prediction_aux, target)
+            loss_task_aux = task_aux_weight * \
+                self.criterion_task(prediction_aux, target)
 
-        tie_criterion_args = [feature_probs, concept_probs]
+        tie_criterion_args = [feature_logits, concept_logits]
         if not self.tie_loss_wrt_concepts:
             tie_criterion_args = tie_criterion_args[::-1]
         loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
@@ -314,12 +333,15 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         images, indices, target = batch["image"], batch["indices"], batch["target"]
 
         iteration = self.trainer.global_step
+        if self.pretrain_embeddings_epoch:
+            if self.trainer.current_epoch // self.pretrain_embeddings_epoch == 0:
+                self.last_iteration = iteration
+            else:
+                iteration = max(0, iteration - self.last_iteration)
         out_dict = self(images, indices, iteration=iteration)
 
-        prediction, feature_probs, concept_probs = out_dict[
-            "prediction"], out_dict["feature_probs"], out_dict["concept_probs"]
-
-        prediction, feature_probs = out_dict["prediction"], out_dict["feature_probs"]
+        prediction, feature_logits, concept_logits = out_dict[
+            "prediction"], out_dict["feature_logits"], out_dict["concept_logits"]
 
         prediction_aux = None
         if "prediction_aux" in out_dict:
@@ -329,12 +351,19 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         if self.mix_tie_epoch and self.trainer.current_epoch // self.mix_tie_epoch == 0:
             tie_weight, dist_weight = 0, 0
 
-        loss_task = self.criterion_task(prediction, target)
+        task_weight, task_aux_weight = 1.0, 0.0
+        if not self.pretrain_embeddings_epoch:
+            task_aux_weight = 1.0
+        if self.pretrain_embeddings_epoch and self.trainer.current_epoch // self.pretrain_embeddings_epoch == 0:
+            task_weight, task_aux_weight = 0, 1.0
+        loss_task = task_weight * self.criterion_task(prediction, target)
+
         loss_task_aux = None
         if prediction_aux is not None:
-            loss_task_aux = self.criterion_task(prediction_aux, target)
+            loss_task_aux = task_aux_weight * \
+                self.criterion_task(prediction_aux, target)
 
-        tie_criterion_args = [feature_probs, concept_probs]
+        tie_criterion_args = [feature_logits, concept_logits]
         if not self.tie_loss_wrt_concepts:
             tie_criterion_args = tie_criterion_args[::-1]
         loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)

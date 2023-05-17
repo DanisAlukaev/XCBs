@@ -26,7 +26,12 @@ class TorchvisionFeatureExtractor(BaseFeatureExtractor):
         except AttributeError:
             raise ValueError(
                 f"Backbone '{self.backbone_name}' is not supported!")
+
         backbone = constructor(weights=self.weights)
+        # if not self.weights:
+        #     for layer in backbone.children():
+        #         if hasattr(layer, 'reset_parameters'):
+        #             layer.reset_parameters()
 
         if backbone.fc.out_features != self.out_features:
             backbone.fc = nn.Linear(backbone.fc.in_features, self.out_features)
