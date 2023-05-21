@@ -6,7 +6,7 @@ main:
   extractor:
     _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
     model: inception_v3
-    weights: IMAGENET1K_V1
+    weights: null # IMAGENET1K_V1
     out_features: 10
 
   predictor:

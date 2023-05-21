@@ -1,3 +1,5 @@
+import torch
+import torch.nn as nn
 from sklearn.metrics import (accuracy_score, balanced_accuracy_score,
                              classification_report, f1_score, hamming_loss)
 
@@ -45,3 +47,8 @@ def retrieve(x, flatten=True):
     if flatten:
         return x.detach().cpu().numpy().flatten()
     return x.detach().cpu().numpy()
+
+
+def weights_init(m):
+    if isinstance(m, nn.Conv2d):
+        torch.nn.init.xavier_uniform(m.weight.data)

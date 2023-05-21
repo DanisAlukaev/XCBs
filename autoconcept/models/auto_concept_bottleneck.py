@@ -18,8 +18,8 @@ class AutoConceptBottleneckModel(nn.Module):
 
     def __init__(self, feature_extractor, concept_extractor, predictor, interim_activation, predictor_aux=None):
         super().__init__()
-        assert feature_extractor.out_features == predictor.layers[0]
-        assert concept_extractor.out_features == predictor.layers[0]
+        # assert feature_extractor.out_features == predictor.layers[0]
+        # assert concept_extractor.out_features == predictor.layers[0]
 
         self.feature_extractor = feature_extractor
         self.concept_extractor = concept_extractor

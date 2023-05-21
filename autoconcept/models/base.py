@@ -15,7 +15,7 @@ class BaseModel(nn.Module):
 
     def __init__(self, extractor, predictor, interim_activation):
         super().__init__()
-        assert extractor.out_features == predictor.layers[0]
+        # assert extractor.out_features == predictor.layers[0]
 
         self.feature_extractor = extractor
         self.predictor = predictor

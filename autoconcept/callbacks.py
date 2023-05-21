@@ -1,5 +1,6 @@
 import torch
 from models.feature_extractors.torchvision import TorchvisionFeatureExtractor
+from models.helpers import weights_init
 from models.predictors.mlp import MLPPredictor
 from pytorch_lightning.callbacks import Callback
 
@@ -78,3 +79,16 @@ class ReinitializeTextualMLP(Callback):
                             print(l.weight)
                     print(
                         f"MLPs in concept extractor was re-initialized on {trainer.current_epoch} epoch!")
+
+
+class InitializeInceptionCallback(Callback):
+
+    def __init__(self):
+        super().__init__()
+
+    def on_train_epoch_start(self, trainer, pl_module):
+        if hasattr(pl_module.main, 'feature_extractor'):
+            if trainer.current_epoch == 0:
+                pl_module.main.feature_extractor.main.apply(weights_init)
+                print(
+                    "Inception: ", pl_module.main.feature_extractor.main.Conv2d_1a_3x3.conv.weight)

@@ -3,7 +3,8 @@ import traceback
 
 import hydra
 import pytorch_lightning as pl
-from callbacks import (FreezingCallback, InitializePredictorCallback,
+from callbacks import (FreezingCallback, InitializeInceptionCallback,
+                       InitializePredictorCallback,
                        ReinitializeBottleneckCallback, ReinitializeTextualMLP)
 from clearml import Task
 from extract import trace_interpretations
@@ -45,6 +46,7 @@ def run(cfg):
         LearningRateMonitor(logging_interval="step"),
         DeviceStatsMonitor(),
         InitializePredictorCallback(),
+        InitializeInceptionCallback(),
     ]
 
     if hasattr(cfg.model, 'pretrain_embeddings_epoch'):
