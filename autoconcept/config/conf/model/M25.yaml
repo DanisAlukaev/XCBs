@@ -25,7 +25,7 @@ main:
     norm_fn2:
       _target_: functional.operations.ScalerSum
       dim: -1
-    regularize_distance: true
+    regularize_distance: false
     use_position_encoding: true
     mlp_depth: 4
     use_dummy_attention: true
