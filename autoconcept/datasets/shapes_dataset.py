@@ -1,6 +1,9 @@
 
+import random
+
 import albumentations as A
 import cv2
+import numpy
 import numpy as np
 import pandas as pd
 import torch
@@ -9,6 +12,12 @@ from datasets.collators import CollateIndices
 from datasets.utils import VocabularyShapes
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
+
+
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    numpy.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 
 class JointDataset(Dataset):
@@ -149,27 +158,39 @@ class JointDataModule(LightningDataModule):
 
     def train_dataloader(self):
         train_dataset = self.train_dataset
+        g = torch.Generator()
+        g.manual_seed(0)
         return DataLoader(
             train_dataset,
             shuffle=self.shuffle_train,
             **self.dataloader_kwargs,
-            # pin_memory=True
+            # pin_memory=True,
+            # generator=g,
+            # worker_init_fn=seed_worker,
         )
 
     def val_dataloader(self):
         val_dataset = self.val_dataset
+        g = torch.Generator()
+        g.manual_seed(0)
         return DataLoader(
             val_dataset,
             **self.dataloader_kwargs,
-            # pin_memory=True
+            # pin_memory=True,
+            # generator=g,
+            # worker_init_fn=seed_worker,
         )
 
     def test_dataloader(self):
         test_dataset = self.test_dataset
+        g = torch.Generator()
+        g.manual_seed(0)
         return DataLoader(
             test_dataset,
             **self.dataloader_kwargs,
-            # pin_memory=True
+            # pin_memory=True,
+            # generator=g,
+            # worker_init_fn=seed_worker,
         )
 
 

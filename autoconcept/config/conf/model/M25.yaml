@@ -25,7 +25,7 @@ main:
     norm_fn2:
       _target_: functional.operations.ScalerSum
       dim: -1
-    regularize_distance: false
+    regularize_distance: true
     use_position_encoding: true
     mlp_depth: 4
     use_dummy_attention: true
@@ -53,7 +53,7 @@ main:
     activation:
       _target_: torch.nn.ReLU
 
-dist_weight: 0.0
+dist_weight: 1.0
 
 criterion_task:
   _target_: torch.nn.CrossEntropyLoss
