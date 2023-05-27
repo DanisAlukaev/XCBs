@@ -3,9 +3,7 @@ import traceback
 
 import hydra
 import pytorch_lightning as pl
-from callbacks import (FreezingCallback, InitializeInceptionCallback,
-                       InitializePredictorCallback,
-                       ReinitializeBottleneckCallback, ReinitializeTextualMLP)
+from callbacks import ReinitializeTextualMLP
 from clearml import Task
 from extract import trace_interpretations
 from helpers import load_experiment, pretty_cfg, report_to_telegram, set_seed
@@ -45,8 +43,8 @@ def run(cfg):
         checkpoint_callback,
         LearningRateMonitor(logging_interval="step"),
         DeviceStatsMonitor(),
-        InitializePredictorCallback(),
-        InitializeInceptionCallback(),
+        # InitializePredictorCallback(),
+        # InitializeInceptionCallback(),
     ]
 
     if hasattr(cfg.model, 'pretrain_embeddings_epoch'):
@@ -56,14 +54,14 @@ def run(cfg):
     if cfg.early_stopper:
         trainer_callbacks += [instantiate(cfg.early_stopper)]
 
-    if isinstance(cfg.epoch_freeze_backbone, int):
-        print("Freezing callback activated ")
-        trainer_callbacks += [
-            FreezingCallback(cfg.epoch_freeze_backbone)]
+    # if isinstance(cfg.epoch_freeze_backbone, int):
+    #     print("Freezing callback activated ")
+    #     trainer_callbacks += [
+    #         FreezingCallback(cfg.epoch_freeze_backbone)]
 
-    if isinstance(cfg.epoch_reinitialize, int):
-        trainer_callbacks += [
-            ReinitializeBottleneckCallback(cfg.epoch_reinitialize)]
+    # if isinstance(cfg.epoch_reinitialize, int):
+    #     trainer_callbacks += [
+        # ReinitializeBottleneckCallback(cfg.epoch_reinitialize)]
 
     trainer = pl.Trainer(
         max_epochs=cfg.max_epochs,
