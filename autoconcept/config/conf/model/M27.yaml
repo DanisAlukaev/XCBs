@@ -45,7 +45,7 @@ main:
     step: 75
     t: 1.0
     rate: 0.001
-    min_val: 0.5
+    min_val: 0.05
 
   predictor_aux:
     _target_: models.predictors.mlp.MLPPredictor
@@ -62,7 +62,7 @@ criterion_tie:
   _target_: functional.loss.JensenShannonDivergenceLoss
   # _target_: functional.loss.KullbackLeiblerDivergenceLoss
   # _target_: torch.nn.L1Loss
-tie_weight: 10.0
+tie_weight: 0.0
 
 mix_tie_epoch: null
 
