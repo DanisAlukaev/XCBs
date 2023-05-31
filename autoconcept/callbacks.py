@@ -35,9 +35,9 @@ class ReinitializeBottleneckCallback(Callback):
                 # pl_module.main.feature_extractor.main.fc.reset_parameters()
                 torch.nn.init.xavier_uniform_(
                     pl_module.main.feature_extractor.main.fc.weight)
-                print(pl_module.main.feature_extractor.main.fc.weight)
-                print(
-                    f"Bottleneck was re-initialized on {trainer.current_epoch} epoch!")
+                # print(pl_module.main.feature_extractor.main.fc.weight)
+                # print(
+                #     f"Bottleneck was re-initialized on {trainer.current_epoch} epoch!")
 
 
 class InitializePredictorCallback(Callback):
@@ -51,9 +51,9 @@ class InitializePredictorCallback(Callback):
                 for l in pl_module.main.predictor.main:
                     if isinstance(l, torch.nn.Linear):
                         torch.nn.init.xavier_uniform_(l.weight)
-                        print(l.weight)
-                print(
-                    f"Predictor was initialized on {trainer.current_epoch} epoch!")
+                #         print(l.weight)
+                # print(
+                #     f"Predictor was initialized on {trainer.current_epoch} epoch!")
 
 
 class ReinitializeTextualMLP(Callback):
@@ -76,9 +76,9 @@ class ReinitializeTextualMLP(Callback):
                     for l in mlp.main:
                         if isinstance(l, torch.nn.Linear):
                             torch.nn.init.xavier_uniform_(l.weight)
-                            print(l.weight)
-                    print(
-                        f"MLPs in concept extractor was re-initialized on {trainer.current_epoch} epoch!")
+                            # print(l.weight)
+                    # print(
+                    #     f"MLPs in concept extractor was re-initialized on {trainer.current_epoch} epoch!")
 
 
 class InitializeInceptionCallback(Callback):
@@ -90,5 +90,5 @@ class InitializeInceptionCallback(Callback):
         if hasattr(pl_module.main, 'feature_extractor'):
             if trainer.current_epoch == 0:
                 pl_module.main.feature_extractor.main.apply(weights_init)
-                print(
-                    "Inception: ", pl_module.main.feature_extractor.main.Conv2d_1a_3x3.conv.weight)
+                # print(
+                #     "Inception: ", pl_module.main.feature_extractor.main.Conv2d_1a_3x3.conv.weight)

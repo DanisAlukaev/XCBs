@@ -35,8 +35,12 @@ class AutoConceptBottleneckModel(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, images, captions, iteration):
+        # print("Inception: ", self.feature_extractor.main.Conv2d_1a_3x3.conv.weight)
+        # print("Feature extractor fc: ", self.feature_extractor.main.fc.weight)
+        # print("Predictor: ", self.predictor.main[0].weight)
+
         feature_logits = self.feature_extractor(images)
-        print(feature_logits[:, 0].min(), feature_logits[:, 0].max())
+        # print(feature_logits[:, 0].min(), feature_logits[:, 0].max())
 
         concept_extractor_dict = self.concept_extractor(captions)
         concept_logits = concept_extractor_dict["concept_logits"]
@@ -163,6 +167,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
         self.automatic_optimization = False
         # print("Predictor: ", self.main.predictor.main[0].weight)
+        # print("BatchNorm: ", self.main.bn_visual.weight, self.main.bn_visual.bias)
 
     def forward(self, images, indices, iteration=None):
         out_dict = self.main(images, indices, iteration=iteration)
@@ -189,6 +194,8 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         images, indices, target = batch["image"], batch["indices"], batch["target"]
+
+        print("target: ", target)
 
         iteration = self.trainer.global_step
         if self.pretrain_embeddings_epoch:
@@ -227,6 +234,7 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         loss_tie = tie_weight * self.criterion_tie(*tie_criterion_args)
 
         loss = loss_task + loss_tie
+
         if loss_task_aux is not None:
             loss += loss_task_aux
 
