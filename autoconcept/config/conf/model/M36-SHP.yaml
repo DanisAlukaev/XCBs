@@ -40,7 +40,12 @@ main:
       _target_: torch.nn.ReLU
 
   interim_activation:
-    _target_: torch.nn.ReLU
+    _target_: torch.nn.Sigmoid
+    # _target_: functional.gumbel.GumbelSigmoid
+    # step: 15
+    # t: 1.0
+    # rate: 0.0035
+    # min_val: 0.001
 
   predictor_aux:
     _target_: models.predictors.mlp.MLPPredictor
@@ -55,6 +60,8 @@ criterion_task:
 
 criterion_tie:
   _target_: functional.loss.JensenShannonDivergenceLoss
+  # _target_: functional.loss.KullbackLeiblerDivergenceLoss
+  # _target_: torch.nn.L1Loss
 tie_weight: 0.0
 
 mix_tie_epoch: null
