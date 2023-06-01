@@ -1,7 +1,13 @@
-download_data: create_data_dir download_coco download_cub download_mimic
+download_data: create_data_dir download_shapes download_coco download_cub download_mimic
 
 create_data_dir:
 	mkdir -p data/; \
+
+download_shapes:
+	cd data/; \
+	wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1rHhva_-GS-xUOomhIgCPgnE0lrvh9-eL' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1rHhva_-GS-xUOomhIgCPgnE0lrvh9-eL" -O shapes.zip && rm -rf /tmp/cookies.txt; \
+	unzip shapes.zip; \
+	rm *.zip; \
 
 download_coco:
 	cd data/; \
