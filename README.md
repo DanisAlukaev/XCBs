@@ -9,7 +9,7 @@
     ```
     make download_data
     ```
-3. Prerocess datasets
+3. Pre-process datasets
     ```
     # CUB-200
     make preprocess_cub
