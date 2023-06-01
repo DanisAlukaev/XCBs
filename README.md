@@ -33,7 +33,7 @@
 
 ## 🧬 Experiments
 
-| Model     | EID         | activation | norm_fn  | slot_norm | reg_dist | tie_loss   |  F1-score     | Disentanglement | Completeness    | Directory      |
+| Model     | EID         | act_fn | norm_fn  | slot_norm | reg_dist | tie_loss   |  F1-score     | D-score | C-score    | Directory      |
 |:------------|:-----------:|:-----------:|:--------:|:---------:|:--------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
 | Baseline | E35-SHP | relu | - | - | - | - | X | X | X | X  |
 | Baseline | E36-SHP | sigmoid | - | - | - | - | X | X | X | X  |
