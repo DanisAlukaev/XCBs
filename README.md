@@ -4,7 +4,7 @@
 ## Getting Started
 1. Set-up conda environment
 ```
-conda create --name bottleneck --file requirements.txt python=3.10
+conda create --name bottleneck --file requirements.txt python=3.10.8
 ```
 2. Download public datasets
 ```
