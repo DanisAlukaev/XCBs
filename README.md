@@ -1,26 +1,38 @@
 # Automatic Concept Bottleneck Models
-| [📈 ClearML](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments) |
 
-## Getting Started
+## 🚀 Getting Started
 1. Set-up conda environment
-```
-conda create --name bottleneck --file requirements.txt python=3.10.8
-```
+    ```
+    conda create --name bottleneck --file requirements.txt python=3.10.8
+    ```
 2. Download public datasets
-```
-make download_data
-```
-3. Prerocess datasets
-```
-# CUB-200
-make preprocess_cub
+    ```
+    make download_data
+    ```
+3. Pre-process datasets
+    ```
+    # CUB-200
+    make preprocess_cub
 
-# MIMIC-CXR
-make preprocess_mimic
-```
+    # MIMIC-CXR
+    make preprocess_mimic
+    ```
+4. You are ready to run your first experiment!
+    ```
+    python main.py dataset.batch_size=64 seed=42 +experiment={XXX}
+    ```
+
+## 🤔 FAQ
+
+1. How can I retrieve explanations?
+    > Our pipeline saves explanations in `results.json`, which can be found in experiment folder. For visualization you can use [`inspect.ipynb`](./autoconcept/inspect.ipynb) notebook.
+
+2. How can I assess my model in terms of DCI?
+    > Measuring disentanglement, completeness, informativeness is moved outside the default pipeline and can be performed via [`metrics.ipynb`](./autoconcept/metrics.ipynb) notebook.
 
 
-## Experiments
+## 🧬 Experiments
+
 | EID   | MID | Model name | Description | Task | Runs |
 | ----:| :--- | :---  | :----       | :--- |:--- |
 | [E01](autoconcept/config/conf/experiment/E01.yaml) | [M01](autoconcept/config/conf/model/M01.yaml) | Unrestricted Bottleneck Model | Visual feature extractor + predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/45290810b6594c90bd67599f9a9eb948), [[2]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/7acaef594d8e4785b0259341ed68d619), [[3]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/46375d4209234e33abb4c9db98fee285/info-output/metrics/scalar) |
@@ -34,8 +46,3 @@ make preprocess_mimic
 | [E09](autoconcept/config/conf/experiment/E09.yaml) | [M09](autoconcept/config/conf/model/M09.yaml) | Transformer Classifier | Transformer concept extractor + predictor (see issue [#22](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/22)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/1586fc7eb35b43e9a20123eac86d394d) |
 | [E10](autoconcept/config/conf/experiment/E10.yaml) | [M10](autoconcept/config/conf/model/M10.yaml) | Automatic Concept Bottleneck | Visual feature extractor + transformer concept extractor + predictor (see issue [#24](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/24)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/b7b4c971f26b4ca0b931c2bd286da8cf) |
 | [E10-1](autoconcept/config/conf/experiment/E10-1.yaml) | [M10](autoconcept/config/conf/model/M10.yaml) | Automatic Concept Bottleneck | Visual feature extractor + transformer concept extractor + predictor + freezing callback (see issue [#26](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/26)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/6f6609392f404f0080bbfc189ceb62a8) |
-
-## How to run?
-```
-python main.py dataset.batch_size=64 seed=42 +experiment={XXX}
-```
