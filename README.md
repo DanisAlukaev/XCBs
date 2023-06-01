@@ -47,5 +47,3 @@
 | Framework | E44-SHP | gumbel | entmax | ✓ | ✗ | JS | X | X | X | X  |
 | Framework | E45-SHP | gumbel | softmax | ✗ | ✓ | JS | X | X | X | X  |
 | Framework | E46-SHP | gumbel | entmax | ✗ | ✓ | JS | X | X | X | X  |
-|  |  |  |  |  |  |  |  |  |  | - |
-| Baseline    | EXX-SHP     | sigmoid | entmax   |  ✗ | ✓ | KL (w.r.t. $c$) | 0.000 ± 0.0   | 0.000 ± 0.0     | 0.000 ± 0.0     | -              |
