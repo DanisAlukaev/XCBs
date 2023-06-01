@@ -1,0 +1,22 @@
+# @package _global_
+
+defaults:
+  - override /model: M28
+  - override /dataset: mimic
+
+name: E34
+epoch_freeze_backbone: null
+epoch_reinitialize: 0
+max_epochs: 100
+dataset:
+  img_size: 299
+  img_dir: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/images
+  annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/annotation.csv
+  collate_fn:
+    _target_: datasets.collators.CollateIndices
+    vocabulary:
+      _target_: datasets.utils.VocabularyMimic
+      annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/annotation.csv
+  num_workers: 10
+devices:
+  - 0
