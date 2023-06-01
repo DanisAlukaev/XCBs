@@ -33,15 +33,15 @@
 
 ## 🧬 Experiments
 
-| Model     | EID         | act_fn | norm_fn  | slot_norm | reg_dist | tie_loss   |  F1-score     | D-score | C-score    | Directory      |
+| Model     | EID-DATASET         | act_fn | norm_fn  | slot_norm | reg_dist | tie_loss   |  Performance (F1-score)   | Disentanglement | Completeness    | Directory      |
 |:------------|:-----------:|:-----------:|:--------:|:---------:|:--------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
 | Baseline | E35-SHP | relu | - | - | - | - | X | X | X | X  |
 | Baseline | E36-SHP | sigmoid | - | - | - | - | X | X | X | X  |
 | Baseline | E37-SHP | gumbel | - | - | - | - | X | X | X | X  |
 | Framework | E38-SHP | sigmoid | softmax | ✗ | ✗ | JS | X | X | X | X  |
 | Framework | E39-SHP | gumbel | softmax | ✗ | ✗ | JS | X | X | X | X  |
-| Framework | E40-SHP | gumbel | softmax | ✗ | ✗ | KL (w.r.t. $f$) | X | X | X | X  |
-| Framework | E41-SHP | gumbel | softmax | ✗ | ✗ | KL (w.r.t. $c$) | X | X | X | X  |
+| Framework | E40-SHP | gumbel | softmax | ✗ | ✗ | KL($f$, $c$) | X | X | X | X  |
+| Framework | E41-SHP | gumbel | softmax | ✗ | ✗ | KL($c$, $f$) | X | X | X | X  |
 | Framework | E42-SHP | gumbel | entmax | ✗ | ✗ | JS | X | X | X | X  |
 | Framework | E43-SHP | gumbel | softmax | ✓ | ✗ | JS | X | X | X | X  |
 | Framework | E44-SHP | gumbel | entmax | ✓ | ✗ | JS | X | X | X | X  |
