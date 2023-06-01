@@ -35,7 +35,7 @@
 
 | Model     | EID-DATASET         | act_fn | norm_fn  | slot_norm | reg_dist | tie_loss   |  Performance (F1-score)   | Disentanglement | Completeness    | Directory      |
 |:------------|:-----------:|:-----------:|:--------:|:---------:|:--------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
-| Baseline | E35-SHP | relu | - | - | - | - | X | X | X | X  |
+| Baseline | E35-SHP | relu | - | - | - | - | 0.994 ± 0.0 | 0.520 ± 0.0 | 0.542 ± 0.0 | `outputs/2023-06-01/20-42-08` |
 | Baseline | E36-SHP | sigmoid | - | - | - | - | X | X | X | X  |
 | Baseline | E37-SHP | gumbel | - | - | - | - | X | X | X | X  |
 | Framework | E38-SHP | sigmoid | softmax | ✗ | ✗ | JS | X | X | X | X  |
