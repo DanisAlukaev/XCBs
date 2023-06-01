@@ -56,6 +56,7 @@ class MimicDataset(Dataset):
             report=report,
             target_one_hot=target,
             attributes=attributes,
+            target=target,
         )
 
         return sample
@@ -118,7 +119,8 @@ class MimicDataModule(LightningDataModule):
 
         # default augmentations were taken from the paper "Concept Bottleneck Models"
         self.pre_transforms = []
-        self.post_transforms = [A.Normalize(), ToTensorV2()]
+        self.post_transforms = [A.Normalize(), A.augmentations.geometric.resize.Resize(
+            self.img_size, self.img_size), ToTensorV2()]
 
     def prepare_data_per_node(self):
         pass
