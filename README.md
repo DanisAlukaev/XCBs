@@ -1,23 +1,34 @@
 # Automatic Concept Bottleneck Models
-| [📈 ClearML](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments) |
 
-## Getting Started
+## 🚀 Getting Started
 1. Set-up conda environment
-```
-conda create --name bottleneck --file requirements.txt python=3.10.8
-```
+    ```
+    conda create --name bottleneck --file requirements.txt python=3.10.8
+    ```
 2. Download public datasets
-```
-make download_data
-```
+    ```
+    make download_data
+    ```
 3. Prerocess datasets
-```
-# CUB-200
-make preprocess_cub
+    ```
+    # CUB-200
+    make preprocess_cub
 
-# MIMIC-CXR
-make preprocess_mimic
-```
+    # MIMIC-CXR
+    make preprocess_mimic
+    ```
+4. You are ready to run your first experiment!
+    ```
+    python main.py dataset.batch_size=64 seed=42 +experiment={XXX}
+    ```
+
+## 🤔 FAQ
+
+1. How can I retrieve explanations?
+    > Our pipeline saves explanations in `results.json`, which can be found in experiment folder. For visualization you can use [`inspect.ipynb`](./autoconcept/inspect.ipynb) notebook.
+
+2. How can I assess my model in terms of DCI?
+    > Measuring disentanglement, completeness, informativeness is moved outside the default pipeline and can be performed via [`metrics.ipynb`](./autoconcept/metrics.ipynb) notebook.
 
 
 ## Experiments

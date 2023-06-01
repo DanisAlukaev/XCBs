@@ -13,6 +13,27 @@ from datasets.utils import VocabularyShapes
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
+attribute_mapping = {
+    0: [1, 0, 0, 1, 0, 0,  # 1, 0, 0, 0, 0, 0, 0, 0, 0
+        ],
+    1: [0, 1, 0, 1, 0, 0,  # 0, 1, 0, 0, 0, 0, 0, 0, 0
+        ],
+    2: [0, 0, 1, 1, 0, 0,  # 0, 0, 1, 0, 0, 0, 0, 0, 0
+        ],
+    3: [1, 0, 0, 0, 1, 0,  # 0, 0, 0, 1, 0, 0, 0, 0, 0
+        ],
+    4: [0, 1, 0, 0, 1, 0,  # 0, 0, 0, 0, 1, 0, 0, 0, 0
+        ],
+    5: [0, 0, 1, 0, 1, 0,  # 0, 0, 0, 0, 0, 1, 0, 0, 0
+        ],
+    6: [1, 0, 0, 0, 0, 1,  # 0, 0, 0, 0, 0, 0, 1, 0, 0
+        ],
+    7: [0, 1, 0, 0, 0, 1,  # 0, 0, 0, 0, 0, 0, 0, 1, 0
+        ],
+    8: [0, 0, 1, 0, 0, 1,  # 0, 0, 0, 0, 0, 0, 0, 0, 1
+        ],
+}
+
 
 def seed_worker(worker_id):
     worker_seed = torch.initial_seed() % 2**32
@@ -64,6 +85,7 @@ class JointDataset(Dataset):
             img_path=str(img_path),
             report=caption,
             target_one_hot=target_one_hot,
+            attributes=attribute_mapping[row.class_id]
         )
         self.dict_to_float32(sample)
         sample['target'] = target
