@@ -1,37 +1,29 @@
-
-import random
+from pathlib import Path
 
 import albumentations as A
 import cv2
-import numpy
-import numpy as np
 import pandas as pd
 import torch
 from albumentations.pytorch.transforms import ToTensorV2
 from datasets.collators import CollateIndices
-from datasets.utils import VocabularyShapes
+from datasets.utils import VocabularyMimic
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
 
-def seed_worker(worker_id):
-    worker_seed = torch.initial_seed() % 2**32
-    numpy.random.seed(worker_seed)
-    random.seed(worker_seed)
-
-
-class JointDataset(Dataset):
-
+class MimicDataset(Dataset):
     def __init__(
         self,
-        annotations_file,
+        annotation_path=None,
+        img_dir=None,
         transforms=None,
         phase='train',
         debug_sample=None,
     ):
-        self.annotations_file = annotations_file
+        self.annotation_path = annotation_path
         self.phase = phase
         self.transforms = transforms
+        self.img_dir = Path(img_dir)
 
         self.read_annotations_file()
 
@@ -47,56 +39,52 @@ class JointDataset(Dataset):
     def __getitem__(self, idx):
         row = self.annotations.iloc[idx]
 
-        img_path = row.filepath
+        img_path = self.img_dir / f"{row.dicom_id}.jpg"
         image = cv2.cvtColor(cv2.imread(str(img_path)), cv2.COLOR_BGR2RGB)
 
         if self.transforms:
             transformed = self.transforms(image=image)
             image = transformed["image"]
 
-        caption = row.caption
-
-        target = torch.tensor(row.class_id)
-        target_one_hot = torch.tensor(eval(row.one_hot))
+        report = row.caption
+        target = torch.tensor(row.is_pathology)
+        attributes = self.get_attributes(idx)
 
         sample = dict(
             image=image,
             img_path=str(img_path),
-            report=caption,
-            target_one_hot=target_one_hot,
+            report=report,
+            target_one_hot=target,
+            attributes=attributes,
         )
-        self.dict_to_float32(sample)
-        sample['target'] = target
+
         return sample
 
-    @staticmethod
-    def dict_to_float32(d):
-        def array_to_float32(a):
-            if isinstance(a, np.ndarray):
-                return a.astype(np.float32)
-            elif isinstance(a, torch.Tensor):
-                return a.float()
-            else:
-                return a
-
-        for k, v in d.items():
-            d[k] = array_to_float32(v)
-
     def read_annotations_file(self):
-        filename = self.annotations_file
-        self.annotations = pd.read_csv(filename)
+        self.annotations = pd.read_csv(self.annotation_path)
         phases = {"train": 0, "val": 1, "test": 2}
         self.annotations = self.annotations[self.annotations.split ==
                                             phases[self.phase]]
 
+    def get_attributes(self, idx):
+        row = self.annotations.iloc[idx]
 
-class JointDataModule(LightningDataModule):
+        attribute_cols = ['is_erect', 'atelectasis', 'cardiomegaly', 'consolidation',
+                          'edema', 'enlarged_cardiomediastinum', 'fracture', 'lung_lesion',
+                          'lung_opacity', 'pleural_effusion', 'pleural_other', 'pneumonia',
+                          'pneumothorax', 'support_devices']
+
+        attributes = torch.tensor(list(row[attribute_cols].to_list())).float()
+
+        return attributes
+
+
+class MimicDataModule(LightningDataModule):
     def __init__(
         self,
         img_size,
-        augmentations_train=None,
-        augmentations_test=None,
-        annotation_path="data/shapes/captions.csv",
+        img_dir="data/images/",
+        annotation_path="data/mimic-cxr/annotation.csv",
         debug_sample=None,
         batch_size=64,
         num_workers=4,
@@ -106,6 +94,7 @@ class JointDataModule(LightningDataModule):
     ):
         super().__init__()
         self.img_size = img_size
+        self.img_dir = img_dir
         self.annotation_path = annotation_path
         self.debug_sample = debug_sample
         self.batch_size = batch_size
@@ -114,7 +103,8 @@ class JointDataModule(LightningDataModule):
         self.use_val_for_train = use_val_for_train
 
         self.dataset_kwargs = dict(
-            annotations_file=self.annotation_path,
+            annotation_path=self.annotation_path,
+            img_dir=self.img_dir,
             debug_sample=self.debug_sample,
         )
 
@@ -135,20 +125,20 @@ class JointDataModule(LightningDataModule):
 
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
-            self.train_dataset = JointDataset(
+            self.train_dataset = MimicDataset(
                 phase='train',
                 transforms=self.pre_transforms + self.post_transforms,
                 **self.dataset_kwargs
             )
 
-            self.val_dataset = JointDataset(
+            self.val_dataset = MimicDataset(
                 phase='val',
                 transforms=self.pre_transforms + self.post_transforms,
                 **self.dataset_kwargs
             )
 
         if stage == "test" or stage is None:
-            self.test_dataset = JointDataset(
+            self.test_dataset = MimicDataset(
                 phase='test',
                 transforms=self.pre_transforms + self.post_transforms,
                 **self.dataset_kwargs
@@ -156,56 +146,43 @@ class JointDataModule(LightningDataModule):
 
     def train_dataloader(self):
         train_dataset = self.train_dataset
-        g = torch.Generator()
-        g.manual_seed(0)
         return DataLoader(
             train_dataset,
             shuffle=self.shuffle_train,
             **self.dataloader_kwargs,
-            # pin_memory=True,
-            # generator=g,
-            # worker_init_fn=seed_worker,
         )
 
     def val_dataloader(self):
         val_dataset = self.val_dataset
-        g = torch.Generator()
-        g.manual_seed(0)
         return DataLoader(
             val_dataset,
             **self.dataloader_kwargs,
-            # pin_memory=True,
-            # generator=g,
-            # worker_init_fn=seed_worker,
         )
 
     def test_dataloader(self):
         test_dataset = self.test_dataset
-        g = torch.Generator()
-        g.manual_seed(0)
         return DataLoader(
             test_dataset,
             **self.dataloader_kwargs,
-            # pin_memory=True,
-            # generator=g,
-            # worker_init_fn=seed_worker,
         )
 
 
 if __name__ == '__main__':
-    annotation_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes/captions.csv"
+    annotation_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/annotation.csv"
+    img_dir = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/images"
 
-    vocab = VocabularyShapes(annotation_path=annotation_path)
+    vocab = VocabularyMimic(annotation_path=annotation_path)
     collate_fn = CollateIndices(vocabulary=vocab)
 
-    dm = JointDataModule(299,
-                         annotation_path=annotation_path,
-                         collate_fn=collate_fn)
+    dm = MimicDataModule(
+        img_size=299,
+        annotation_path=annotation_path,
+        img_dir=img_dir,
+        collate_fn=collate_fn
+    )
 
     dm.setup()
 
     training_data = dm.train_dataloader()
     print('\nFirst iteration of data set: ', next(iter(training_data)), '\n')
-    print('Length of data set: ', len(training_data), '\n')
-
-    print(training_data["target"])
+    print('Length of dataloader: ', len(training_data), '\n')

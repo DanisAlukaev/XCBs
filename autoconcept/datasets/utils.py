@@ -5,6 +5,7 @@ from string import punctuation
 import nltk
 import pandas as pd
 from nltk.stem import WordNetLemmatizer
+from spellchecker import SpellChecker
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import vocab
 from tqdm import tqdm
@@ -16,8 +17,8 @@ nltk.download('wordnet')
 
 class Preprocess:
 
-    def __init__(self):
-        pass
+    def __init__(self, use_spellcheck=False):
+        self.use_spellcheck = use_spellcheck
 
     def remove_numbers(self, text):
         output = ''.join(c for c in text if not c.isdigit())
@@ -36,6 +37,16 @@ class Preprocess:
             sent_list.append(sent_token)
         return sent_list
 
+    def fix_spelling(self, text):
+        spell = SpellChecker()
+        fixed_text = list()
+        for word in text:
+            fixed = spell.correction(word)
+            if not fixed:
+                fixed = word
+            fixed_text.append(fixed)
+        return fixed_text
+
     def word_tokenize(self, text):
         return [w for sent in nltk.sent_tokenize(text) for w in nltk.word_tokenize(sent)]
 
@@ -50,6 +61,7 @@ class Preprocess:
         return " ".join(lemmatized_word)
 
     def __call__(self, text):
+        token_sequence = list()
         lower_text = text.lower()
         sentence_tokens = self.sentence_tokenize(lower_text)
         for sentence_token in sentence_tokens:
@@ -59,7 +71,10 @@ class Preprocess:
             clean_text = self.remove_punct(clean_text)
             clean_text = self.remove_tags(clean_text)
             word_tokens = list(self.word_tokenize(clean_text))
-        return " ".join(word_tokens)
+            if self.use_spellcheck:
+                word_tokens = self.fix_spelling(word_tokens)
+            token_sequence += word_tokens
+        return " ".join(token_sequence)
 
 
 class Vocabulary:
@@ -130,6 +145,37 @@ class VocabularyShapes:
         lens = list()
         for _, row in tqdm(self.annotations.iterrows(), total=self.annotations.shape[0]):
             text = row[2]
+            tokens = self.tokenizer(text)
+            lens.append(len(tokens))
+            word_counter.update(tokens)
+
+        special_symbols = ["<pad>", "<unk>"]
+        self.vocab = vocab(word_counter, specials=special_symbols)
+        self.vocab.set_default_index(self.vocab["<unk>"])
+        print("Len of vocab: ", len(self.vocab))
+        print("Max len of caption: ", max(lens))
+
+    def read_annotations_file(self):
+        filename = self.annotation_path
+        self.annotations = pd.read_csv(filename)
+
+
+class VocabularyMimic:
+
+    def __init__(
+        self,
+        annotation_path="data/mimic-cxr/captions.csv",
+    ):
+        self.annotation_path = annotation_path
+        self.tokenizer = get_tokenizer('spacy', language='en')
+        self.read_annotations_file()
+        self.build_vocab()
+
+    def build_vocab(self):
+        word_counter = Counter()
+        lens = list()
+        for _, row in tqdm(self.annotations.iterrows(), total=self.annotations.shape[0]):
+            text = row.caption
             tokens = self.tokenizer(text)
             lens.append(len(tokens))
             word_counter.update(tokens)

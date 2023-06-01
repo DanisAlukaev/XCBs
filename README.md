@@ -4,7 +4,7 @@
 ## Getting Started
 1. Set-up conda environment
 ```
-conda create --name bottleneck --file requirements.txt python=3.10
+conda create --name bottleneck --file requirements.txt python=3.10.8
 ```
 2. Download public datasets
 ```
@@ -12,8 +12,14 @@ make download_data
 ```
 3. Prerocess datasets
 ```
-make preprocess_data
+# CUB-200
+make preprocess_cub
+
+# MIMIC-CXR
+make preprocess_mimic
 ```
+
+
 ## Experiments
 | EID   | MID | Model name | Description | Task | Runs |
 | ----:| :--- | :---  | :----       | :--- |:--- |
