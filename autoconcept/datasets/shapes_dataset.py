@@ -102,7 +102,6 @@ class JointDataModule(LightningDataModule):
         num_workers=4,
         collate_fn=None,
         shuffle_train=True,
-        mix_with_mscoco=False,
         use_val_for_train=False
     ):
         super().__init__()
@@ -112,7 +111,6 @@ class JointDataModule(LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.shuffle_train = shuffle_train
-        self.mix_with_mscoco = mix_with_mscoco
         self.use_val_for_train = use_val_for_train
 
         self.dataset_kwargs = dict(

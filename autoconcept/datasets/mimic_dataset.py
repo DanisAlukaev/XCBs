@@ -4,19 +4,23 @@ import albumentations as A
 import cv2
 import pandas as pd
 import torch
-from torch.utils.data import Dataset
+from albumentations.pytorch.transforms import ToTensorV2
+from datasets.collators import CollateIndices
+from datasets.utils import VocabularyMimic
+from pytorch_lightning import LightningDataModule
+from torch.utils.data import DataLoader, Dataset
 
 
 class MimicDataset(Dataset):
     def __init__(
         self,
-        annotations_path,
-        img_dir,
+        annotation_path=None,
+        img_dir=None,
         transforms=None,
         phase='train',
         debug_sample=None,
     ):
-        self.annotations_path = annotations_path
+        self.annotation_path = annotation_path
         self.phase = phase
         self.transforms = transforms
         self.img_dir = Path(img_dir)
@@ -57,7 +61,7 @@ class MimicDataset(Dataset):
         return sample
 
     def read_annotations_file(self):
-        self.annotations = pd.read_csv(self.annotations_path)
+        self.annotations = pd.read_csv(self.annotation_path)
         phases = {"train": 0, "val": 1, "test": 2}
         self.annotations = self.annotations[self.annotations.split ==
                                             phases[self.phase]]
@@ -75,21 +79,110 @@ class MimicDataset(Dataset):
         return attributes
 
 
+class MimicDataModule(LightningDataModule):
+    def __init__(
+        self,
+        img_size,
+        img_dir="data/images/",
+        annotation_path="data/mimic-cxr/annotation.csv",
+        debug_sample=None,
+        batch_size=64,
+        num_workers=4,
+        collate_fn=None,
+        shuffle_train=True,
+        use_val_for_train=False
+    ):
+        super().__init__()
+        self.img_size = img_size
+        self.img_dir = img_dir
+        self.annotation_path = annotation_path
+        self.debug_sample = debug_sample
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.shuffle_train = shuffle_train
+        self.use_val_for_train = use_val_for_train
+
+        self.dataset_kwargs = dict(
+            annotation_path=self.annotation_path,
+            img_dir=self.img_dir,
+            debug_sample=self.debug_sample,
+        )
+
+        self.dataloader_kwargs = dict(
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+        )
+
+        if collate_fn is not None:
+            self.dataloader_kwargs['collate_fn'] = collate_fn
+
+        # default augmentations were taken from the paper "Concept Bottleneck Models"
+        self.pre_transforms = []
+        self.post_transforms = [A.Normalize(), ToTensorV2()]
+
+    def prepare_data_per_node(self):
+        pass
+
+    def setup(self, stage=None):
+        if stage == "fit" or stage is None:
+            self.train_dataset = MimicDataset(
+                phase='train',
+                transforms=self.pre_transforms + self.post_transforms,
+                **self.dataset_kwargs
+            )
+
+            self.val_dataset = MimicDataset(
+                phase='val',
+                transforms=self.pre_transforms + self.post_transforms,
+                **self.dataset_kwargs
+            )
+
+        if stage == "test" or stage is None:
+            self.test_dataset = MimicDataset(
+                phase='test',
+                transforms=self.pre_transforms + self.post_transforms,
+                **self.dataset_kwargs
+            )
+
+    def train_dataloader(self):
+        train_dataset = self.train_dataset
+        return DataLoader(
+            train_dataset,
+            shuffle=self.shuffle_train,
+            **self.dataloader_kwargs,
+        )
+
+    def val_dataloader(self):
+        val_dataset = self.val_dataset
+        return DataLoader(
+            val_dataset,
+            **self.dataloader_kwargs,
+        )
+
+    def test_dataloader(self):
+        test_dataset = self.test_dataset
+        return DataLoader(
+            test_dataset,
+            **self.dataloader_kwargs,
+        )
+
+
 if __name__ == '__main__':
     annotation_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/annotation.csv"
     img_dir = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/images"
 
-    # vocab = VocabularyShapes(annotation_path=annotation_path)
-    # collate_fn = CollateIndices(vocabulary=vocab)
+    vocab = VocabularyMimic(annotation_path=annotation_path)
+    collate_fn = CollateIndices(vocabulary=vocab)
 
-    # dm = JointDataModule(299,
-    #                      annotation_path=annotation_path,
-    #                      collate_fn=collate_fn)
+    dm = MimicDataModule(
+        img_size=299,
+        annotation_path=annotation_path,
+        img_dir=img_dir,
+        collate_fn=collate_fn
+    )
 
-    # dm.setup()
+    dm.setup()
 
-    # training_data = dm.train_dataloader()
-    # print('\nFirst iteration of data set: ', next(iter(training_data)), '\n')
-    # print('Length of data set: ', len(training_data), '\n')
-
-    # print(training_data["target"])
+    training_data = dm.train_dataloader()
+    print('\nFirst iteration of data set: ', next(iter(training_data)), '\n')
+    print('Length of dataloader: ', len(training_data), '\n')
