@@ -33,6 +33,24 @@
 
 ## 🧬 Experiments
 
+| Model       | EID         | norm_fn  | slot_norm | reg_dist | tie_loss   |  F1-score     | Disentanglement | Completeness    | Directory      |
+|:------------|:-----------:|:--------:|:---------:|:--------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
+|     |      |    |           |          |  |  |  |  | -              |
+| Baseline    | EXX-SHP     | entmax   |           |          | KL (w.r.t. $c$) | $0.000 ± 0.0$   | $0.000 ± 0.0$     | $0.000 ± 0.0$     | -              |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 | EID   | MID | Model name | Description | Task | Runs |
 | ----:| :--- | :---  | :----       | :--- |:--- |
 | [E01](autoconcept/config/conf/experiment/E01.yaml) | [M01](autoconcept/config/conf/model/M01.yaml) | Unrestricted Bottleneck Model | Visual feature extractor + predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/45290810b6594c90bd67599f9a9eb948), [[2]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/7acaef594d8e4785b0259341ed68d619), [[3]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/46375d4209234e33abb4c9db98fee285/info-output/metrics/scalar) |
