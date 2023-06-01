@@ -12,8 +12,14 @@ make download_data
 ```
 3. Prerocess datasets
 ```
-make preprocess_data
+# CUB-200
+make preprocess_cub
+
+# MIMIC-CXR
+make preprocess_mimic
 ```
+
+
 ## Experiments
 | EID   | MID | Model name | Description | Task | Runs |
 | ----:| :--- | :---  | :----       | :--- |:--- |
