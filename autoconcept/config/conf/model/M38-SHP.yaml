@@ -17,7 +17,7 @@ main:
     max_len: 30
     src_pad_idx: 0
     dropout: 0.
-    use_slot_norm: true
+    use_slot_norm: false
     norm_fn1:
       _target_: torch.nn.Softmax
       dim: -2

@@ -40,7 +40,11 @@ main:
       _target_: torch.nn.ReLU
 
   interim_activation:
-    _target_: torch.nn.Sigmoid
+    _target_: functional.gumbel.GumbelSigmoid
+    step: 15
+    t: 1.0
+    rate: 0.0035
+    min_val: 0.001
 
   predictor_aux:
     _target_: models.predictors.mlp.MLPPredictor
@@ -54,14 +58,14 @@ criterion_task:
   _target_: torch.nn.CrossEntropyLoss
 
 criterion_tie:
-  _target_: functional.loss.JensenShannonDivergenceLoss
-tie_weight: 0.0
+  _target_: functional.loss.KullbackLeiblerDivergenceLoss
+tie_weight: 10.0
 
 mix_tie_epoch: null
 
 pretrain_embeddings_epoch: null
 
-tie_loss_wrt_concepts: true
+tie_loss_wrt_concepts: false
 
 optimizer_model_template:
   _target_: functools.partial

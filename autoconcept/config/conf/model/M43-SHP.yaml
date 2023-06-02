@@ -17,7 +17,7 @@ main:
     max_len: 30
     src_pad_idx: 0
     dropout: 0.
-    use_slot_norm: false
+    use_slot_norm: true
     norm_fn1:
       _target_: torch.nn.Softmax
       dim: -2
@@ -27,7 +27,7 @@ main:
     regularize_distance: false
     use_position_encoding: true
     mlp_depth: 4
-    use_dummy_concept: false
+    use_dummy_concept: true
     use_dummy_tokens: false
     activation:
       _target_: torch.nn.ReLU
@@ -40,7 +40,11 @@ main:
       _target_: torch.nn.ReLU
 
   interim_activation:
-    _target_: torch.nn.Sigmoid
+    _target_: functional.gumbel.GumbelSigmoid
+    step: 15
+    t: 1.0
+    rate: 0.0035
+    min_val: 0.001
 
   predictor_aux:
     _target_: models.predictors.mlp.MLPPredictor
@@ -54,8 +58,8 @@ criterion_task:
   _target_: torch.nn.CrossEntropyLoss
 
 criterion_tie:
-  _target_: functional.loss.JensenShannonDivergenceLoss
-tie_weight: 0.0
+  _target_: functional.loss.KullbackLeiblerDivergenceLoss
+tie_weight: 10.0
 
 mix_tie_epoch: null
 
