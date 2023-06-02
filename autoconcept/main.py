@@ -5,7 +5,9 @@ import hydra
 import pytorch_lightning as pl
 from callbacks import ReinitializeTextualMLP
 from clearml import Task
-from extract import trace_interpretations
+from extract import (compute_completeness, compute_disentanglement,
+                     compute_informativeness, fit_linear_model,
+                     prepare_data_dci, trace_interpretations)
 from helpers import load_experiment, pretty_cfg, report_to_telegram, set_seed
 from hydra.utils import instantiate
 from omegaconf import DictConfig
@@ -74,19 +76,32 @@ def run(cfg):
     trainer.fit(model, train_loader, val_loader)
 
     dm, inference = load_experiment(".")
+    train_loader = dm.train_dataloader()
+    test_loader = dm.test_dataloader()
 
-    trace_interpretations(dm, inference)
+    X_train, y_train = prepare_data_dci(train_loader, inference.cuda())
+    X_test, y_test = prepare_data_dci(test_loader, inference.cuda())
 
-    # checkpoint_path = checkpoint_callback.best_model_path
+    R, errors = fit_linear_model(X_train, y_train, X_test, y_test)
+    disentanglement = compute_disentanglement(R)
+    completeness = compute_completeness(R)
+    informativeness = compute_informativeness(errors)
 
-    # target_class = get_class(cfg.model._target_)
-    # main = instantiate(cfg.model.main)
-    # inference = target_class.load_from_checkpoint(
-    #     checkpoint_path, main=main).cuda()
-    # inference = inference.eval()
+    logger = task.get_logger()
+    logger.report_scalar("disentanglement", "test", disentanglement, 0)
+    logger.report_scalar("completeness", "test", completeness, 0)
+    logger.report_scalar("informativeness", "test", informativeness, 0)
+
+    dm, inference = load_experiment(".")
+    test_loader = dm.test_dataloader()
 
     f1_test = trainer.test(inference, test_loader)[
         0]['test/weighted_avg/f1-score']
+
+    dm, inference = load_experiment(".")
+
+    if cfg.trace_interpretations:
+        trace_interpretations(dm, inference)
 
     return f1_test
 

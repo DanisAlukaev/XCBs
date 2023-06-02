@@ -8,6 +8,8 @@ name: E37-SHP
 epoch_freeze_backbone: null
 epoch_reinitialize: 0
 max_epochs: 10
+trace_interpretations: true
+
 dataset:
   annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes-hard-3/captions.csv
   collate_fn:
