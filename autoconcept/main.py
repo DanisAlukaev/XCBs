@@ -3,7 +3,7 @@ import traceback
 
 import hydra
 import pytorch_lightning as pl
-from callbacks import ReinitializeTextualMLP
+from callbacks import FreezingCallback
 from clearml import Task
 from extract import (compute_completeness, compute_disentanglement,
                      compute_informativeness, fit_linear_model,
@@ -46,24 +46,19 @@ def run(cfg):
         LearningRateMonitor(logging_interval="step"),
         DeviceStatsMonitor(),
         # InitializePredictorCallback(),
-        # InitializeInceptionCallback(),
+        # ReinitializeTextualMLP(0),
     ]
-
-    if hasattr(cfg.model, 'pretrain_embeddings_epoch'):
-        trainer_callbacks.append(ReinitializeTextualMLP(
-            cfg.model.pretrain_embeddings_epoch))
+    # TODO: re-initialization worsens performance
+    # if cfg.reinitialize_feature_extractor:
+    #     trainer_callbacks.append(InitializeInceptionCallback())
+    # if isinstance(cfg.epoch_reinitialize, int):
+    #     trainer_callbacks += [ReinitializeBottleneckCallback(cfg.epoch_reinitialize)]
 
     if cfg.early_stopper:
         trainer_callbacks += [instantiate(cfg.early_stopper)]
 
-    # if isinstance(cfg.epoch_freeze_backbone, int):
-    #     print("Freezing callback activated ")
-    #     trainer_callbacks += [
-    #         FreezingCallback(cfg.epoch_freeze_backbone)]
-
-    # if isinstance(cfg.epoch_reinitialize, int):
-    #     trainer_callbacks += [
-        # ReinitializeBottleneckCallback(cfg.epoch_reinitialize)]
+    if isinstance(cfg.epoch_freeze_backbone, int):
+        trainer_callbacks += [FreezingCallback(cfg.epoch_freeze_backbone)]
 
     trainer = pl.Trainer(
         max_epochs=cfg.max_epochs,
@@ -82,7 +77,8 @@ def run(cfg):
     X_train, y_train = prepare_data_dci(train_loader, inference.cuda())
     X_test, y_test = prepare_data_dci(test_loader, inference.cuda())
 
-    R, errors = fit_linear_model(X_train, y_train, X_test, y_test)
+    R, errors = fit_linear_model(
+        X_train, y_train, X_test, y_test, seed=cfg.seed)
     disentanglement = compute_disentanglement(R)
     completeness = compute_completeness(R)
     informativeness = compute_informativeness(errors)
