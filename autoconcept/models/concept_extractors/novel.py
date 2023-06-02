@@ -50,6 +50,8 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         regularize_distance_apply_p=1.0,
         mlp_depth=1,
         use_dummy_attention=True,
+        use_dummy_concept=False,
+        use_dummy_tokens=False,
     ):
         super().__init__()
 
@@ -70,18 +72,17 @@ class ConceptExtractorAttention(BaseConceptExtractor):
         self.regularize_distance_apply_p = regularize_distance_apply_p
         self.mlp_depth = mlp_depth
         self.use_dummy_attention = use_dummy_attention
+        self.use_dummy_concept = use_dummy_concept
+        self.use_dummy_tokens = use_dummy_tokens
 
         self.mlp_layers = [self.embed_dim] * (mlp_depth - 1) + [1]
-
-        # if use_dummy_attention:
-        # self.mlp_layers[0] += 1
 
         self.values_w = nn.Linear(embed_dim, embed_dim)
         self.keys_w = nn.Linear(embed_dim, embed_dim)
         self.query_w = nn.Linear(embed_dim, embed_dim)
 
         queries_n = out_features
-        if use_slot_norm:
+        if use_dummy_concept:
             dummy_query_n = 1
             queries_n += dummy_query_n
         self.queries_w = nn.Embedding(queries_n, embed_dim)
@@ -164,74 +165,49 @@ class ConceptExtractorAttention(BaseConceptExtractor):
 
         if self.use_slot_norm:
             scores = self.norm_fn1(attn_logits)
-            if self.use_dummy_attention:
-                # scores_max, _ = torch.max(scores, 2)
-                # scores_mean = scores.mean(dim=-1)
 
-                # scores_dummy = 1 - (scores_max + scores_mean)
-
-                # scores_dummy = 1 - torch.norm(scores, dim=-1)
-                # scores_dummy = torch.nn.functional.relu(scores_dummy)
-
-                # scores_norm = scores.norm(dim=-1)
-                # print(scores_norm)
+            if self.use_dummy_tokens:
+                # TODO: change computation of scores for dummy tokens
                 scores_mean = scores.mean(dim=-1)
-                # print(scores_mean.min(), scores_mean.max())
                 scores_dummy = 1 - self.sigmoid_parametrized(scores_mean)
-
-                # print(self.sigmoid_parametrized.c1,
-                #       self.sigmoid_parametrized.c2)
-
                 scores_dummy = scores_dummy.unsqueeze(-1)
-
-                # scores_dummy = self.norm_fn1(attn_dummy_logits)
-                # scores_dummy = torch.diagonal(scores_dummy, 0)
-                # scores_dummy = scores_dummy.expand(N, -1, -1)
-
                 scores = scores.masked_fill(mask == 0, 0)
                 scores = torch.cat((scores, scores_dummy), dim=2)
 
             scores = scores + self.eps
             scores = self.norm_fn2(scores)
-
-            # TODO: use entire sequence with dummy tokens (or add it as additional feature)
             scores_aux = scores
 
-            if self.use_dummy_attention:
+            if self.use_dummy_tokens:
                 scores = scores[:, :, :seq_length]
         else:
-            attn_dummy_logits = torch.diagonal(attn_dummy_logits, 0)
-            attn_dummy_logits = attn_dummy_logits.expand(N, -1, -1)
-            attn_logits = torch.cat((attn_logits, attn_dummy_logits), dim=2)
+
+            if self.use_dummy_tokens:
+                attn_dummy_logits = torch.diagonal(attn_dummy_logits, 0)
+                attn_dummy_logits = attn_dummy_logits.expand(N, -1, -1)
+                attn_logits = torch.cat(
+                    (attn_logits, attn_dummy_logits), dim=2)
 
             attn_logits += self.eps
-
             scores = self.norm_fn1(attn_logits)
-
             scores_aux = scores
-            scores_dummy = scores[:, :, -1].unsqueeze(-1)
-            scores = scores[:, :, :seq_length]
+
+            if self.use_dummy_tokens:
+                scores_dummy = scores[:, :, -1].unsqueeze(-1)
+                scores = scores[:, :, :seq_length]
 
         semantic = torch.matmul(scores, values)
 
         for idx, mlp in enumerate(self.mlps):
             concept_semantic = semantic[:, idx, :]
-            if self.use_dummy_attention:
+
+            if self.use_dummy_tokens:
                 score_dummy = scores_dummy[:, idx, :]
-
-                # TODO: use only one dummy embedding
                 dummy_embedding = dummy_tokens[idx]
-                # dummy_embedding = dummy_tokens[0]
-
                 concept_semantic = concept_semantic + score_dummy * dummy_embedding
 
-                # concept_semantic = torch.cat(
-                #     (concept_semantic, score_dummy), dim=1)
-
             concept_semantics.append(concept_semantic)
-
             concept_logit = mlp(concept_semantic)
-
             concept_logits.append(concept_logit)
 
         concept_logits = torch.stack(concept_logits, dim=1).squeeze(-1)

@@ -33,17 +33,19 @@
 
 ## 🧬 Experiments
 
-| Model     | EID-DATASET         | act_fn | pretrain | norm_fn  | slot_norm | reg_dist | tie_loss   |  Performance (F1-score)   | Disentanglement | Completeness    | Directory      |
-|:------------|:-----------:|:-----------:|:--------:|:--------:|:---------:|:--------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
-| Baseline | E35-SHP | relu | ✓ | - | - | - | - | 0.994 ± 0.0 | 0.520 ± 0.0 | 0.542 ± 0.0 | `outputs/2023-06-01/20-42-08` |
-| Baseline | E36-SHP | sigmoid | ✓ | - | - | - | - | 0.992 ± 0.0 | 0.495 ± 0.0 | 0.605 ± 0.0 | `outputs/2023-06-01/20-57-51` |
-| Baseline | E37-SHP | gumbel | ✓ | - | - | - | - | 0.994 ± 0.0  | 0.618 ± 0.0 | 0.537 ± 0.0 | `outputs/2023-06-01/21-30-27` |
-| Framework | E38-SHP | sigmoid | ✓ | softmax | ✗ | ✗ | JS | X | X | X | X  |
-| Framework | E39-SHP | gumbel | ✓ | softmax | ✗ | ✗ | JS | X | X | X | X  |
-| Framework | E40-SHP | gumbel | ✓ | softmax | ✗ | ✗ | KL($f$, $c$) | X | X | X | X  |
-| Framework | E41-SHP | gumbel | ✓ | softmax | ✗ | ✗ | KL($c$, $f$) | X | X | X | X  |
-| Framework | E42-SHP | gumbel | ✓ | entmax | ✗ | ✗ | JS | X | X | X | X  |
-| Framework | E43-SHP | gumbel | ✓ | softmax | ✓ | ✗ | JS | X | X | X | X  |
-| Framework | E44-SHP | gumbel | ✓ | entmax | ✓ | ✗ | JS | X | X | X | X  |
-| Framework | E45-SHP | gumbel | ✓ | softmax | ✗ | ✓ | JS | X | X | X | X  |
-| Framework | E46-SHP | gumbel | ✓ | entmax | ✗ | ✓ | JS | X | X | X | X  |
+| Model     | EID-DATASET         | act_fn | pretrain | norm_fn  | slot_norm | dummy_concept | dummy_tokens | reg_dist | tie_loss   |  Performance (F1-score)   | Disentanglement | Completeness    | Directory      |
+|:------------|:-----------:|:-----------:|:--------:|:--------:|:---------:|:--------:|:----------:|:----------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
+| Baseline | E35-SHP | relu | ✓ | - | - | -| - | - | - | 0.994 ± 0.0 | 0.605 ± 0.0 | 0.726 ± 0.0 | `outputs/2023-06-02/06-01-57` |
+| Baseline | E36-SHP | sigmoid | ✓ | - | - | - | - | - | - | 0.998 ± 0.0 | 0.572 ± 0.0 | 0.660 ± 0.0 | `outputs/2023-06-02/05-51-13` |
+| Baseline | E37-SHP | gumbel | ✓ | - | - | - | - | - | - | 0.992 ± 0.0  | 0.505 ± 0.0 | 0.579 ± 0.0 | `outputs/2023-06-02/05-38-06` |
+| Framework | E38-SHP | sigmoid | ✓ | softmax | ✗ | - | - | ✗ | JS | 0.996 ± 0.0  | 0.587 ± 0.0 | 0.712 ± 0.0 | `outputs/2023-06-02/06-14-39`  |
+| Framework | E39-SHP | gumbel | ✓ | softmax | ✗ | - | - | ✗ | JS | X | X | X | X  |
+| Framework | E40-SHP | gumbel | ✓ | softmax | ✗ | - | -  | ✗ | KL($f$, $c$) | X | X | X | X  |
+| Framework | E41-SHP | gumbel | ✓ | softmax | ✗ | - | - | ✗ | KL($c$, $f$) | X | X | X | X  |
+| Framework | E42-SHP | gumbel | ✓ | entmax | ✗ | - | - | ✗ | JS | X | X | X | X  |
+| Framework | E43-SHP | gumbel | ✓ | softmax | ✓ | ✓ | ✗ | ✗ | JS | X | X | X | X  |
+| Framework | E44-SHP | gumbel | ✓ | softmax | ✓ | ✓ | ✓ | ✗ | JS | X | X | X | X  |
+| Framework | E45-SHP | gumbel | ✓ | entmax | ✓ | ✓ | ✗ | ✗ | JS | X | X | X | X  |
+| Framework | E46-SHP | gumbel | ✓ | entmax | ✓ | ✓ | ✓ | ✗ | JS | X | X | X | X  |
+| Framework | E47-SHP | gumbel | ✓ | softmax | ✗ | - | - | ✓ | JS | X | X | X | X  |
+| Framework | E48-SHP | gumbel | ✓ | entmax | ✗ | - | - | ✓ | JS | X | X | X | X  |
