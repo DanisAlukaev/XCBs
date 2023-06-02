@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.nn.parameter import Parameter
 
 
 class GumbelSigmoid(nn.Module):
@@ -18,7 +19,7 @@ class GumbelSigmoid(nn.Module):
     ):
         super().__init__()
         # gumbel config
-        self.t = t
+        self.t = Parameter(torch.tensor(t), requires_grad=False)
         self.eps = eps
         self.hard = hard
         self.threshold = threshold
@@ -30,8 +31,9 @@ class GumbelSigmoid(nn.Module):
 
     def forward(self, x, iteration=None):
         if iteration and iteration % self.step == 0:
-            self.t = np.maximum(np.exp(-self.rate * iteration), self.min_val)
-        t = self.t
+            t = np.maximum(np.exp(-self.rate * iteration), self.min_val)
+            self.t = Parameter(torch.tensor(t), requires_grad=False)
+        t = self.t.item()
 
         y = self._gumbel_sigmoid_sample(x, t)
         if not self.hard:

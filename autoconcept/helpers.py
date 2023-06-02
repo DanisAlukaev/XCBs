@@ -2,7 +2,6 @@ import json
 import os
 import random
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pytorch_lightning as pl
 import requests
@@ -66,33 +65,3 @@ def load_experiment(path):
     model = model.eval()
 
     return dm, model
-
-
-def plot_instances(features, n_images):
-    fig, axes = plt.subplots(3, n_images)
-    fig.set_size_inches(10, 4)
-    labels = ["lrg", "mdm", "sml"]
-    for i, ax in enumerate(axes.flatten()):
-        label = labels[i // n_images]
-        image = plt.imread(features[label][i % n_images][0])
-        label = float(features[label][i % n_images][1])
-        ax.set_title(f"{label:.3f}")
-        ax.imshow(image)
-        ax.xaxis.set_ticks_position('none')
-        ax.yaxis.set_ticks_position('none')
-        ax.set_yticklabels([])
-        ax.set_xticklabels([])
-    plt.show()
-
-
-def visualize_concept(results, n_images, concept_id=0, n_tokens=10):
-    print(f"Concept #{concept_id + 1}\n")
-    print("Top-k tokens w.r.t. average attention score:")
-    pair = results[concept_id]
-    token_attn = [(t, a) for t, a in pair["concept"]][:n_tokens]
-    for idx, (t, a) in enumerate(token_attn):
-        print(f"\t{idx + 1}. {t}: {a:.4f}", sep=" ")
-    if pair["feature"]:
-        print("\nTop-n images with largest absolute values of logits:")
-        plot_instances(pair["feature"], n_images)
-    print(120 * "-")

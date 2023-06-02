@@ -33,16 +33,42 @@
 
 ## 🧬 Experiments
 
-| EID   | MID | Model name | Description | Task | Runs |
-| ----:| :--- | :---  | :----       | :--- |:--- |
-| [E01](autoconcept/config/conf/experiment/E01.yaml) | [M01](autoconcept/config/conf/model/M01.yaml) | Unrestricted Bottleneck Model | Visual feature extractor + predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/45290810b6594c90bd67599f9a9eb948), [[2]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/7acaef594d8e4785b0259341ed68d619), [[3]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/46375d4209234e33abb4c9db98fee285/info-output/metrics/scalar) |
-| [E02](autoconcept/config/conf/experiment/E02.yaml) | [M02](autoconcept/config/conf/model/M02.yaml) | Concept Bottleneck Model | Visual feature extractor + predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/0651aab925ed46b4bde3574cf523bbd1) |
-| [E03](autoconcept/config/conf/experiment/E03.yaml) | [M03](autoconcept/config/conf/model/M03.yaml) | Binary Attributes Classifier | Predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/60fddd0c2a0f46f384e597c5e33d1b2e) |
-| [E04](autoconcept/config/conf/experiment/E04.yaml) | [M04](autoconcept/config/conf/model/M04.yaml) | BOW Classifier | Predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/4f04a00d9b9a418fb69ac44dd77d4fbf) |
-| [E05](autoconcept/config/conf/experiment/E05.yaml) | [M05](autoconcept/config/conf/model/M05.yaml) | LSTM Classifier | LSTM concept extractor + predictor | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/e1e2454081d04be7aaac8a0b5597c583) |
-| [E06](autoconcept/config/conf/experiment/E06.yaml) | [M06](autoconcept/config/conf/model/M06.yaml) | Single CNN Classifier | Single CNN concept extractor + predictor (see issue [#14](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/14)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/61fe6ef5e7594f0586d1b814402d173b) |
-| [E07](autoconcept/config/conf/experiment/E07.yaml) | [M07](autoconcept/config/conf/model/M07.yaml) | Multiple CNN Classifier | Multiple CNN concept extractor + predictor (see issue [#16](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/16)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/06197c1b3a1c4352850bb181dd1bd564) |
-| [E08](autoconcept/config/conf/experiment/E08.yaml) | [M08](autoconcept/config/conf/model/M08.yaml) | Simplified Attention Classifier | Simplified Attention concept extractor + predictor (see issue [#20](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/20)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/1ac635b4173240928a2a72ea14c497d1) |
-| [E09](autoconcept/config/conf/experiment/E09.yaml) | [M09](autoconcept/config/conf/model/M09.yaml) | Transformer Classifier | Transformer concept extractor + predictor (see issue [#22](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/22)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/1586fc7eb35b43e9a20123eac86d394d) |
-| [E10](autoconcept/config/conf/experiment/E10.yaml) | [M10](autoconcept/config/conf/model/M10.yaml) | Automatic Concept Bottleneck | Visual feature extractor + transformer concept extractor + predictor (see issue [#24](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/24)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/b7b4c971f26b4ca0b931c2bd286da8cf) |
-| [E10-1](autoconcept/config/conf/experiment/E10-1.yaml) | [M10](autoconcept/config/conf/model/M10.yaml) | Automatic Concept Bottleneck | Visual feature extractor + transformer concept extractor + predictor + freezing callback (see issue [#26](https://github.com/DanisAlukaev/AutoConceptBottleneck/issues/26)) | CLF CUB200 | [[1]](http://10.100.11.149:8080/projects/747cd2ee35374486acb675187990cf67/experiments/6f6609392f404f0080bbfc189ceb62a8) |
+### 1. Shapes Dataset (ablation study)
+
+**a. Fine-tuned feature extractor.**
+
+| Model     | EID-DATASET         | act_fn | pretrain | norm_fn  | slot_norm | dummy_concept | dummy_tokens | reg_dist | tie_loss   |  Performance (F1-score)   | Disentanglement | Completeness    | Directory      |
+|:------------|:-----------:|:-----------:|:--------:|:--------:|:---------:|:--------:|:----------:|:----------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
+| Baseline | E35-SHP | relu | ✓ | - | - | -| - | - | - | 0.994 ± 0.0 | 0.605 ± 0.0 | 0.726 ± 0.0 | `outputs/2023-06-02/06-31-54` |
+| Baseline | E36-SHP | sigmoid | ✓ | - | - | - | - | - | - |  0.998 ± 0.0 | 0.572 ± 0.0 | 0.660 ± 0.0 | `outputs/2023-06-02/06-44-03` |
+| Baseline | E37-SHP | gumbel | ✓ | - | - | - | - | - | - |  0.992 ± 0.0 | 0.505 ± 0.0 | 0.579 ± 0.0 | `outputs/2023-06-02/06-54-19` |
+| Framework | E38-SHP | sigmoid | ✓ | softmax | ✗ | - | - | ✗ | JS |  0.992 ± 0.0 | 0.510 ± 0.0 | 0.658 ± 0.0 | `outputs/2023-06-02/07-04-49` |
+| Framework | E39-SHP | gumbel | ✓ | softmax | ✗ | - | - | ✗ | JS | 0.913 ± 0.0 | 0.730 ± 0.0 | 0.727 ± 0.0 | `outputs/2023-06-02/07-18-28` |
+| Framework | E40-SHP | gumbel | ✓ | softmax | ✗ | - | -  | ✗ | KL($f$, $c$) | 0.586 ± 0.0 | 0.695 ± 0.0 | 0.624 ± 0.0 | `outputs/2023-06-02/07-29-29` |
+| Framework | E41-SHP | gumbel | ✓ | softmax | ✗ | - | - | ✗ | KL($c$, $f$) | 0.602 ± 0.0 | 0.764 ± 0.0 | 0.701 ± 0.0 | `outputs/2023-06-02/07-41-38` |
+| Framework | E42-SHP | gumbel | ✓ | entmax | ✗ | - | - | ✗ | JS | 0.888 ± 0.0 | 0.763 ± 0.0 | 0.827 ± 0.0 | `outputs/2023-06-02/07-52-20`  |
+| Framework | E43-SHP | gumbel | ✓ | softmax | ✓ | ✓ | ✗ | ✗ | JS | 0.730 ± 0.0 | 0.733 ± 0.0 | 0.705 ± 0.0 | `outputs/2023-06-02/08-02-59` |
+| Framework | E44-SHP | gumbel | ✓ | softmax | ✓ | ✓ | ✓ | ✗ | JS | 0.792 ± 0.0 | 0.662 ± 0.0 | 0.773 ± 0.0 | `outputs/2023-06-02/08-13-11` |
+| Framework | E45-SHP | gumbel | ✓ | entmax | ✓ | ✓ | ✗ | ✗ | JS | 0.673 ± 0.0 | 0.739 ± 0.0 | 0.748 ± 0.0 | `outputs/2023-06-02/08-31-29` |
+| Framework | E46-SHP | gumbel | ✓ | entmax | ✓ | ✓ | ✓ | ✗ | JS | 0.712 ± 0.0 | 0.739 ± 0.0 | 0.748 ± 0.0 | `outputs/2023-06-02/08-31-29` |
+| Framework | E47-SHP | gumbel | ✓ | softmax | ✗ | - | - | ✓ | JS | 0.912 ± 0.0 | 0.730 ± 0.0 | 0.727 ± 0.0 | `outputs/2023-06-02/08-52-26`  |
+| Framework | E48-SHP | gumbel | ✓ | entmax | ✗ | - | - | ✓ | JS | 0.888 ± 0.0 | 0.763 ± 0.0 | 0.827 ± 0.0 | `outputs/2023-06-02/09-02-55` |
+
+**b. Training of feature extractor from scratch.**
+
+| Model     | EID-DATASET         | act_fn | pretrain | norm_fn  | slot_norm | dummy_concept | dummy_tokens | reg_dist | tie_loss   |  Performance (F1-score)   | Disentanglement | Completeness    | Directory      |
+|:------------|:-----------:|:-----------:|:--------:|:--------:|:---------:|:--------:|:----------:|:----------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
+| Baseline | E49-SHP | relu | ✗ | - | - | -| - | - | - | 0.972 ± 0.0 | 0.574 ± 0.0 | 0.647 ± 0.0 | `outputs/2023-06-02/09-57-26` |
+| Baseline | E50-SHP | sigmoid | ✗ | - | - | - | - | - | - | 0.983 ± 0.0 | 0.495 ± 0.0 | 0.394 ± 0.0 | `outputs/2023-06-02/10-08-34` |
+| Baseline | E51-SHP | gumbel | ✗ | - | - | - | - | - | - | 0.490 ± 0.0 | 0.529 ± 0.0 | 0.435 ± 0.0 | `outputs/2023-06-02/10-21-00` |
+| Framework | E52-SHP | sigmoid | ✗ | softmax | ✗ | - | - | ✗ | JS | 0.989 ± 0.0 | 0.509 ± 0.0 | 0.422 ± 0.0 | `outputs/2023-06-02/10-32-52` |
+| Framework | E53-SHP | gumbel | ✗ | softmax | ✗ | - | - | ✗ | JS | 0.682 ± 0.0 | 0.536 ± 0.0 | 0.514 ± 0.0 | `outputs/2023-06-02/11-22-21` |
+| Framework | E54-SHP | gumbel | ✗ | softmax | ✗ | - | -  | ✗ | KL($f$, $c$) | 0.377 ± 0.0 | 0.578 ± 0.0 | 0.605 ± 0.0 | `outputs/2023-06-02/11-34-23` |
+| Framework | E55-SHP | gumbel | ✗ | softmax | ✗ | - | - | ✗ | KL($c$, $f$) | 0.394 ± 0.0 | 0.579 ± 0.0 | 0.566 ± 0.0 | `outputs/2023-06-02/11-44-17` |
+| Framework | E56-SHP | gumbel | ✗ | entmax | ✗ | - | - | ✗ | JS | 0.740 ± 0.0 | 0.525 ± 0.0 | 0.506 ± 0.0 | `outputs/2023-06-02/11-54-53` |
+| Framework | E57-SHP | gumbel | ✗ | softmax | ✓ | ✓ | ✗ | ✗ | JS | 0.509 ± 0.0 | 0.602 ± 0.0 | 0.642 ± 0.0 | `outputs/2023-06-02/12-05-44` |
+| Framework | E58-SHP | gumbel | ✗ | softmax | ✓ | ✓ | ✓ | ✗ | JS | 0.513 ± 0.0 | 0.540 ± 0.0 | 0.564 ± 0.0 | `outputs/2023-06-02/12-16-04` |
+| Framework | E59-SHP | gumbel | ✗ | entmax | ✓ | ✓ | ✗ | ✗ | JS | 0.673 ± 0.0 | 0.739 ± 0.0 | 0.748 ± 0.0 | `outputs/2023-06-02/12-26-31` |
+| Framework | E60-SHP | gumbel | ✗ | entmax | ✓ | ✓ | ✓ | ✗ | JS | 0.471 ± 0.0 | 0.680 ± 0.0 | 0.669 ± 0.0 | `outputs/2023-06-02/12-37-21` |
+| Framework | E61-SHP | gumbel | ✗ | softmax | ✗ | - | - | ✓ | JS | 0.682 ± 0.0 | 0.534 ± 0.0 | 0.511 ± 0.0 | `outputs/2023-06-02/12-52-49` |
+| Framework | E62-SHP | gumbel | ✗ | entmax | ✗ | - | - | ✓ | JS | 0.740 ± 0.0 | 0.525 ± 0.0 | 0.506 ± 0.0 | `outputs/2023-06-02/13-02-58` |

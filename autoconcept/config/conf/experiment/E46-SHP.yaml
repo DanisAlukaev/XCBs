@@ -1,0 +1,22 @@
+# @package _global_
+
+defaults:
+  - override /model: M46-SHP
+  - override /dataset: shapes
+
+name: E46-SHP
+epoch_freeze_backbone: null
+epoch_reinitialize: 0
+max_epochs: 10
+dataset:
+  annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes-hard-3/captions.csv
+  collate_fn:
+    _target_: datasets.collators.CollateIndices
+    vocabulary:
+      _target_: datasets.utils.VocabularyShapes
+      annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes-hard-3/captions.csv
+  num_workers: 10
+  batch_size: 64
+
+devices:
+  - 0
