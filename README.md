@@ -56,7 +56,7 @@
 
 **b. Training of feature extractor from scratch.**
 
-| Model     | EID-DATASET  |F1-score   | Disentanglement | Completeness   | Informativeness | act_fn  | norm_fn  | slot_norm | dummy_concept | dummy_tokens | reg_dist | tie_loss   |
+| Model     | EID-DATASET  | Performance (F1-score)   | Disentanglement | Completeness   | Informativeness | act_fn  | norm_fn  | slot_norm | dummy_concept | dummy_tokens | reg_dist | tie_loss   |
 |:------------|:-----------:|:-----------:|:--------:|:--------:|:--------:|:----------:|:----------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
 | Baseline | E49-SHP | 0.94 ± 0.04 | 0.52 ± 0.11 | 0.47 ± 0.10 | 0.20 ± 0.04  | relu |  - | - | -| - | - | - |
 | Baseline | E50-SHP | 0.98 ± 0.01 | 0.55 ± 0.04 | 0.49 ± 0.08 | 0.16 ± 0.01 | sigmoid | - | - | - | - | - | - |
