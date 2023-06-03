@@ -104,6 +104,7 @@ def run(cfg):
 
 @hydra.main(version_base=None, config_path="config/conf", config_name="config")
 def main(cfg: DictConfig):
+    print(cfg.name)
     try:
         metric = run(cfg)
         message = f"✅ Successful run from {cfg.timestamp}!\n\n"
