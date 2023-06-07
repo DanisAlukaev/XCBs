@@ -47,7 +47,7 @@ class MimicDataset(Dataset):
             image = transformed["image"]
 
         report = row.caption
-        target = torch.tensor(row.is_pathology)
+        target = torch.tensor([row.is_pathology]).float()
         attributes = self.get_attributes(idx)
 
         sample = dict(

@@ -97,7 +97,8 @@ class AutoConceptBottleneckModel(nn.Module):
         feature_activated = self.bn_visual(feature_activated)
         prediction = self.predictor(feature_activated)
 
-        return self.softmax(prediction), feature_probs, feature_logits
+        # self.softmax(prediction), feature_probs, feature_logits
+        return prediction
 
     def inference_textual(self, indices, iteration=None):
         concept_extractor_dict = self.concept_extractor(indices)

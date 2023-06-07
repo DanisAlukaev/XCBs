@@ -1,0 +1,25 @@
+# @package _global_
+
+defaults:
+  - override /model: M39-MIM
+  - override /dataset: mimic
+
+name: E39-MIM
+epoch_freeze_backbone: null
+epoch_reinitialize: 0
+max_epochs: 15
+trace_interpretations: false
+reinitialize_feature_extractor: false
+
+dataset:
+  img_size: 299
+  img_dir: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/images
+  annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/annotation.csv
+  collate_fn:
+    _target_: datasets.collators.CollateIndices
+    vocabulary:
+      _target_: datasets.utils.VocabularyMimic
+      annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/annotation.csv
+  num_workers: 10
+devices:
+  - 0
