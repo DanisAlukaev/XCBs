@@ -39,20 +39,20 @@
 
 | Model     | EID-DATASET  | Performance (F1-score)   | Disentanglement | Completeness   | Informativeness | act_fn  | norm_fn  | slot_norm | dummy_concept | dummy_tokens | reg_dist | tie_loss   |
 |:------------|:-----------:|:-----------:|:--------:|:--------:|:--------:|:----------:|:----------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------:|
-| Baseline | E35-SHP | 1.00 ± 0.00 | 0.60 ± 0.05 | 0.64 ± 0.10 | 0.07 ± 0.01 | relu | ✓ | - | - | -| - | - | - |
-| Baseline | E36-SHP | 1.00 ± 0.00 | 0.68 ± 0.10 | 0.72 ± 0.05 | 0.08 ± 0.01 | sigmoid | ✓ | - | - | - | - | - | - |
-| Baseline | E37-SHP | 0.99 ± 0.00 | 0.51 ± 0.01 | 0.56 ± 0.06 | 0.08 ± 0.02  | gumbel | ✓ | - | - | - | - | - | - |
-| Framework | E38-SHP |  0.99 ± 0.00 | 0.64 ± 0.09 | 0.68 ± 0.04| 0.08 ± 0.03 | sigmoid | ✓ | softmax | ✗ | - | - | ✗ | JS |
-| Framework | E39-SHP | 0.93 ± 0.01 | 0.78 ± 0.03 | 0.74 ± 0.12 | 0.07 ± 0.02 | gumbel | ✓ | softmax | ✗ | - | - | ✗ | JS |
-| Framework | E40-SHP | 0.62 ± 0.04 | 0.67 ± 0.03 | 0.71 ± 0.05 | 0.09 ± 0.03 | gumbel | ✓ | softmax | ✗ | - | -  | ✗ | KL($f$, $c$) |
-| Framework | E41-SHP | 0.65 ± 0.06 | 0.69 ± 0.06 | 0.72 ± 0.05 | 0.09 ± 0.02 | gumbel | ✓ | softmax | ✗ | - | - | ✗ | KL($c$, $f$) |
-| Framework | E42-SHP | 0.91 ± 0.01 | 0.75 ± 0.03 | 0.73 ± 0.10 | 0.08 ± 0.01 | gumbel | ✓ | entmax | ✗ | - | - | ✗ | JS |
-| Framework | E43-SHP | 0.75 ± 0.04 | 0.71 ± 0.06 | 0.71 ± 0.07 | 0.09 ± 0.01 | gumbel | ✓ | softmax | ✓ | ✓ | ✗ | ✗ | JS |
-| Framework | E44-SHP | 0.72 ± 0.04 | 0.74 ± 0.06 | 0.79 ± 0.14 | 0.07 ± 0.02 | gumbel | ✓ | softmax | ✓ | ✓ | ✓ | ✗ | JS |
-| Framework | E45-SHP | 0.64 ± 0.04 | 0.75 ± 0.03 | 0.75 ± 0.02 | 0.08 ± 0.02 | gumbel | ✓ | entmax | ✓ | ✓ | ✗ | ✗ | JS |
-| Framework | E46-SHP | 0.66 ± 0.05 | 0.69 ± 0.05 | 0.73 ± 0.08 | 0.08 ± 0.03 | gumbel | ✓ | entmax | ✓ | ✓ | ✓ | ✗ | JS |
-| Framework | E47-SHP | 0.93 ± 0.01 | 0.78 ± 0.03 | 0.74 ± 0.12 | 0.07 ± 0.02 | gumbel | ✓ | softmax | ✗ | - | - | ✓ | JS |
-| Framework | E48-SHP | 0.93 ± 0.01 | 0.75 ± 0.03 | 0.73 ± 0.10 | 0.08 ± 0.01 | gumbel | ✓ | entmax | ✗ | - | - | ✓ | JS |
+| Baseline | E35-SHP | 1.00 ± 0.00 | 0.60 ± 0.05 | 0.64 ± 0.10 | 0.07 ± 0.01 | relu | - | - | -| - | - | - |
+| Baseline | E36-SHP | 1.00 ± 0.00 | 0.68 ± 0.10 | 0.72 ± 0.05 | 0.08 ± 0.01 | sigmoid  | - | - | - | - | - | - |
+| Baseline | E37-SHP | 0.99 ± 0.00 | 0.51 ± 0.01 | 0.56 ± 0.06 | 0.08 ± 0.02  | gumbel  | - | - | - | - | - | - |
+| Framework | E38-SHP |  0.99 ± 0.00 | 0.64 ± 0.09 | 0.68 ± 0.04| 0.08 ± 0.03 | sigmoid | softmax | ✗ | - | - | ✗ | JS |
+| Framework | E39-SHP | 0.93 ± 0.01 | 0.78 ± 0.03 | 0.74 ± 0.12 | 0.07 ± 0.02 | gumbel | softmax | ✗ | - | - | ✗ | JS |
+| Framework | E40-SHP | 0.62 ± 0.04 | 0.67 ± 0.03 | 0.71 ± 0.05 | 0.09 ± 0.03 | gumbel  | softmax | ✗ | - | -  | ✗ | KL($f$, $c$) |
+| Framework | E41-SHP | 0.65 ± 0.06 | 0.69 ± 0.06 | 0.72 ± 0.05 | 0.09 ± 0.02 | gumbel | softmax | ✗ | - | - | ✗ | KL($c$, $f$) |
+| Framework | E42-SHP | 0.91 ± 0.01 | 0.75 ± 0.03 | 0.73 ± 0.10 | 0.08 ± 0.01 | gumbel | entmax | ✗ | - | - | ✗ | JS |
+| Framework | E43-SHP | 0.75 ± 0.04 | 0.71 ± 0.06 | 0.71 ± 0.07 | 0.09 ± 0.01 | gumbel | softmax | ✓ | ✓ | ✗ | ✗ | JS |
+| Framework | E44-SHP | 0.72 ± 0.04 | 0.74 ± 0.06 | 0.79 ± 0.14 | 0.07 ± 0.02 | gumbel | softmax | ✓ | ✓ | ✓ | ✗ | JS |
+| Framework | E45-SHP | 0.64 ± 0.04 | 0.75 ± 0.03 | 0.75 ± 0.02 | 0.08 ± 0.02 | gumbel | entmax | ✓ | ✓ | ✗ | ✗ | JS |
+| Framework | E46-SHP | 0.66 ± 0.05 | 0.69 ± 0.05 | 0.73 ± 0.08 | 0.08 ± 0.03 | gumbel | entmax | ✓ | ✓ | ✓ | ✗ | JS |
+| Framework | E47-SHP | 0.93 ± 0.01 | 0.78 ± 0.03 | 0.74 ± 0.12 | 0.07 ± 0.02 | gumbel  | softmax | ✗ | - | - | ✓ | JS |
+| Framework | E48-SHP | 0.93 ± 0.01 | 0.75 ± 0.03 | 0.73 ± 0.10 | 0.08 ± 0.01 | gumbel  | entmax | ✗ | - | - | ✓ | JS |
 
 **b. Training of feature extractor from scratch.**
 

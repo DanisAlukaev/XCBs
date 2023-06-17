@@ -53,14 +53,20 @@ class AutoConceptBottleneckModel(nn.Module):
             feature_activated = self.interim_activation(*args)
             concept_activated = self.interim_activation_aux(*args_aux)
 
-        feature_activated_bn = self.bn_visual(feature_activated)
-        concept_activated_bn = self.bn_textual(concept_activated)
+        # feature_activated_bn = self.bn_visual(feature_activated)
+        # concept_activated_bn = self.bn_textual(concept_activated)
 
-        prediction = self.predictor(feature_activated_bn)
+        # prediction = self.predictor(feature_activated_bn)
+
+        # prediction_aux = None
+        # if self.predictor_aux:
+        #     prediction_aux = self.predictor_aux(concept_activated_bn)
+
+        prediction = self.predictor(feature_activated)
 
         prediction_aux = None
         if self.predictor_aux:
-            prediction_aux = self.predictor_aux(concept_activated_bn)
+            prediction_aux = self.predictor_aux(concept_activated)
 
         out_dict = dict(
             feature_logits=feature_logits,
@@ -94,11 +100,11 @@ class AutoConceptBottleneckModel(nn.Module):
         if self.interim_activation:
             feature_activated = self.interim_activation(*args)
 
-        feature_activated = self.bn_visual(feature_activated)
+        # feature_activated = self.bn_visual(feature_activated)
         prediction = self.predictor(feature_activated)
 
-        # self.softmax(prediction), feature_probs, feature_logits
-        return prediction
+        return self.softmax(prediction), feature_probs, feature_logits, feature_activated
+        # return prediction
 
     def inference_textual(self, indices, iteration=None):
         concept_extractor_dict = self.concept_extractor(indices)

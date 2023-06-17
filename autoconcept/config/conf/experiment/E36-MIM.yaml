@@ -7,7 +7,7 @@ defaults:
 name: E36-MIM
 epoch_freeze_backbone: null
 epoch_reinitialize: 0
-max_epochs: 15
+max_epochs: 7
 trace_interpretations: false
 reinitialize_feature_extractor: false
 

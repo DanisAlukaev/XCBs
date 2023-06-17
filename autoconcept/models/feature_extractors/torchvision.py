@@ -33,8 +33,15 @@ class TorchvisionFeatureExtractor(BaseFeatureExtractor):
         #         if hasattr(layer, 'reset_parameters'):
         #             layer.reset_parameters()
 
-        if backbone.fc.out_features != self.out_features:
-            backbone.fc = nn.Linear(backbone.fc.in_features, self.out_features)
+        if hasattr(backbone, "fc"):
+            if backbone.fc.out_features != self.out_features:
+                backbone.fc = nn.Linear(
+                    backbone.fc.in_features, self.out_features)
+
+        if hasattr(backbone, "classifier"):
+            if backbone.classifier.out_features != self.out_features:
+                backbone.classifier = nn.Linear(
+                    backbone.classifier.in_features, self.out_features)
 
         self.main = backbone
 

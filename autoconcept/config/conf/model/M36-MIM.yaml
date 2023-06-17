@@ -5,8 +5,8 @@ main:
 
   feature_extractor:
     _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
-    model: inception_v3
-    weights: IMAGENET1K_V1
+    model: densenet121
+    weights: null
     out_features: 20
 
   concept_extractor:
@@ -35,7 +35,7 @@ main:
 
   predictor:
     _target_: models.predictors.mlp.MLPPredictor
-    layers: [20, 1]
+    layers: [20, 500, 500, 2]
     activation:
       _target_: torch.nn.ReLU
 
@@ -44,14 +44,14 @@ main:
 
   predictor_aux:
     _target_: models.predictors.mlp.MLPPredictor
-    layers: [20, 1]
+    layers: [20, 500, 500, 2]
     activation:
       _target_: torch.nn.ReLU
 
 dist_weight: 0.0
 
 criterion_task:
-  _target_: torch.nn.BCEWithLogitsLoss
+  _target_: torch.nn.CrossEntropyLoss
 
 criterion_tie:
   _target_: functional.loss.JensenShannonDivergenceLoss
@@ -67,9 +67,10 @@ optimizer_model_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
-      path: torch.optim.AdamW
-  lr: 0.0001
-  weight_decay: 0.02
+      path: torch.optim.Adam
+  lr: 0.001
+  weight_decay: 1e-5
+  amsgrad: true
 
 optimizer_concept_extractor_template:
   _target_: functools.partial
@@ -84,7 +85,7 @@ scheduler_model_template:
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.lr_scheduler.MultiStepLR
-  milestones: [5, 9]
+  milestones: [2, 5]
   gamma: 0.1
 
 scheduler_concept_extractor_template:
@@ -92,5 +93,5 @@ scheduler_concept_extractor_template:
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.lr_scheduler.MultiStepLR
-  milestones: [6, 10]
+  milestones: [3, 6]
   gamma: 0.3

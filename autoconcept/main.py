@@ -7,7 +7,7 @@ from callbacks import FreezingCallback
 from clearml import Task
 from extract import (compute_completeness, compute_disentanglement,
                      compute_informativeness, fit_linear_model,
-                     prepare_data_dci, trace_interpretations)
+                     prepare_data_dci)
 from helpers import load_experiment, pretty_cfg, report_to_telegram, set_seed
 from hydra.utils import instantiate
 from omegaconf import DictConfig
@@ -94,10 +94,10 @@ def run(cfg):
     f1_test = trainer.test(inference, test_loader)[
         0]['test/weighted_avg/f1-score']
 
-    dm, inference = load_experiment(".")
+    # dm, inference = load_experiment(".")
 
-    if cfg.trace_interpretations:
-        trace_interpretations(dm, inference)
+    # if cfg.trace_interpretations:
+    #     trace_interpretations(dm, inference)
 
     return f1_test
 

@@ -42,8 +42,8 @@ class BaseModel(nn.Module):
         if self.interim_activation:
             concept_activated = self.interim_activation(*args)
 
-        print()
-        print("Gumbel: ", concept_activated)
+        # print()
+        # print("Gumbel: ", concept_activated)
 
         concept_activated_bn = self.bn(concept_activated)
         prediction = self.predictor(concept_activated_bn)
@@ -86,7 +86,7 @@ class LitBaseModel(pl.LightningModule):
         self.field = field
 
         # print("Predictor: ", self.main.predictor.main[0].weight)
-        print("BatchNorm: ", self.main.bn.weight, self.main.bn.bias)
+        # print("BatchNorm: ", self.main.bn.weight, self.main.bn.bias)
 
         self.automatic_optimization = False
 
@@ -102,7 +102,7 @@ class LitBaseModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, target = batch[self.field], batch["target"]
 
-        print("target: ", target)
+        # print("target: ", target)
 
         iteration = self.trainer.global_step
         out_dict = self(x, iteration=iteration)

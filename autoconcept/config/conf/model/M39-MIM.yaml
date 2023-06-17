@@ -3,10 +3,18 @@ _target_: models.auto_concept_bottleneck.LitAutoConceptBottleneckModel
 main:
   _target_: models.auto_concept_bottleneck.AutoConceptBottleneckModel
 
+  # feature_extractor:
+  #   _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
+  #   model: densenet161
+  #   weights: IMAGENET1K_V1
+  #   out_features: 30
+
+  # feature_extractor:
+  #   _target_: models.feature_extractors.resnet.PretrainedResnetFeatureExtractor
+  #   out_features: 30
+
   feature_extractor:
-    _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
-    model: inception_v3
-    weights: IMAGENET1K_V1
+    _target_: models.feature_extractors.pre-trained.PretrainedDensenetFeatureExtractor
     out_features: 20
 
   concept_extractor:
@@ -41,7 +49,7 @@ main:
 
   interim_activation:
     _target_: functional.gumbel.GumbelSigmoid
-    step: 34
+    step: 10
     t: 1.0
     rate: 0.001
     min_val: 0.01
@@ -52,14 +60,14 @@ main:
     activation:
       _target_: torch.nn.ReLU
 
-dist_weight: 10.0
+dist_weight: 0.0
 
 criterion_task:
   _target_: torch.nn.CrossEntropyLoss
 
 criterion_tie:
   _target_: functional.loss.JensenShannonDivergenceLoss
-tie_weight: 0.0
+tie_weight: 30.0
 
 mix_tie_epoch: null
 
@@ -71,16 +79,17 @@ optimizer_model_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
-      path: torch.optim.AdamW
-  lr: 0.001
-  weight_decay: 0.02
+      path: torch.optim.Adam
+  lr: 0.0002
+  weight_decay: 1e-5
+  amsgrad: true
 
 optimizer_concept_extractor_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.AdamW
-  lr: 6e-3
+  lr: 2e-4
   weight_decay: 0.03
 
 scheduler_model_template:
@@ -88,7 +97,7 @@ scheduler_model_template:
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.lr_scheduler.MultiStepLR
-  milestones: [5, 9]
+  milestones: [4, 7]
   gamma: 0.1
 
 scheduler_concept_extractor_template:
@@ -96,5 +105,5 @@ scheduler_concept_extractor_template:
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.lr_scheduler.MultiStepLR
-  milestones: [6, 10]
+  milestones: [5, 8]
   gamma: 0.3
