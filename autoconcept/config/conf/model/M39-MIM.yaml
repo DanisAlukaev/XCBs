@@ -16,7 +16,7 @@ main:
   feature_extractor:
     _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
     model: densenet121
-    weights: null
+    weights: IMAGENET1K_V1
     out_features: 20
 
   # feature_extractor:

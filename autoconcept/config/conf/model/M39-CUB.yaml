@@ -5,21 +5,22 @@ main:
 
   feature_extractor:
     _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
-    model: densenet121
-    weights: IMAGENET1K_V1
-    out_features: 20
+    model: inception_v3
+    weights: IMAGENET1K_V1 # null
+    out_features: 320
 
   concept_extractor:
     _target_: models.concept_extractors.novel.ConceptExtractorAttention
     vocab_size: 8800
     embed_dim: 50
-    out_features: 20
+    out_features: 320
     max_len: 380
     src_pad_idx: 0
     dropout: 0.
     use_slot_norm: false
     norm_fn1:
-      _target_: torch.nn.Softmax
+      _target_: functional.activation.Entmax15
+      # _target_: torch.nn.Softmax
       dim: -2
     norm_fn2:
       _target_: functional.operations.ScalerSum
@@ -27,15 +28,14 @@ main:
     regularize_distance: false
     use_position_encoding: true
     mlp_depth: 4
-    use_dummy_concept: false
-    use_dummy_tokens: false
+    use_dummy_attention: true
     activation:
       _target_: torch.nn.ReLU
     device: cuda
 
   predictor:
     _target_: models.predictors.mlp.MLPPredictor
-    layers: [20, 2]
+    layers: [320, 200]
     activation:
       _target_: torch.nn.ReLU
 
@@ -44,7 +44,7 @@ main:
 
   predictor_aux:
     _target_: models.predictors.mlp.MLPPredictor
-    layers: [20, 2]
+    layers: [320, 200]
     activation:
       _target_: torch.nn.ReLU
 
@@ -55,7 +55,7 @@ criterion_task:
 
 criterion_tie:
   _target_: functional.loss.JensenShannonDivergenceLoss
-tie_weight: 0.0
+tie_weight: 10.0
 
 mix_tie_epoch: null
 
@@ -67,31 +67,30 @@ optimizer_model_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
-      path: torch.optim.Adam
-  lr: 0.001
-  weight_decay: 1e-5
-  amsgrad: true
+      path: torch.optim.Adadelta
+  lr: 0.25
+  rho: 0.95
 
 optimizer_concept_extractor_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.AdamW
-  lr: 2e-4
-  weight_decay: 0.03
+  lr: 2e-3
+  weight_decay: 0.01
 
 scheduler_model_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.lr_scheduler.MultiStepLR
-  milestones: [2, 5]
-  gamma: 0.1
+  milestones: [20, 30, 35, 40]
+  gamma: 0.3
 
 scheduler_concept_extractor_template:
   _target_: functools.partial
   _args_:
     - _target_: hydra.utils.get_class
       path: torch.optim.lr_scheduler.MultiStepLR
-  milestones: [3, 6]
-  gamma: 0.3
+  milestones: [25, 40]
+  gamma: 0.2
