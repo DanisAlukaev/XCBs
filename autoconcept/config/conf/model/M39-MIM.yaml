@@ -14,8 +14,14 @@ main:
   #   out_features: 30
 
   feature_extractor:
-    _target_: models.feature_extractors.pre-trained.PretrainedDensenetFeatureExtractor
+    _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
+    model: densenet121
+    weights: null
     out_features: 20
+
+  # feature_extractor:
+  #   _target_: models.feature_extractors.pre-trained.PretrainedDensenetFeatureExtractor
+  #   out_features: 20
 
   concept_extractor:
     _target_: models.concept_extractors.novel.ConceptExtractorAttention
