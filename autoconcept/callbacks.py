@@ -32,12 +32,9 @@ class ReinitializeBottleneckCallback(Callback):
     def on_train_epoch_start(self, trainer, pl_module):
         if hasattr(pl_module.main, 'feature_extractor') and isinstance(pl_module.main.feature_extractor, TorchvisionFeatureExtractor):
             if trainer.current_epoch == self.epoch_reinitialize:
-                # pl_module.main.feature_extractor.main.fc.reset_parameters()
                 torch.nn.init.xavier_uniform_(
                     pl_module.main.feature_extractor.main.fc.weight)
-                # print(pl_module.main.feature_extractor.main.fc.weight)
-                # print(
-                #     f"Bottleneck was re-initialized on {trainer.current_epoch} epoch!")
+                print("Bottleneck was re-initialized.")
 
 
 class InitializePredictorCallback(Callback):
@@ -51,9 +48,14 @@ class InitializePredictorCallback(Callback):
                 for l in pl_module.main.predictor.main:
                     if isinstance(l, torch.nn.Linear):
                         torch.nn.init.xavier_uniform_(l.weight)
-                #         print(l.weight)
-                # print(
-                #     f"Predictor was initialized on {trainer.current_epoch} epoch!")
+                print("Predictor was re-initialized.")
+
+        if hasattr(pl_module.main, 'predictor_aux') and isinstance(pl_module.main.predictor_aux, MLPPredictor):
+            if trainer.current_epoch == 0:
+                for l in pl_module.main.predictor_aux.main:
+                    if isinstance(l, torch.nn.Linear):
+                        torch.nn.init.xavier_uniform_(l.weight)
+                print("Predictor aux was re-initialized.")
 
 
 class ReinitializeTextualMLP(Callback):
@@ -62,7 +64,7 @@ class ReinitializeTextualMLP(Callback):
         super().__init__()
         self.epoch = epoch
 
-    def on_train_epoch_end(self, trainer, pl_module):
+    def on_train_epoch_start(self, trainer, pl_module):
         if trainer.current_epoch == self.epoch:
             if hasattr(pl_module.main, 'concept_extractor'):
                 torch.nn.init.xavier_uniform_(
@@ -76,9 +78,7 @@ class ReinitializeTextualMLP(Callback):
                     for l in mlp.main:
                         if isinstance(l, torch.nn.Linear):
                             torch.nn.init.xavier_uniform_(l.weight)
-                            # print(l.weight)
-                    # print(
-                    #     f"MLPs in concept extractor was re-initialized on {trainer.current_epoch} epoch!")
+                print("Textual MLP were re-initialized.")
 
 
 class InitializeInceptionCallback(Callback):
@@ -90,5 +90,4 @@ class InitializeInceptionCallback(Callback):
         if hasattr(pl_module.main, 'feature_extractor'):
             if trainer.current_epoch == 0:
                 pl_module.main.feature_extractor.main.apply(weights_init)
-                # print(
-                #     "Inception: ", pl_module.main.feature_extractor.main.Conv2d_1a_3x3.conv.weight)
+                print("Inception was re-initialized.")

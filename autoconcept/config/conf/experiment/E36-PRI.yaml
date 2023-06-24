@@ -1,0 +1,23 @@
+# @package _global_
+
+defaults:
+  - override /model: M36-PRI
+  - override /dataset: private
+
+name: E36-PRI
+epoch_freeze_backbone: null
+epoch_reinitialize: 0
+max_epochs: 7
+trace_interpretations: false
+reinitialize_feature_extractor: false
+
+dataset:
+  img_size: 299
+  collate_fn:
+    _target_: datasets.collators.CollateIndices
+    vocabulary:
+      _target_: datasets.utils.VocabularyMimic
+      annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/datasets/annotations_public.csv
+  num_workers: 10
+devices:
+  - 0

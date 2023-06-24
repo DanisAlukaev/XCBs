@@ -18,8 +18,6 @@ class AutoConceptBottleneckModel(nn.Module):
 
     def __init__(self, feature_extractor, concept_extractor, predictor, interim_activation, predictor_aux=None):
         super().__init__()
-        # assert feature_extractor.out_features == predictor.layers[0]
-        # assert concept_extractor.out_features == predictor.layers[0]
 
         self.feature_extractor = feature_extractor
         self.concept_extractor = concept_extractor
@@ -35,25 +33,10 @@ class AutoConceptBottleneckModel(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, images, captions, iteration):
-        # print("Inception: ", self.feature_extractor.main.Conv2d_1a_3x3.conv.weight)
-        # print("Feature extractor fc: ", self.feature_extractor.main.fc.weight)
-        # print("Predictor: ", self.predictor.main[0].weight)
-
         feature_logits = self.feature_extractor(images)
-        # print(feature_logits[:, 0].min(), feature_logits[:, 0].max())
 
         concept_extractor_dict = self.concept_extractor(captions)
         concept_logits = concept_extractor_dict["concept_logits"]
-
-        # print((feature_logits.min(), concept_logits.min()),
-        #       (feature_logits.max(), concept_logits.max()),
-        #       (feature_logits.abs().min(), concept_logits.abs().min())
-        #       )
-
-        # print("Features", torch.topk(
-        #     feature_logits.flatten().abs(), 10, largest=False))
-        # print("Concepts", torch.topk(
-        #     concept_logits.flatten().abs(), 10, largest=False))
 
         feature_probs = self.sigmoid(feature_logits)
         concept_probs = self.sigmoid(concept_logits)
@@ -70,14 +53,20 @@ class AutoConceptBottleneckModel(nn.Module):
             feature_activated = self.interim_activation(*args)
             concept_activated = self.interim_activation_aux(*args_aux)
 
-        feature_activated_bn = self.bn_visual(feature_activated)
-        concept_activated_bn = self.bn_textual(concept_activated)
+        # feature_activated_bn = self.bn_visual(feature_activated)
+        # concept_activated_bn = self.bn_textual(concept_activated)
 
-        prediction = self.predictor(feature_activated_bn)
+        # prediction = self.predictor(feature_activated_bn)
+
+        # prediction_aux = None
+        # if self.predictor_aux:
+        #     prediction_aux = self.predictor_aux(concept_activated_bn)
+
+        prediction = self.predictor(feature_activated)
 
         prediction_aux = None
         if self.predictor_aux:
-            prediction_aux = self.predictor_aux(concept_activated_bn)
+            prediction_aux = self.predictor_aux(concept_activated)
 
         out_dict = dict(
             feature_logits=feature_logits,
@@ -111,10 +100,11 @@ class AutoConceptBottleneckModel(nn.Module):
         if self.interim_activation:
             feature_activated = self.interim_activation(*args)
 
-        feature_activated = self.bn_visual(feature_activated)
+        # feature_activated = self.bn_visual(feature_activated)
         prediction = self.predictor(feature_activated)
 
-        return self.softmax(prediction), feature_probs, feature_logits
+        return self.softmax(prediction), feature_probs, feature_logits, feature_activated
+        # return prediction
 
     def inference_textual(self, indices, iteration=None):
         concept_extractor_dict = self.concept_extractor(indices)
@@ -166,8 +156,6 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         self.last_iteration = 0
 
         self.automatic_optimization = False
-        # print("Predictor: ", self.main.predictor.main[0].weight)
-        # print("BatchNorm: ", self.main.bn_visual.weight, self.main.bn_visual.bias)
 
     def forward(self, images, indices, iteration=None):
         out_dict = self.main(images, indices, iteration=iteration)
@@ -176,8 +164,6 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
     def configure_optimizers(self):
         optimizer_model = self.optimizer_model_template(
             [*self.main.feature_extractor.parameters(), *self.main.bn_visual.parameters(), *self.main.predictor.parameters()])
-
-        # optimizer_model = self.optimizer_model_template(self.parameters())
 
         parameters_textual = [
             *self.main.concept_extractor.parameters(), *self.main.bn_textual.parameters()]
@@ -190,12 +176,9 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         scheduler_concept_extractor = self.scheduler_concept_extractor_template(
             optimizer_concept_extractor)
         return [optimizer_model, optimizer_concept_extractor], [scheduler_model, scheduler_concept_extractor]
-        # return [optimizer_model], [scheduler_model]
 
     def training_step(self, batch, batch_idx):
         images, indices, target = batch["image"], batch["indices"], batch["target"]
-
-        print("target: ", target)
 
         iteration = self.trainer.global_step
         if self.pretrain_embeddings_epoch:
@@ -246,8 +229,6 @@ class LitAutoConceptBottleneckModel(pl.LightningModule):
         opt_clf, opt_tie = self.optimizers()
         opt_clf.zero_grad()
         opt_tie.zero_grad()
-
-        # torch.autograd.set_detect_anomaly(True)
 
         self.manual_backward(loss)
         opt_clf.step()

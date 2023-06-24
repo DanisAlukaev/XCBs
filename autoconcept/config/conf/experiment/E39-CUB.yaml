@@ -1,0 +1,23 @@
+# @package _global_
+
+defaults:
+  - override /model: M39-CUB
+
+name: E39-CUB
+epoch_freeze_backbone: null
+epoch_reinitialize: 0
+max_epochs: 50
+trace_interpretations: true
+reinitialize_feature_extractor: false
+early_stopper: null
+
+dataset:
+  collate_fn:
+    _target_: datasets.collators.CollateIndices
+    vocabulary:
+      _target_: datasets.utils.Vocabulary
+      annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/captions_merged.csv
+  mix_with_mscoco: false
+  num_workers: 10
+devices:
+  - 0

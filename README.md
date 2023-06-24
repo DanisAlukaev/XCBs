@@ -37,38 +37,38 @@
 
 **a. Fine-tuned feature extractor.**
 
-| Model     | EID-DATASET         | act_fn | pretrain | norm_fn  | slot_norm | dummy_concept | dummy_tokens | reg_dist | tie_loss   |  Performance (F1-score)   | Disentanglement | Completeness    | Directory      |
-|:------------|:-----------:|:-----------:|:--------:|:--------:|:---------:|:--------:|:----------:|:----------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
-| Baseline | E35-SHP | relu | ✓ | - | - | -| - | - | - | 0.994 ± 0.0 | 0.605 ± 0.0 | 0.726 ± 0.0 | `outputs/2023-06-02/06-31-54` |
-| Baseline | E36-SHP | sigmoid | ✓ | - | - | - | - | - | - |  0.998 ± 0.0 | 0.572 ± 0.0 | 0.660 ± 0.0 | `outputs/2023-06-02/06-44-03` |
-| Baseline | E37-SHP | gumbel | ✓ | - | - | - | - | - | - |  0.992 ± 0.0 | 0.505 ± 0.0 | 0.579 ± 0.0 | `outputs/2023-06-02/06-54-19` |
-| Framework | E38-SHP | sigmoid | ✓ | softmax | ✗ | - | - | ✗ | JS |  0.992 ± 0.0 | 0.510 ± 0.0 | 0.658 ± 0.0 | `outputs/2023-06-02/07-04-49` |
-| Framework | E39-SHP | gumbel | ✓ | softmax | ✗ | - | - | ✗ | JS | 0.913 ± 0.0 | 0.730 ± 0.0 | 0.727 ± 0.0 | `outputs/2023-06-02/07-18-28` |
-| Framework | E40-SHP | gumbel | ✓ | softmax | ✗ | - | -  | ✗ | KL($f$, $c$) | 0.586 ± 0.0 | 0.695 ± 0.0 | 0.624 ± 0.0 | `outputs/2023-06-02/07-29-29` |
-| Framework | E41-SHP | gumbel | ✓ | softmax | ✗ | - | - | ✗ | KL($c$, $f$) | 0.602 ± 0.0 | 0.764 ± 0.0 | 0.701 ± 0.0 | `outputs/2023-06-02/07-41-38` |
-| Framework | E42-SHP | gumbel | ✓ | entmax | ✗ | - | - | ✗ | JS | 0.888 ± 0.0 | 0.763 ± 0.0 | 0.827 ± 0.0 | `outputs/2023-06-02/07-52-20`  |
-| Framework | E43-SHP | gumbel | ✓ | softmax | ✓ | ✓ | ✗ | ✗ | JS | 0.730 ± 0.0 | 0.733 ± 0.0 | 0.705 ± 0.0 | `outputs/2023-06-02/08-02-59` |
-| Framework | E44-SHP | gumbel | ✓ | softmax | ✓ | ✓ | ✓ | ✗ | JS | 0.792 ± 0.0 | 0.662 ± 0.0 | 0.773 ± 0.0 | `outputs/2023-06-02/08-13-11` |
-| Framework | E45-SHP | gumbel | ✓ | entmax | ✓ | ✓ | ✗ | ✗ | JS | 0.673 ± 0.0 | 0.739 ± 0.0 | 0.748 ± 0.0 | `outputs/2023-06-02/08-31-29` |
-| Framework | E46-SHP | gumbel | ✓ | entmax | ✓ | ✓ | ✓ | ✗ | JS | 0.712 ± 0.0 | 0.739 ± 0.0 | 0.748 ± 0.0 | `outputs/2023-06-02/08-31-29` |
-| Framework | E47-SHP | gumbel | ✓ | softmax | ✗ | - | - | ✓ | JS | 0.912 ± 0.0 | 0.730 ± 0.0 | 0.727 ± 0.0 | `outputs/2023-06-02/08-52-26`  |
-| Framework | E48-SHP | gumbel | ✓ | entmax | ✗ | - | - | ✓ | JS | 0.888 ± 0.0 | 0.763 ± 0.0 | 0.827 ± 0.0 | `outputs/2023-06-02/09-02-55` |
+| Model     | EID-DATASET  | Performance (F1-score)   | Disentanglement | Completeness   | Informativeness | act_fn  | norm_fn  | slot_norm | dummy_concept | dummy_tokens | reg_dist | tie_loss   |
+|:------------|:-----------:|:-----------:|:--------:|:--------:|:--------:|:----------:|:----------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------:|
+| Baseline | E35-SHP | 1.00 ± 0.00 | 0.60 ± 0.05 | 0.64 ± 0.10 | 0.07 ± 0.01 | relu | - | - | -| - | - | - |
+| Baseline | E36-SHP | 1.00 ± 0.00 | 0.68 ± 0.10 | 0.72 ± 0.05 | 0.08 ± 0.01 | sigmoid  | - | - | - | - | - | - |
+| Baseline | E37-SHP | 0.99 ± 0.00 | 0.51 ± 0.01 | 0.56 ± 0.06 | 0.08 ± 0.02  | gumbel  | - | - | - | - | - | - |
+| Framework | E38-SHP |  0.99 ± 0.00 | 0.64 ± 0.09 | 0.68 ± 0.04| 0.08 ± 0.03 | sigmoid | softmax | ✗ | - | - | ✗ | JS |
+| Framework | E39-SHP | 0.93 ± 0.01 | 0.78 ± 0.03 | 0.74 ± 0.12 | 0.07 ± 0.02 | gumbel | softmax | ✗ | - | - | ✗ | JS |
+| Framework | E40-SHP | 0.62 ± 0.04 | 0.67 ± 0.03 | 0.71 ± 0.05 | 0.09 ± 0.03 | gumbel  | softmax | ✗ | - | -  | ✗ | KL($f$, $c$) |
+| Framework | E41-SHP | 0.65 ± 0.06 | 0.69 ± 0.06 | 0.72 ± 0.05 | 0.09 ± 0.02 | gumbel | softmax | ✗ | - | - | ✗ | KL($c$, $f$) |
+| Framework | E42-SHP | 0.91 ± 0.01 | 0.75 ± 0.03 | 0.73 ± 0.10 | 0.08 ± 0.01 | gumbel | entmax | ✗ | - | - | ✗ | JS |
+| Framework | E43-SHP | 0.75 ± 0.04 | 0.71 ± 0.06 | 0.71 ± 0.07 | 0.09 ± 0.01 | gumbel | softmax | ✓ | ✓ | ✗ | ✗ | JS |
+| Framework | E44-SHP | 0.72 ± 0.04 | 0.74 ± 0.06 | 0.79 ± 0.14 | 0.07 ± 0.02 | gumbel | softmax | ✓ | ✓ | ✓ | ✗ | JS |
+| Framework | E45-SHP | 0.64 ± 0.04 | 0.75 ± 0.03 | 0.75 ± 0.02 | 0.08 ± 0.02 | gumbel | entmax | ✓ | ✓ | ✗ | ✗ | JS |
+| Framework | E46-SHP | 0.66 ± 0.05 | 0.69 ± 0.05 | 0.73 ± 0.08 | 0.08 ± 0.03 | gumbel | entmax | ✓ | ✓ | ✓ | ✗ | JS |
+| Framework | E47-SHP | 0.93 ± 0.01 | 0.78 ± 0.03 | 0.74 ± 0.12 | 0.07 ± 0.02 | gumbel  | softmax | ✗ | - | - | ✓ | JS |
+| Framework | E48-SHP | 0.93 ± 0.01 | 0.75 ± 0.03 | 0.73 ± 0.10 | 0.08 ± 0.01 | gumbel  | entmax | ✗ | - | - | ✓ | JS |
 
 **b. Training of feature extractor from scratch.**
 
-| Model     | EID-DATASET         | act_fn | pretrain | norm_fn  | slot_norm | dummy_concept | dummy_tokens | reg_dist | tie_loss   |  Performance (F1-score)   | Disentanglement | Completeness    | Directory      |
-|:------------|:-----------:|:-----------:|:--------:|:--------:|:---------:|:--------:|:----------:|:----------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
-| Baseline | E49-SHP | relu | ✗ | - | - | -| - | - | - | 0.972 ± 0.0 | 0.574 ± 0.0 | 0.647 ± 0.0 | `outputs/2023-06-02/09-57-26` |
-| Baseline | E50-SHP | sigmoid | ✗ | - | - | - | - | - | - | 0.983 ± 0.0 | 0.495 ± 0.0 | 0.394 ± 0.0 | `outputs/2023-06-02/10-08-34` |
-| Baseline | E51-SHP | gumbel | ✗ | - | - | - | - | - | - | 0.490 ± 0.0 | 0.529 ± 0.0 | 0.435 ± 0.0 | `outputs/2023-06-02/10-21-00` |
-| Framework | E52-SHP | sigmoid | ✗ | softmax | ✗ | - | - | ✗ | JS | 0.989 ± 0.0 | 0.509 ± 0.0 | 0.422 ± 0.0 | `outputs/2023-06-02/10-32-52` |
-| Framework | E53-SHP | gumbel | ✗ | softmax | ✗ | - | - | ✗ | JS | 0.682 ± 0.0 | 0.536 ± 0.0 | 0.514 ± 0.0 | `outputs/2023-06-02/11-22-21` |
-| Framework | E54-SHP | gumbel | ✗ | softmax | ✗ | - | -  | ✗ | KL($f$, $c$) | 0.377 ± 0.0 | 0.578 ± 0.0 | 0.605 ± 0.0 | `outputs/2023-06-02/11-34-23` |
-| Framework | E55-SHP | gumbel | ✗ | softmax | ✗ | - | - | ✗ | KL($c$, $f$) | 0.394 ± 0.0 | 0.579 ± 0.0 | 0.566 ± 0.0 | `outputs/2023-06-02/11-44-17` |
-| Framework | E56-SHP | gumbel | ✗ | entmax | ✗ | - | - | ✗ | JS | 0.740 ± 0.0 | 0.525 ± 0.0 | 0.506 ± 0.0 | `outputs/2023-06-02/11-54-53` |
-| Framework | E57-SHP | gumbel | ✗ | softmax | ✓ | ✓ | ✗ | ✗ | JS | 0.509 ± 0.0 | 0.602 ± 0.0 | 0.642 ± 0.0 | `outputs/2023-06-02/12-05-44` |
-| Framework | E58-SHP | gumbel | ✗ | softmax | ✓ | ✓ | ✓ | ✗ | JS | 0.513 ± 0.0 | 0.540 ± 0.0 | 0.564 ± 0.0 | `outputs/2023-06-02/12-16-04` |
-| Framework | E59-SHP | gumbel | ✗ | entmax | ✓ | ✓ | ✗ | ✗ | JS | 0.673 ± 0.0 | 0.739 ± 0.0 | 0.748 ± 0.0 | `outputs/2023-06-02/12-26-31` |
-| Framework | E60-SHP | gumbel | ✗ | entmax | ✓ | ✓ | ✓ | ✗ | JS | 0.471 ± 0.0 | 0.680 ± 0.0 | 0.669 ± 0.0 | `outputs/2023-06-02/12-37-21` |
-| Framework | E61-SHP | gumbel | ✗ | softmax | ✗ | - | - | ✓ | JS | 0.682 ± 0.0 | 0.534 ± 0.0 | 0.511 ± 0.0 | `outputs/2023-06-02/12-52-49` |
-| Framework | E62-SHP | gumbel | ✗ | entmax | ✗ | - | - | ✓ | JS | 0.740 ± 0.0 | 0.525 ± 0.0 | 0.506 ± 0.0 | `outputs/2023-06-02/13-02-58` |
+| Model     | EID-DATASET  | Performance (F1-score)   | Disentanglement | Completeness   | Informativeness | act_fn  | norm_fn  | slot_norm | dummy_concept | dummy_tokens | reg_dist | tie_loss   |
+|:------------|:-----------:|:-----------:|:--------:|:--------:|:--------:|:----------:|:----------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------:|
+| Baseline | E49-SHP | 0.94 ± 0.04 | 0.52 ± 0.11 | 0.47 ± 0.10 | 0.20 ± 0.04  | relu |  - | - | -| - | - | - |
+| Baseline | E50-SHP | 0.98 ± 0.01 | 0.55 ± 0.04 | 0.49 ± 0.08 | 0.16 ± 0.01 | sigmoid | - | - | - | - | - | - |
+| Baseline | E51-SHP | 0.49 ± 0.09 | 0.45 ± 0.05 | 0.42 ± 0.03 | 0.45 ± 0.04 | gumbel | - | - | - | - | - | - |
+| Framework | E52-SHP | 0.97 ± 0.02 | 0.52 ± 0.06 | 0.48 ± 0.05 | 0.16 ± 0.03 | sigmoid | softmax | ✗ | - | - | ✗ | JS |
+| Framework | E53-SHP | 0.83 ± 0.08 | 0.66 ± 0.11 | 0.56 ± 0.07 | 0.16 ± 0.03 |  gumbel | softmax | ✗ | - | - | ✗ | JS |
+| Framework | E54-SHP | 0.47 ± 0.10 | 0.56 ± 0.08 | 0.52 ± 0.07 | 0.23 ± 0.08 | gumbel | softmax | ✗ | - | -  | ✗ | KL($f$, $c$) |
+| Framework | E55-SHP | 0.50 ± 0.09 | 0.57 ± 0.06| 0.51 ± 0.06 | 0.20 ± 0.04 |  gumbel  | softmax | ✗ | - | - | ✗ | KL($c$, $f$) |
+| Framework | E56-SHP | 0.83 ± 0.05 | 0.60 ± 0.08 | 0.52 ± 0.07 | 0.16 ± 0.02 |  gumbel  | entmax | ✗ | - | - | ✗ | JS |
+| Framework | E57-SHP | 0.54 ± 0.06 | 0.57 ± 0.15 | 0.52 ± 0.09 | 0.25 ± 0.07 | gumbel | softmax | ✓ | ✓ | ✗ | ✗ | JS |
+| Framework | E58-SHP | 0.49 ± 0.07 | 0.57 ± 0.12 | 0.48 ± 0.08 | 0.25 ± 0.07 |  gumbel  | softmax | ✓ | ✓ | ✓ | ✗ | JS |
+| Framework | E59-SHP | 0.64 ± 0.04 | 0.75 ± 0.03 | 0.75 ± 0.02 | 0.08 ± 0.02 | gumbel | entmax | ✓ | ✓ | ✗ | ✗ | JS |
+| Framework | E60-SHP | 0.49 ± 0.02 | 0.61 ± 0.05 | 0.52 ± 0.09 | 0.23 ± 0.04 |  gumbel | entmax | ✓ | ✓ | ✓ | ✗ | JS |
+| Framework | E61-SHP | 0.83 ± 0.08 | 0.66 ± 0.11 | 0.56 ± 0.07 | 0.16 ± 0.03 |  gumbel | softmax | ✗ | - | - | ✓ | JS |
+| Framework | E62-SHP | 0.83 ± 0.05 | 0.60 ± 0.08 | 0.52 ± 0.07 | 0.16 ± 0.02 | gumbel | entmax | ✗ | - | - | ✓ | JS |

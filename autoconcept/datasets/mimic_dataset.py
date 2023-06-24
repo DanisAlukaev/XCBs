@@ -118,9 +118,13 @@ class MimicDataModule(LightningDataModule):
             self.dataloader_kwargs['collate_fn'] = collate_fn
 
         # default augmentations were taken from the paper "Concept Bottleneck Models"
-        self.pre_transforms = []
-        self.post_transforms = [A.Normalize(), A.augmentations.geometric.resize.Resize(
-            self.img_size, self.img_size), ToTensorV2()]
+        self.pre_transforms = [
+            # A.augmentations.geometric.rotate.Rotate(limit=45),
+            # A.augmentations.geometric.transforms.Affine(scale=(0, 10), translate_percent=(0, 0.15)),
+
+        ]
+        self.post_transforms = [A.augmentations.geometric.resize.Resize(
+            self.img_size, self.img_size), A.Normalize(), ToTensorV2()]
 
     def prepare_data_per_node(self):
         pass
@@ -135,14 +139,14 @@ class MimicDataModule(LightningDataModule):
 
             self.val_dataset = MimicDataset(
                 phase='val',
-                transforms=self.pre_transforms + self.post_transforms,
+                transforms=self.post_transforms,
                 **self.dataset_kwargs
             )
 
         if stage == "test" or stage is None:
             self.test_dataset = MimicDataset(
                 phase='test',
-                transforms=self.pre_transforms + self.post_transforms,
+                transforms=self.post_transforms,
                 **self.dataset_kwargs
             )
 

@@ -1,8 +1,105 @@
 import json
+import math
 
 import numpy as np
 import torch
+from sklearn.ensemble import RandomForestRegressor
 from tqdm import tqdm
+
+
+def prepare_data_dci(loader, model):
+    X, y = list(), list()
+    is_framework = hasattr(model.main, "concept_extractor")
+
+    for batch in tqdm(loader):
+        images, attributes_all = batch["image"].cuda(), batch["attributes"]
+        N = images.shape[0]
+
+        if is_framework:
+            batch_features = model.main.inference(
+                images)[1].cpu().detach().numpy()
+        else:
+            batch_features = model(
+                images)["concept_probs"].cpu().detach().numpy()
+
+        for sample_id in range(N):
+            attributes = np.array(attributes_all[sample_id])
+            features = batch_features[sample_id]
+
+            X.append(features)
+            y.append(attributes)
+
+    X, y = np.array(X), np.array(y)
+
+    return X, y
+
+
+TINY = 1e-12
+
+
+def norm_entropy(p):
+    n = p.shape[0]
+    return - p.dot(np.log(p + TINY) / np.log(n + TINY))
+
+
+def entropic_scores(r):
+    r = np.abs(r)
+    ps = r / np.sum(r, axis=0)  # 'probabilities'
+    hs = [1-norm_entropy(p) for p in ps.T]
+    return hs
+
+
+def mse(predicted, target):
+    predicted = predicted[:, None] if len(
+        predicted.shape) == 1 else predicted  # (n,)->(n,1)
+    target = target[:, None] if len(
+        target.shape) == 1 else target  # (n,)->(n,1)
+    err = predicted - target
+    err = err.T.dot(err) / len(err)
+    return err[0, 0]  # value not array
+
+
+def rmse(predicted, target):
+    return np.sqrt(mse(predicted, target))
+
+
+def nrmse(predicted, target):
+    return rmse(predicted, target) / np.std(target)
+
+
+def fit_linear_model(X_train, y_train, X_test, y_test, err_fn=nrmse, fast=False, seed=42):
+    n_attributes = y_train.shape[1]
+    R, errors = list(), list()
+    for regressor_idx in tqdm(range(n_attributes)):
+        kwargs = {"random_state": seed}
+        if fast:
+            kwargs["n_estimators"] = 20
+            kwargs["max_depth"] = 10
+        regressor = RandomForestRegressor(**kwargs)
+        regressor.fit(X_train, y_train[:, regressor_idx])
+        y_pred = regressor.predict(X_test)
+        errors.append(err_fn(y_pred, y_test[:, regressor_idx]))
+        R.append(regressor.feature_importances_)
+    return np.array(R), np.array(errors)
+
+
+def compute_disentanglement(R):
+    disent_scores = entropic_scores(R.T)
+    c_rel_importance = np.sum(R, 1) / np.sum(R)
+    disent_w_avg = np.sum(np.array(disent_scores) * c_rel_importance)
+    return disent_w_avg
+
+
+def compute_completeness(R):
+    complete_scores = entropic_scores(R)
+    complete_scores = [v for v in complete_scores if not math.isnan(v)]
+    complete_avg = np.mean(complete_scores)
+    return complete_avg
+
+
+def compute_informativeness(errors):
+    informativeness = np.mean(errors)
+    return informativeness
 
 
 def trace_interpretations(dm, model):

@@ -3,7 +3,7 @@ import traceback
 
 import hydra
 import pytorch_lightning as pl
-from callbacks import ReinitializeTextualMLP
+from callbacks import FreezingCallback
 from clearml import Task
 from extract import trace_interpretations
 from helpers import load_experiment, pretty_cfg, report_to_telegram, set_seed
@@ -44,24 +44,19 @@ def run(cfg):
         LearningRateMonitor(logging_interval="step"),
         DeviceStatsMonitor(),
         # InitializePredictorCallback(),
-        # InitializeInceptionCallback(),
+        # ReinitializeTextualMLP(0),
     ]
-
-    if hasattr(cfg.model, 'pretrain_embeddings_epoch'):
-        trainer_callbacks.append(ReinitializeTextualMLP(
-            cfg.model.pretrain_embeddings_epoch))
+    # TODO: re-initialization worsens performance
+    # if cfg.reinitialize_feature_extractor:
+    #     trainer_callbacks.append(InitializeInceptionCallback())
+    # if isinstance(cfg.epoch_reinitialize, int):
+    #     trainer_callbacks += [ReinitializeBottleneckCallback(cfg.epoch_reinitialize)]
 
     if cfg.early_stopper:
         trainer_callbacks += [instantiate(cfg.early_stopper)]
 
-    # if isinstance(cfg.epoch_freeze_backbone, int):
-    #     print("Freezing callback activated ")
-    #     trainer_callbacks += [
-    #         FreezingCallback(cfg.epoch_freeze_backbone)]
-
-    # if isinstance(cfg.epoch_reinitialize, int):
-    #     trainer_callbacks += [
-        # ReinitializeBottleneckCallback(cfg.epoch_reinitialize)]
+    if isinstance(cfg.epoch_freeze_backbone, int):
+        trainer_callbacks += [FreezingCallback(cfg.epoch_freeze_backbone)]
 
     trainer = pl.Trainer(
         max_epochs=cfg.max_epochs,
@@ -73,26 +68,41 @@ def run(cfg):
     )
     trainer.fit(model, train_loader, val_loader)
 
+    # dm, inference = load_experiment(".")
+    # train_loader = dm.train_dataloader()
+    # test_loader = dm.test_dataloader()
+
+    # X_train, y_train = prepare_data_dci(train_loader, inference.cuda())
+    # X_test, y_test = prepare_data_dci(test_loader, inference.cuda())
+
+    # R, errors = fit_linear_model(
+    #     X_train, y_train, X_test, y_test, seed=cfg.seed, fast=True)
+    # disentanglement = compute_disentanglement(R)
+    # completeness = compute_completeness(R)
+    # informativeness = compute_informativeness(errors)
+
+    # logger = task.get_logger()
+    # logger.report_scalar("disentanglement", "test", disentanglement, 0)
+    # logger.report_scalar("completeness", "test", completeness, 0)
+    # logger.report_scalar("informativeness", "test", informativeness, 0)
+
+    # dm, inference = load_experiment(".")
+    # test_loader = dm.test_dataloader()
+
+    # f1_test = trainer.test(inference, test_loader)[
+    #     0]['test/weighted_avg/f1-score']
+
     dm, inference = load_experiment(".")
 
-    trace_interpretations(dm, inference)
+    if cfg.trace_interpretations:
+        trace_interpretations(dm, inference)
 
-    # checkpoint_path = checkpoint_callback.best_model_path
-
-    # target_class = get_class(cfg.model._target_)
-    # main = instantiate(cfg.model.main)
-    # inference = target_class.load_from_checkpoint(
-    #     checkpoint_path, main=main).cuda()
-    # inference = inference.eval()
-
-    f1_test = trainer.test(inference, test_loader)[
-        0]['test/weighted_avg/f1-score']
-
-    return f1_test
+    # return f1_test
 
 
 @hydra.main(version_base=None, config_path="config/conf", config_name="config")
 def main(cfg: DictConfig):
+    print(cfg.name)
     try:
         metric = run(cfg)
         message = f"✅ Successful run from {cfg.timestamp}!\n\n"
