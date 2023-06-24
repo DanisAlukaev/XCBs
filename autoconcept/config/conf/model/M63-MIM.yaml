@@ -1,0 +1,45 @@
+_target_: models.concept_bottleneck.LitConceptBottleneckModel
+
+main:
+  _target_: models.base.BaseModel
+
+  extractor:
+    _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
+    model: inception_v3
+    weights: IMAGENET1K_V1
+    out_features: 14
+
+  predictor:
+    _target_: models.predictors.mlp.MLPPredictor
+    layers: [14, 2]
+    activation:
+      _target_: torch.nn.ReLU
+
+  interim_activation:
+    _target_: torch.nn.Sigmoid
+
+criterion_task:
+  _target_: torch.nn.CrossEntropyLoss
+
+criterion_concept:
+  _target_: torch.nn.BCELoss
+  reduction: none
+
+lambda_p: 0.01
+
+optimizer_template:
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.Adam
+  lr: 0.0002
+  weight_decay: 1e-5
+  amsgrad: true
+
+scheduler_template:
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.lr_scheduler.MultiStepLR
+  milestones: [4, 7]
+  gamma: 0.1

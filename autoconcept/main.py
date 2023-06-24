@@ -5,9 +5,7 @@ import hydra
 import pytorch_lightning as pl
 from callbacks import FreezingCallback
 from clearml import Task
-from extract import (compute_completeness, compute_disentanglement,
-                     compute_informativeness, fit_linear_model,
-                     prepare_data_dci)
+from extract import trace_interpretations
 from helpers import load_experiment, pretty_cfg, report_to_telegram, set_seed
 from hydra.utils import instantiate
 from omegaconf import DictConfig
@@ -70,36 +68,36 @@ def run(cfg):
     )
     trainer.fit(model, train_loader, val_loader)
 
-    dm, inference = load_experiment(".")
-    train_loader = dm.train_dataloader()
-    test_loader = dm.test_dataloader()
+    # dm, inference = load_experiment(".")
+    # train_loader = dm.train_dataloader()
+    # test_loader = dm.test_dataloader()
 
-    X_train, y_train = prepare_data_dci(train_loader, inference.cuda())
-    X_test, y_test = prepare_data_dci(test_loader, inference.cuda())
+    # X_train, y_train = prepare_data_dci(train_loader, inference.cuda())
+    # X_test, y_test = prepare_data_dci(test_loader, inference.cuda())
 
-    R, errors = fit_linear_model(
-        X_train, y_train, X_test, y_test, seed=cfg.seed)
-    disentanglement = compute_disentanglement(R)
-    completeness = compute_completeness(R)
-    informativeness = compute_informativeness(errors)
+    # R, errors = fit_linear_model(
+    #     X_train, y_train, X_test, y_test, seed=cfg.seed, fast=True)
+    # disentanglement = compute_disentanglement(R)
+    # completeness = compute_completeness(R)
+    # informativeness = compute_informativeness(errors)
 
-    logger = task.get_logger()
-    logger.report_scalar("disentanglement", "test", disentanglement, 0)
-    logger.report_scalar("completeness", "test", completeness, 0)
-    logger.report_scalar("informativeness", "test", informativeness, 0)
-
-    dm, inference = load_experiment(".")
-    test_loader = dm.test_dataloader()
-
-    f1_test = trainer.test(inference, test_loader)[
-        0]['test/weighted_avg/f1-score']
+    # logger = task.get_logger()
+    # logger.report_scalar("disentanglement", "test", disentanglement, 0)
+    # logger.report_scalar("completeness", "test", completeness, 0)
+    # logger.report_scalar("informativeness", "test", informativeness, 0)
 
     # dm, inference = load_experiment(".")
+    # test_loader = dm.test_dataloader()
 
-    # if cfg.trace_interpretations:
-    #     trace_interpretations(dm, inference)
+    # f1_test = trainer.test(inference, test_loader)[
+    #     0]['test/weighted_avg/f1-score']
 
-    return f1_test
+    dm, inference = load_experiment(".")
+
+    if cfg.trace_interpretations:
+        trace_interpretations(dm, inference)
+
+    # return f1_test
 
 
 @hydra.main(version_base=None, config_path="config/conf", config_name="config")

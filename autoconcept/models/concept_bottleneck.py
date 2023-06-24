@@ -18,7 +18,7 @@ class LitConceptBottleneckModel(pl.LightningModule):
     def __init__(
         self,
         main=BaseModel(
-            feature_extractor=TorchvisionFeatureExtractor(),
+            extractor=TorchvisionFeatureExtractor(),
             predictor=MLPPredictor(),
             interim_activation=nn.ReLU(),
         ),
@@ -49,7 +49,8 @@ class LitConceptBottleneckModel(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def training_step(self, batch, batch_idx):
-        images, target, attributes = batch["image"], batch["target"], batch["attributes"]
+        images, target, attributes = batch["image"], batch["target"], torch.tensor(
+            batch["attributes"]).float().cuda()
 
         iteration = self.trainer.global_step
         out_dict = self(images, iteration=iteration)
@@ -133,7 +134,8 @@ class LitConceptBottleneckModel(pl.LightningModule):
         return metrics
 
     def _validation_step(self, batch, batch_idx, phase='val'):
-        images, target, attributes = batch["image"], batch["target"], batch["attributes"]
+        images, target, attributes = batch["image"], batch["target"], torch.tensor(
+            batch["attributes"]).float().cuda()
 
         iteration = self.trainer.global_step
         out_dict = self(images, iteration=iteration)

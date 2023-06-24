@@ -2,14 +2,14 @@
 
 defaults:
   - override /model: M39-CUB
-  - override /dataset: mimic
 
 name: E39-CUB
 epoch_freeze_backbone: null
 epoch_reinitialize: 0
 max_epochs: 50
-trace_interpretations: false
+trace_interpretations: true
 reinitialize_feature_extractor: false
+early_stopper: null
 
 dataset:
   collate_fn:
