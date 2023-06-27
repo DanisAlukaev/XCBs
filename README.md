@@ -1,4 +1,4 @@
-# Automatic Concept Bottleneck Models
+# Cross-Modal Conceptualization in Bottleneck Models
 
 ## 🚀 Getting Started
 1. Set-up conda environment
