@@ -40,7 +40,17 @@
 # done
 
 # CUB
+# for j in 42 0 17 9 3
+# do
+#     python main.py -m dataset.batch_size=64 seed=$j +experiment=E39-CUB
+# done
+
 for j in 42 0 17 9 3
 do
-    python main.py -m dataset.batch_size=64 seed=$j +experiment=E39-CUB
+    python main.py -m dataset.batch_size=64 seed=$j +experiment=E47-SHP-NOISE
 done
+
+# for j in 42 0 17 9 3
+# do
+#     python main.py -m dataset.batch_size=64 seed=$j +experiment=E47-SHP-REDUNDANCY
+# done

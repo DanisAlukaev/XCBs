@@ -54,7 +54,11 @@ class JointDataset(Dataset):
         self.phase = phase
         self.transforms = transforms
 
+        print("q")
+
         self.read_annotations_file()
+
+        print("w")
 
         if debug_sample is not None:
             self.annotations = self.annotations.sample(n=debug_sample)
@@ -126,7 +130,10 @@ class JointDataModule(LightningDataModule):
         shuffle_train=True,
         use_val_for_train=False
     ):
+        print("b")
         super().__init__()
+
+        print("x")
         self.img_size = img_size
         self.annotation_path = annotation_path
         self.debug_sample = debug_sample
@@ -134,6 +141,8 @@ class JointDataModule(LightningDataModule):
         self.num_workers = num_workers
         self.shuffle_train = shuffle_train
         self.use_val_for_train = use_val_for_train
+
+        print("e")
 
         self.dataset_kwargs = dict(
             annotations_file=self.annotation_path,
@@ -144,6 +153,8 @@ class JointDataModule(LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
         )
+
+        print("r")
 
         if collate_fn is not None:
             self.dataloader_kwargs['collate_fn'] = collate_fn
