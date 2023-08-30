@@ -1,5 +1,28 @@
 download_data: create_data_dir download_shapes download_coco download_cub download_mimic
 
+SHELL=/bin/bash
+CONDA_ACTIVATE=source $$(conda info --base)/etc/profile.d/conda.sh ; conda activate ; conda activate
+
+first-time-set-up-env:
+	wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh; \
+	bash Mambaforge-Linux-x86_64.sh; \
+	conda env create -f environment.yml; \
+	$(CONDA_ACTIVATE) autoconcept; \
+	conda-lock -k explicit --conda mamba; \
+	poetry init --python=~3.10; \
+	poetry add --lock torch=1.12.1 torchaudio=0.12.1 torchvision=0.13.1; \
+	poetry add --lock conda-lock; \
+
+set-up-env:
+	conda create --name autoconcept --file conda-linux-64.lock; \
+	$(CONDA_ACTIVATE) autoconcept; \
+	poetry install; \
+
+update-env:
+	conda-lock -k explicit --conda mamba; \
+	mamba update --file conda-linux-64.lock; \
+	poetry update; \
+
 create_data_dir:
 	mkdir -p data/; \
 

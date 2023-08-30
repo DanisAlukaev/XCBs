@@ -1,0 +1,16 @@
+name: autoconcept
+channels:
+  - pytorch
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.10.8
+  - poetry=1.5.1
+  - conda-lock=2.1.0
+  - mamba
+  - pytorch::pytorch=1.12.0
+  - pytorch::torchaudio=0.12.0
+  - pytorch::torchvision=0.13.0
+  - cudatoolkit=10.2
+platforms:
+  - linux-64
