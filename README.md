@@ -3,9 +3,24 @@
 ## 🚀 Getting Started
 1. Set-up conda environment
     ```
-    conda create --name bottleneck --file requirements.txt python=3.10.8
+    # create new environment with cuda version of torch
+    conda create --name autoconcept --file conda-linux-64.lock
+
+    # activate environment
+    conda activate autoconcept
+
+    # install poetry dependencies
+    poetry install
+
+    # update dependency tree
+    make update-env
     ```
-2. Download public datasets
+2. Update environmental variables in `.env`
+3. Set-up experiment registry in clear-ml
+    ```
+    clearml-init
+    ```
+4. Download public datasets
     ```
     make download_data
     ```
