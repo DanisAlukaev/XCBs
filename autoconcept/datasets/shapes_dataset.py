@@ -1,8 +1,10 @@
 
 import random
+from pathlib import Path
 
 import albumentations as A
 import cv2
+import hydra
 import numpy
 import numpy as np
 import pandas as pd
@@ -135,7 +137,9 @@ class JointDataModule(LightningDataModule):
 
         print("x")
         self.img_size = img_size
-        self.annotation_path = annotation_path
+        self.annotation_path = Path(annotation_path)
+        self.annotation_path = hydra.utils.get_original_cwd() / self.annotation_path
+        print(self.annotation_path)
         self.debug_sample = debug_sample
         self.batch_size = batch_size
         self.num_workers = num_workers

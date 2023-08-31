@@ -3,7 +3,7 @@ defaults:
 
 _target_: datasets.mimic_dataset.MimicDataModule
 
-img_dir: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/images
-annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/annotation.csv
+img_dir: data/mimic-cxr/images
+annotation_path: data/mimic-cxr/annotation.csv
 collate_fn:
   _target_: datasets.collators.CollateEmulator

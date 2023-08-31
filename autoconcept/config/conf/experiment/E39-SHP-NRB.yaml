@@ -12,12 +12,12 @@ trace_interpretations: true
 reinitialize_feature_extractor: false
 
 dataset:
-  annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes-hard-4/captions.csv
+  annotation_path: data/shapes-hard-4/captions.csv
   collate_fn:
     _target_: datasets.collators.CollateIndices
     vocabulary:
       _target_: datasets.utils.VocabularyShapes
-      annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes-hard-4/captions.csv
+      annotation_path: data/shapes-hard-4/captions.csv
   num_workers: 10
   batch_size: 64
 

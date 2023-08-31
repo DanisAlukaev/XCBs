@@ -26,6 +26,9 @@ def run(cfg):
         'outputs', artifact_object=os.path.abspath(os.getcwd()))
     set_seed(cfg.seed)
 
+    print(os.getcwd())
+    print(hydra.utils.get_original_cwd())
+
     print(1)
 
     pl.seed_everything(cfg.seed, workers=True)
