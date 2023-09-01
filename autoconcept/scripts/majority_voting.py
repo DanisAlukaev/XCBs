@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-IMAGE_ATTRIBUTES_PATH = "../data/CUB_200_2011/attributes/image_attribute_labels.txt"
-ATTRIBUTES_PATH = "../data/attributes.txt"
-IMAGE_NAMES_PATH = "../data/CUB_200_2011/images.txt"
+IMAGE_ATTRIBUTES_PATH = "data/CUB_200_2011/attributes/image_attribute_labels.txt"
+ATTRIBUTES_PATH = "data/attributes.txt"
+IMAGE_NAMES_PATH = "data/CUB_200_2011/images.txt"
 ATTRIBUTES_NUM = 312
 
 

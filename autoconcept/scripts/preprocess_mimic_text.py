@@ -2,7 +2,7 @@ import pandas as pd
 from datasets.utils import Preprocess
 from tqdm import tqdm
 
-MIMIC_ANNOTATION_PATH = "../data/mimic-cxr/annotation.csv"
+MIMIC_ANNOTATION_PATH = "data/mimic-cxr/annotation.csv"
 
 
 def main():

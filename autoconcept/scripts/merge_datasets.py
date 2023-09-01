@@ -9,17 +9,17 @@ from tqdm import tqdm
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-CUB200_IMG_PATH = "../data/CUB_200_2011/images/"
-CUB200_IMG_TXT = "../data/CUB_200_2011/images.txt"
-CUB200_ATTR_TXT = "../data/attributes.txt"
-CUB200_ATTR_LABELS = "../data/CUB_200_2011/attributes/image_attribute_labels.txt"
+CUB200_IMG_PATH = "data/CUB_200_2011/images/"
+CUB200_IMG_TXT = "data/CUB_200_2011/images.txt"
+CUB200_ATTR_TXT = "data/attributes.txt"
+CUB200_ATTR_LABELS = "data/CUB_200_2011/attributes/image_attribute_labels.txt"
 
-COCO_IMG_PATH = "../data/train2017"
-COCO_CAPTIONS = "../data/annotations/captions_train2017.json"
+COCO_IMG_PATH = "data/train2017"
+COCO_CAPTIONS = "data/annotations/captions_train2017.json"
 
-MERGED_PATH = "../data/merged_files/"
-CAPTIONS_MERGED_CSV = "../data/captions_merged.csv"
-CAPTIONS_MERGED_TXT = "../data/captions_merged.txt"
+MERGED_PATH = "data/merged_files/"
+CAPTIONS_MERGED_CSV = "data/captions_merged.csv"
+CAPTIONS_MERGED_TXT = "data/captions_merged.txt"
 
 
 def start_merging() -> None:

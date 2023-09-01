@@ -3,19 +3,9 @@
 ## 🚀 Getting Started
 1. Set-up conda environment
     ```
-    # create new environment with cuda version of torch
-    conda create --name autoconcept --file conda-linux-64.lock
-
-    # activate environment
-    conda activate autoconcept
-
-    # install poetry dependencies
-    poetry install
-
-    # update dependency tree
-    make update-env
+    make set-up-env
     ```
-2. Update environmental variables in `.env`
+2. Create `.env` file from `.env.example`
 3. Set-up experiment registry in clear-ml
     ```
     clearml-init
@@ -24,15 +14,15 @@
     ```
     make download_data
     ```
-3. Pre-process datasets
+5. Pre-process CUB-200
     ```
-    # CUB-200
     make preprocess_cub
-
-    # MIMIC-CXR
+    ```
+6. Pre-process MIMIC-CXR
+    ```
     make preprocess_mimic
     ```
-4. You are ready to run your first experiment!
+7. You are ready to run your first experiment!
     ```
     python main.py dataset.batch_size=64 seed=42 +experiment={XXX}
     ```

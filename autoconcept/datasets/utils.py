@@ -6,14 +6,11 @@ from string import punctuation
 import hydra
 import nltk
 import pandas as pd
-import spacy
 from nltk.stem import WordNetLemmatizer
 from spellchecker import SpellChecker
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import vocab
 from tqdm import tqdm
-
-spacy.load("en_core_web_sm")
 
 wordnet_lemmatizer = WordNetLemmatizer()
 
