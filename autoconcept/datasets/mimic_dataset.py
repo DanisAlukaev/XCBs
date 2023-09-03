@@ -174,8 +174,8 @@ class MimicDataModule(LightningDataModule):
 
 
 if __name__ == '__main__':
-    annotation_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/annotation.csv"
-    img_dir = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/images"
+    annotation_path = "data/mimic-cxr/annotation.csv"
+    img_dir = "data/mimic-cxr/images"
 
     vocab = VocabularyMimic(annotation_path=annotation_path)
     collate_fn = CollateIndices(vocabulary=vocab)

@@ -230,7 +230,7 @@ class JointDataModule(LightningDataModule):
 
 
 if __name__ == '__main__':
-    annotation_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes/captions.csv"
+    annotation_path = "data/shapes/captions.csv"
 
     vocab = VocabularyShapes(annotation_path=annotation_path)
     collate_fn = CollateIndices(vocabulary=vocab)

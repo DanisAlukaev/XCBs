@@ -222,4 +222,4 @@ def pad(ngrams, max_len):
 
 if __name__ == "__main__":
     vocab = VocabularyShapes(
-        annotation_path='/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes-hard-3/captions.csv')
+        annotation_path='data/shapes-hard-3/captions.csv')

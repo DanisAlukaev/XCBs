@@ -49,7 +49,7 @@ class PretrainedResnetFeatureExtractor(BaseFeatureExtractor):
 
         backbone = PneumoniaCnnModel()
         backbone.load_state_dict(torch.load(
-            "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/chest-x-ray-resnet50-model.pth"))
+            "data/chest-x-ray-resnet50-model.pth"))
 
         backbone = backbone.network
         if hasattr(backbone, "fc"):
@@ -82,7 +82,7 @@ class PretrainedDensenetFeatureExtractor(BaseFeatureExtractor):
     def __build(self):
         backbone = DenseNet121(14)
         backbone.load_state_dict(torch.load(
-            "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/densenet.pth")["model"])
+            "data/densenet.pth")["model"])
 
         backbone = backbone.net
         if hasattr(backbone, "classifier"):
