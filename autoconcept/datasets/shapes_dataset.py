@@ -74,7 +74,7 @@ class JointDataset(Dataset):
     def __getitem__(self, idx):
         row = self.annotations.iloc[idx]
 
-        img_path = row.filepath
+        img_path = hydra.utils.get_original_cwd() / Path(row.filepath)
         image = cv2.cvtColor(cv2.imread(str(img_path)), cv2.COLOR_BGR2RGB)
 
         if self.transforms:

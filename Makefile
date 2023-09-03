@@ -9,7 +9,6 @@ set-up-env:
 update-env:
 	conda-lock -k explicit --conda mamba; \
 	mamba update --file conda-linux-64.lock; \
-	poetry update; \
 
 download_data: create_data_dir download_shapes download_coco download_cub download_mimic
 
@@ -19,8 +18,16 @@ create_data_dir:
 
 download_shapes:
 	cd autoconcept/data/; \
-	wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1rHhva_-GS-xUOomhIgCPgnE0lrvh9-eL' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1rHhva_-GS-xUOomhIgCPgnE0lrvh9-eL" -O shapes.zip && rm -rf /tmp/cookies.txt; \
+	wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1UK4jeWYZhDrPuKkgRzd0FjeA1TxS0t66' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1UK4jeWYZhDrPuKkgRzd0FjeA1TxS0t66" -O shapes.zip && rm -rf /tmp/cookies.txt; \
+	wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1yoQMWutnXPyFJOD9hdMfFoVAo00OZX23' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1yoQMWutnXPyFJOD9hdMfFoVAo00OZX23" -O shapes-hard.zip && rm -rf /tmp/cookies.txt; \
+	wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1BEcS6hmOaNM8Y2Vnos3iYJrQKaaY_E1J' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1BEcS6hmOaNM8Y2Vnos3iYJrQKaaY_E1J" -O shapes-hard-2.zip && rm -rf /tmp/cookies.txt; \
+	wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=10Wk7Ay28ko3qp1uCFqZROo3_v-71uSJL' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=10Wk7Ay28ko3qp1uCFqZROo3_v-71uSJL" -O shapes-hard-3.zip && rm -rf /tmp/cookies.txt; \
+	wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1AJsICgo2zUnuIOK1XhJ6AuL2wojt2ukF' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1AJsICgo2zUnuIOK1XhJ6AuL2wojt2ukF" -O shapes-hard-4.zip && rm -rf /tmp/cookies.txt; \
 	unzip shapes.zip; \
+	unzip shapes-hard.zip; \
+	unzip shapes-hard-2.zip; \
+	unzip shapes-hard-3.zip; \
+	unzip shapes-hard-4.zip; \
 	rm *.zip; \
 
 download_coco:
