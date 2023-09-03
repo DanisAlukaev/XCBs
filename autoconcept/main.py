@@ -26,28 +26,15 @@ def run(cfg):
         'outputs', artifact_object=os.path.abspath(os.getcwd()))
     set_seed(cfg.seed)
 
-    print(1)
-
     pl.seed_everything(cfg.seed, workers=True)
 
-    print(cfg.dataset)
-
     dm = instantiate(cfg.dataset)
-
-    print(3)
-
     dm.setup()
-
-    print(2)
 
     train_loader, test_loader, val_loader = dm.train_dataloader(
     ), dm.test_dataloader(), dm.val_dataloader()
 
-    print(3)
-
     model = instantiate(cfg.model)
-
-    print(4)
 
     checkpoint_callback = ModelCheckpoint(
         save_top_k=1,
@@ -57,8 +44,6 @@ def run(cfg):
         auto_insert_metric_name=False,
         save_last=True,
     )
-
-    print(5)
 
     trainer_callbacks = [
         checkpoint_callback,

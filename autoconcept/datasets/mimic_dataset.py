@@ -2,6 +2,7 @@ from pathlib import Path
 
 import albumentations as A
 import cv2
+import hydra
 import pandas as pd
 import torch
 from albumentations.pytorch.transforms import ToTensorV2
@@ -95,8 +96,8 @@ class MimicDataModule(LightningDataModule):
     ):
         super().__init__()
         self.img_size = img_size
-        self.img_dir = img_dir
-        self.annotation_path = annotation_path
+        self.img_dir = hydra.utils.get_original_cwd() / Path(img_dir)
+        self.annotation_path = hydra.utils.get_original_cwd() / Path(annotation_path)
         self.debug_sample = debug_sample
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -174,8 +175,8 @@ class MimicDataModule(LightningDataModule):
 
 
 if __name__ == '__main__':
-    annotation_path = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/annotation.csv"
-    img_dir = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/mimic-cxr/images"
+    annotation_path = "data/mimic-cxr/annotation.csv"
+    img_dir = "data/mimic-cxr/images"
 
     vocab = VocabularyMimic(annotation_path=annotation_path)
     collate_fn = CollateIndices(vocabulary=vocab)

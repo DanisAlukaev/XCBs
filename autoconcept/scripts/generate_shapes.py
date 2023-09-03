@@ -109,7 +109,7 @@ def main():
     train_test_split = 0.8
     train_val_split = 0.15
 
-    PATH_SAVE = "/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes/"
+    PATH_SAVE = "data/shapes/"
     IMAGE_PATH = PATH_SAVE + "images/"
 
     import os

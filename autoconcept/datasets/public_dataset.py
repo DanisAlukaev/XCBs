@@ -2,6 +2,7 @@ from pathlib import Path
 
 import albumentations as A
 import cv2
+import hydra
 import numpy as np
 import pandas as pd
 import torch
@@ -50,9 +51,9 @@ class JointDataset(Dataset):
         row = self.annotations.iloc[idx]
 
         if self.mix_with_mscoco:
-            img_path = self.img_dir / row.path
+            img_path = hydra.utils.get_original_cwd() / self.img_dir / row.path
         else:
-            img_path = self.CUB_dir / 'images' / row.path
+            img_path = hydra.utils.get_original_cwd() / self.CUB_dir / 'images' / row.path
         image = cv2.cvtColor(cv2.imread(str(img_path)), cv2.COLOR_BGR2RGB)
 
         if self.transforms:
@@ -196,9 +197,9 @@ class JointDataModule(LightningDataModule):
     ):
         super().__init__()
         self.img_size = img_size
-        self.annotation_path = annotation_path
-        self.img_root = img_root
-        self.CUB_dir = CUB_dir
+        self.annotation_path = hydra.utils.get_original_cwd() / Path(annotation_path)
+        self.img_root = hydra.utils.get_original_cwd() / Path(img_root)
+        self.CUB_dir = hydra.utils.get_original_cwd() / Path(CUB_dir)
         self.debug_sample = debug_sample
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -289,9 +290,9 @@ class JointDataModule(LightningDataModule):
 
 
 if __name__ == '__main__':
-    img_root = "../data/merged_files"
-    annotation_path = "../data/captions_merged.csv"
-    CUB_dir = '../data/CUB_200_2011'
+    img_root = "data/merged_files"
+    annotation_path = "data/captions_merged.csv"
+    CUB_dir = 'data/CUB_200_2011'
 
     collate_fn = CollateEmulator()
 

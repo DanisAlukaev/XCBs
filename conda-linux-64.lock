@@ -143,7 +143,7 @@ https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.5.0-pyhd8ed1ab_0
 https://conda.anaconda.org/conda-forge/linux-64/blas-1.0-mkl.tar.bz2#349aef876b1d8c9dccae01de20d5b385
 https://conda.anaconda.org/conda-forge/linux-64/brotlipy-0.7.0-py310h5764c6d_1005.tar.bz2#87669c3468dff637bbd0363bc0f895cf
 https://conda.anaconda.org/conda-forge/linux-64/cryptography-41.0.3-py310h75e40e8_0.conda#2ad1ab0b68e459f8864e74bdd5b00fe5
-https://conda.anaconda.org/conda-forge/noarch/gitpython-3.1.32-pyhd8ed1ab_0.conda#5809a12901d57388444c3293c975d0bb
+https://conda.anaconda.org/conda-forge/noarch/gitpython-3.1.33-pyhd8ed1ab_0.conda#2ac4baf2f8c74a8a45a29e54138301af
 https://conda.anaconda.org/conda-forge/noarch/importlib_metadata-6.8.0-hd8ed1ab_0.conda#b279b07ce18058034e5b3606ba103a8b
 https://conda.anaconda.org/conda-forge/noarch/jsonschema-specifications-2023.7.1-pyhd8ed1ab_0.conda#7c27ea1bdbe520bb830dcadd59f55cbf
 https://conda.anaconda.org/conda-forge/linux-64/libblas-3.9.0-16_linux64_mkl.tar.bz2#85f61af03fd291dae33150ffe89dc09a
@@ -162,12 +162,12 @@ https://conda.anaconda.org/conda-forge/noarch/pydantic-2.3.0-pyhd8ed1ab_0.conda#
 https://conda.anaconda.org/conda-forge/noarch/pyopenssl-23.2.0-pyhd8ed1ab_1.conda#34f7d568bf59d18e3fef8c405cbece21
 https://conda.anaconda.org/pytorch/linux-64/pytorch-1.12.0-py3.10_cuda10.2_cudnn7.6.5_0.tar.bz2#10d4afde05774fd5d4b18c82ee109cc3
 https://conda.anaconda.org/conda-forge/linux-64/secretstorage-3.3.3-py310hff52083_1.tar.bz2#e135d0e3bbb226e8d53d31b4e4f6d93c
-https://conda.anaconda.org/conda-forge/noarch/virtualenv-20.24.3-pyhd8ed1ab_0.conda#e5abd7f3cb1050de9bce3027d8ffb2e7
+https://conda.anaconda.org/conda-forge/noarch/virtualenv-20.24.4-pyhd8ed1ab_0.conda#c3feaf947264a59a125e8c26e98c3c5a
 https://conda.anaconda.org/conda-forge/noarch/conda-package-handling-2.2.0-pyh38be061_0.conda#8a3ae7f6318376aa08ea753367bb7dd6
 https://conda.anaconda.org/conda-forge/linux-64/keyring-23.13.1-py310hff52083_0.conda#85da2982e8456156e2f38e6a3f75cd89
 https://conda.anaconda.org/conda-forge/linux-64/numpy-1.25.2-py310ha4c1d20_0.conda#188e72aa313da668464e35309e9a32b0
 https://conda.anaconda.org/conda-forge/noarch/urllib3-1.26.15-pyhd8ed1ab_0.conda#27db656619a55d727eaf5a6ece3d2fd6
-https://conda.anaconda.org/conda-forge/linux-64/dulwich-0.21.5-py310h2372a71_0.conda#58ee4d1dd828531bb6d69fd6bd304882
+https://conda.anaconda.org/conda-forge/linux-64/dulwich-0.21.6-py310h2372a71_0.conda#88edaa7829cbc288acb82285d2804cef
 https://conda.anaconda.org/conda-forge/linux-64/rapidfuzz-2.15.1-py310heca2aa9_0.conda#542887fb70fae388f9df109866469ca1
 https://conda.anaconda.org/conda-forge/noarch/requests-2.31.0-pyhd8ed1ab_0.conda#a30144e4156cdbb236f99ebb49828f8b
 https://conda.anaconda.org/pytorch/linux-64/torchaudio-0.12.0-py310_cu102.tar.bz2#23542456b93f1605febd22f3ed7106c7

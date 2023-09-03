@@ -40,6 +40,7 @@ pybind11 = "^2.11.1"
 fasttext = {git = "https://github.com/facebookresearch/fastText", rev = "main"}
 en-core-web-sm = {url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.2.0/en_core_web_sm-3.2.0.tar.gz"}
 tensorboardx = "^2.6.2.2"
+pycocotools = "^2.0.7"
 
 
 [build-system]

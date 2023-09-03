@@ -17,7 +17,7 @@ dataset:
     _target_: datasets.collators.CollateIndices
     vocabulary:
       _target_: datasets.utils.VocabularyMimic
-      annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/autoconcept/datasets/annotations_public.csv
+      annotation_path: datasets/annotations_public.csv
   num_workers: 10
 devices:
   - 0

@@ -1,7 +1,0 @@
-defaults:
-  - base
-
-_target_: datasets.private_dataset.MedicalDataModule
-
-collate_fn:
-  _target_: datasets.collators.CollateEmulator

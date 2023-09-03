@@ -1,10 +1,10 @@
 # @package _global_
 
 defaults:
-  - override /model: M39-SHP
+  - override /model: M36-SHP
   - override /dataset: shapes
 
-name: E39-SHP-NRB
+name: E36-SHP-NRB
 epoch_freeze_backbone: null
 epoch_reinitialize: 0
 max_epochs: 10
@@ -12,12 +12,12 @@ trace_interpretations: true
 reinitialize_feature_extractor: false
 
 dataset:
-  annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes-hard-4/captions.csv
+  annotation_path: data/shapes-hard-4/captions.csv
   collate_fn:
     _target_: datasets.collators.CollateIndices
     vocabulary:
       _target_: datasets.utils.VocabularyShapes
-      annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes-hard-4/captions.csv
+      annotation_path: data/shapes-hard-4/captions.csv
   num_workers: 10
   batch_size: 64
 

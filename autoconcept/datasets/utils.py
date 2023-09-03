@@ -1,17 +1,16 @@
 import re
 from collections import Counter
+from pathlib import Path
 from string import punctuation
 
+import hydra
 import nltk
 import pandas as pd
-import spacy
 from nltk.stem import WordNetLemmatizer
 from spellchecker import SpellChecker
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import vocab
 from tqdm import tqdm
-
-spacy.load("en_core_web_sm")
 
 wordnet_lemmatizer = WordNetLemmatizer()
 
@@ -87,7 +86,8 @@ class Vocabulary:
         annotation_path="data/captions_merged.csv",
         mix_with_mscoco=True,
     ):
-        self.annotation_path = annotation_path
+        self.annotation_path = hydra.utils.get_original_cwd() / Path(annotation_path)
+        print("PATH", self.annotation_path)
         self.mix_with_mscoco = mix_with_mscoco
         self.tokenizer = get_tokenizer('spacy', language='en')
         self.read_annotations_file()
@@ -138,7 +138,9 @@ class VocabularyShapes:
         self,
         annotation_path="data/shapes/captions.csv",
     ):
-        self.annotation_path = annotation_path
+        self.annotation_path = Path(annotation_path)
+        print(self.annotation_path)
+        self.annotation_path = hydra.utils.get_original_cwd() / self.annotation_path
         self.tokenizer = get_tokenizer('spacy', language='en')
         self.read_annotations_file()
         self.build_vocab()
@@ -169,7 +171,7 @@ class VocabularyMimic:
         self,
         annotation_path="data/mimic-cxr/captions.csv",
     ):
-        self.annotation_path = annotation_path
+        self.annotation_path = hydra.utils.get_original_cwd() / Path(annotation_path)
         self.tokenizer = get_tokenizer('spacy', language='en')
         self.read_annotations_file()
         self.build_vocab()
@@ -220,4 +222,4 @@ def pad(ngrams, max_len):
 
 if __name__ == "__main__":
     vocab = VocabularyShapes(
-        annotation_path='/home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes-hard-3/captions.csv')
+        annotation_path='data/shapes-hard-3/captions.csv')

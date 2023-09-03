@@ -13,7 +13,7 @@ dataset:
     _target_: datasets.collators.CollateIndices
     vocabulary:
       _target_: datasets.utils.VocabularyShapes
-      annotation_path: /home/danis/Projects/AlphaCaption/AutoConceptBottleneck/data/shapes/captions.csv
+      annotation_path: data/shapes/captions.csv
   num_workers: 10
   batch_size: 64
 devices:
