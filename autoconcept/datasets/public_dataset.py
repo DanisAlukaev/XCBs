@@ -289,9 +289,9 @@ class JointDataModule(LightningDataModule):
 
 
 if __name__ == '__main__':
-    img_root = "../data/merged_files"
-    annotation_path = "../data/captions_merged.csv"
-    CUB_dir = '../data/CUB_200_2011'
+    img_root = "data/merged_files"
+    annotation_path = "data/captions_merged.csv"
+    CUB_dir = 'data/CUB_200_2011'
 
     collate_fn = CollateEmulator()
 
