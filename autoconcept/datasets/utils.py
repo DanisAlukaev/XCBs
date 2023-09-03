@@ -86,7 +86,7 @@ class Vocabulary:
         annotation_path="data/captions_merged.csv",
         mix_with_mscoco=True,
     ):
-        self.annotation_path = Path(annotation_path)
+        self.annotation_path = hydra.utils.get_original_cwd() / Path(annotation_path)
         print("PATH", self.annotation_path)
         self.mix_with_mscoco = mix_with_mscoco
         self.tokenizer = get_tokenizer('spacy', language='en')
@@ -171,7 +171,7 @@ class VocabularyMimic:
         self,
         annotation_path="data/mimic-cxr/captions.csv",
     ):
-        self.annotation_path = annotation_path
+        self.annotation_path = hydra.utils.get_original_cwd() / Path(annotation_path)
         self.tokenizer = get_tokenizer('spacy', language='en')
         self.read_annotations_file()
         self.build_vocab()
