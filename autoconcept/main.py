@@ -120,11 +120,9 @@ def main(cfg: DictConfig):
         message += f"f1-score test: {metric}\n\n"
         message += f"ClearML: {scalar_url}"
     except Exception:
-        error_exc = traceback.format_exc()
         message = f"🚫 Run from {cfg.timestamp} failed!\n\n"
         message += f"ClearML: {logs_url}\n\n"
-        message += error_exc
-        logging.error(message)
+        logging.error(traceback.format_exc())
     report_to_telegram(message)
 
 
