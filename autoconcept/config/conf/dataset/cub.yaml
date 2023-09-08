@@ -1,7 +1,7 @@
 defaults:
   - base
 
-_target_: datasets.public_dataset.JointDataModule
+_target_: datasets.cub_dataset.JointDataModule
 
 annotation_path: data/captions_merged.csv
 img_root: data/merged_files

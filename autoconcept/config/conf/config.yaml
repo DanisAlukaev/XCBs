@@ -1,5 +1,5 @@
 defaults:
-  - dataset: public
+  - dataset: cub
   - model: M01
   - _self_
 

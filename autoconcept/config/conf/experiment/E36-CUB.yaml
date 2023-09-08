@@ -2,7 +2,7 @@
 
 defaults:
   - override /model: M36-CUB
-  - override /dataset: public
+  - override /dataset: cub
 
 name: E36-CUB
 epoch_freeze_backbone: null

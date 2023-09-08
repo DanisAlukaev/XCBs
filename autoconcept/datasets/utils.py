@@ -89,7 +89,7 @@ class Vocabulary:
     ):
         self.annotation_path = hydra.utils.get_original_cwd() / Path(annotation_path)
         self.mix_with_mscoco = mix_with_mscoco
-        self.tokenizer = get_tokenizer('spacy', language='en')
+        self.tokenizer = get_tokenizer('spacy', language='en_core_web_sm')
         self.read_annotations_file()
         self.build_vocab()
 
@@ -140,7 +140,7 @@ class VocabularyShapes:
     ):
         self.annotation_path = Path(annotation_path)
         self.annotation_path = hydra.utils.get_original_cwd() / self.annotation_path
-        self.tokenizer = get_tokenizer('spacy', language='en')
+        self.tokenizer = get_tokenizer('spacy', language='en_core_web_sm')
         self.read_annotations_file()
         self.build_vocab()
 
@@ -171,7 +171,7 @@ class VocabularyMimic:
         annotation_path="data/mimic-cxr/captions.csv",
     ):
         self.annotation_path = hydra.utils.get_original_cwd() / Path(annotation_path)
-        self.tokenizer = get_tokenizer('spacy', language='en')
+        self.tokenizer = get_tokenizer('spacy', language='en_core_web_sm')
         self.read_annotations_file()
         self.build_vocab()
 
