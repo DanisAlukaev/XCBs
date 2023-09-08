@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import torch
 from datasets.embedders.fasttext_embedder import FastTextEmbedder
@@ -64,7 +66,8 @@ class CollateIndices:
 
     def __init__(self, vocabulary):
         self.vocabulary = vocabulary
-        print(f"Index for <pad>: {vocabulary.vocab.lookup_indices(['<pad>'])}")
+        logging.info(
+            f"Index for <pad>: {vocabulary.vocab.lookup_indices(['<pad>'])}")
 
     def __call__(self, batch):
         batch_dict = dict()
