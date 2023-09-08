@@ -24,7 +24,6 @@ main:
       _target_: torch.nn.ReLU
 
   interim_activation:
-    # _target_: torch.nn.Sigmoid
     _target_: functional.gumbel.GumbelSigmoid
     step: 15
     t: 1.0
@@ -40,7 +39,6 @@ criterion_task:
 
 criterion_tie:
   _target_: functional.loss.JensenShannonDivergenceLoss
-  # _target_: functional.loss.KullbackLeiblerDivergenceLoss
 tie_weight: 10.0
 
 mix_tie_epoch: null

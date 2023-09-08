@@ -20,8 +20,6 @@ main:
       _target_: torch.nn.ReLU
 
   interim_activation:
-    # _target_: functional.gumbel.GumbelSigmoid
-    # _target_: torch.nn.Sigmoid
     _target_: torch.nn.ReLU
 
 criterion:

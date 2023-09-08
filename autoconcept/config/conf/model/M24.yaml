@@ -15,18 +15,12 @@ main:
     activation:
       _target_: torch.nn.ReLU
 
-  # interim_activation:
-    # _target_: functional.gumbel.GumbelSigmoid
-    # _target_: torch.nn.Sigmoid
-    # _target_: torch.nn.ReLU
   interim_activation:
-    # _target_: torch.nn.Sigmoid
     _target_: functional.gumbel.GumbelSigmoid
     step: 15
     t: 1.0
     rate: 0.007
     min_val: 0.001
-
 
 criterion:
   _target_: torch.nn.CrossEntropyLoss

@@ -81,7 +81,6 @@ optimizer_concept_extractor_template:
     - _target_: hydra.utils.get_class
       path: torch.optim.AdamW
   lr: 6e-3
-  # lr: 0.001
   weight_decay: 0.03
 
 scheduler_model_template:

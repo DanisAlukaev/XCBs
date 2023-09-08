@@ -3,16 +3,6 @@ _target_: models.auto_concept_bottleneck.LitAutoConceptBottleneckModel
 main:
   _target_: models.auto_concept_bottleneck.AutoConceptBottleneckModel
 
-  # feature_extractor:
-  #   _target_: models.feature_extractors.torchvision.TorchvisionFeatureExtractor
-  #   model: densenet161
-  #   weights: IMAGENET1K_V1
-  #   out_features: 30
-
-  # feature_extractor:
-  #   _target_: models.feature_extractors.resnet.PretrainedResnetFeatureExtractor
-  #   out_features: 30
-
   feature_extractor:
     _target_: models.feature_extractors.pre-trained.PretrainedDensenetFeatureExtractor
     out_features: 20
