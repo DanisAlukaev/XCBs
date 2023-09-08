@@ -1,3 +1,5 @@
+import logging
+
 import torch
 from models.feature_extractors.torchvision import TorchvisionFeatureExtractor
 from models.helpers import weights_init
@@ -19,7 +21,7 @@ class FreezingCallback(Callback):
                 for name, param in pl_module.main.feature_extractor.main.named_parameters():
                     if name.split(".")[0] != "fc":
                         param.requires_grad = False
-                print(
+                logging.info(
                     f"Backbone's weights were frozen on {trainer.current_epoch} epoch!")
 
 
@@ -34,7 +36,7 @@ class ReinitializeBottleneckCallback(Callback):
             if trainer.current_epoch == self.epoch_reinitialize:
                 torch.nn.init.xavier_uniform_(
                     pl_module.main.feature_extractor.main.fc.weight)
-                print("Bottleneck was re-initialized.")
+                logging.info("Bottleneck was re-initialized.")
 
 
 class InitializePredictorCallback(Callback):
@@ -48,14 +50,14 @@ class InitializePredictorCallback(Callback):
                 for l in pl_module.main.predictor.main:
                     if isinstance(l, torch.nn.Linear):
                         torch.nn.init.xavier_uniform_(l.weight)
-                print("Predictor was re-initialized.")
+                logging.info("Predictor was re-initialized.")
 
         if hasattr(pl_module.main, 'predictor_aux') and isinstance(pl_module.main.predictor_aux, MLPPredictor):
             if trainer.current_epoch == 0:
                 for l in pl_module.main.predictor_aux.main:
                     if isinstance(l, torch.nn.Linear):
                         torch.nn.init.xavier_uniform_(l.weight)
-                print("Predictor aux was re-initialized.")
+                logging.info("Predictor aux was re-initialized.")
 
 
 class ReinitializeTextualMLP(Callback):
@@ -78,7 +80,7 @@ class ReinitializeTextualMLP(Callback):
                     for l in mlp.main:
                         if isinstance(l, torch.nn.Linear):
                             torch.nn.init.xavier_uniform_(l.weight)
-                print("Textual MLP were re-initialized.")
+                logging.info("Textual MLP were re-initialized.")
 
 
 class InitializeInceptionCallback(Callback):
@@ -90,4 +92,4 @@ class InitializeInceptionCallback(Callback):
         if hasattr(pl_module.main, 'feature_extractor'):
             if trainer.current_epoch == 0:
                 pl_module.main.feature_extractor.main.apply(weights_init)
-                print("Inception was re-initialized.")
+                logging.info("Inception was re-initialized.")

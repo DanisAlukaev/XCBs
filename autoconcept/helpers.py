@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import random
 
@@ -40,18 +41,18 @@ def pretty_cfg(cfg):
 
 
 def load_experiment(path):
-    print("Fetching configuration...")
+    logging.info("Fetching configuration...")
     cfg_path = os.path.join(path, ".hydra/config.yaml")
     cfg = OmegaConf.load(cfg_path)
 
     set_seed(cfg.seed)
     pl.seed_everything(cfg.seed, workers=True)
 
-    print("Loading datamodule...")
+    logging.info("Loading datamodule...")
     dm = instantiate(cfg.dataset)
     dm.setup()
 
-    print("Loading model")
+    logging.info("Loading model")
     checkpoints_dir = os.path.join(
         path, "lightning_logs", "version_0", "checkpoints")
     checkpoint_name = [n for n in os.listdir(
@@ -65,3 +66,9 @@ def load_experiment(path):
     model = model.eval()
 
     return dm, model
+
+
+def get_scalar_page_clearml(log_page_url):
+    output_url = log_page_url.split("/")[:-1]
+    scalar_url = "/".join(output_url + ["metrics", "scalar"])
+    return scalar_url

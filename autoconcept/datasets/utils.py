@@ -1,3 +1,4 @@
+import logging
 import re
 from collections import Counter
 from pathlib import Path
@@ -87,7 +88,6 @@ class Vocabulary:
         mix_with_mscoco=True,
     ):
         self.annotation_path = hydra.utils.get_original_cwd() / Path(annotation_path)
-        print("PATH", self.annotation_path)
         self.mix_with_mscoco = mix_with_mscoco
         self.tokenizer = get_tokenizer('spacy', language='en')
         self.read_annotations_file()
@@ -122,14 +122,14 @@ class Vocabulary:
         special_symbols = ["<pad>", "<unk>"]
         self.vocab = vocab(word_counter, specials=special_symbols)
         self.vocab.set_default_index(self.vocab["<unk>"])
-        print("Max length: ", max(size_arr))
+
+        logging.info(f"Len of vocab: {len(self.vocab)}")
+        logging.info(f"Max length: {max(size_arr)}")
 
     def read_annotations_file(self):
         filename = self.annotation_path
         self.annotations = pd.read_csv(
             filename, names=['filename', 'source_captions', 'mask_source_captions', 'attributes'])
-        self.annotations
-        print(self.annotations.head())
 
 
 class VocabularyShapes:
@@ -139,7 +139,6 @@ class VocabularyShapes:
         annotation_path="data/shapes/captions.csv",
     ):
         self.annotation_path = Path(annotation_path)
-        print(self.annotation_path)
         self.annotation_path = hydra.utils.get_original_cwd() / self.annotation_path
         self.tokenizer = get_tokenizer('spacy', language='en')
         self.read_annotations_file()
@@ -157,8 +156,8 @@ class VocabularyShapes:
         special_symbols = ["<pad>", "<unk>"]
         self.vocab = vocab(word_counter, specials=special_symbols)
         self.vocab.set_default_index(self.vocab["<unk>"])
-        print("Len of vocab: ", len(self.vocab))
-        print("Max len of caption: ", max(lens))
+        logging.info(f"Len of vocab: {len(self.vocab)}")
+        logging.info(f"Max len of caption: {max(lens)}", )
 
     def read_annotations_file(self):
         filename = self.annotation_path
@@ -188,8 +187,8 @@ class VocabularyMimic:
         special_symbols = ["<pad>", "<unk>"]
         self.vocab = vocab(word_counter, specials=special_symbols)
         self.vocab.set_default_index(self.vocab["<unk>"])
-        print("Len of vocab: ", len(self.vocab))
-        print("Max len of caption: ", max(lens))
+        logging.info(f"Len of vocab: {len(self.vocab)}")
+        logging.info(f"Max len of caption: {max(lens)}")
 
     def read_annotations_file(self):
         filename = self.annotation_path

@@ -15,8 +15,6 @@ class BaseModel(nn.Module):
 
     def __init__(self, extractor, predictor, interim_activation):
         super().__init__()
-        # assert extractor.out_features == predictor.layers[0]
-
         self.feature_extractor = extractor
         self.predictor = predictor
         self.interim_activation = interim_activation
@@ -27,10 +25,6 @@ class BaseModel(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x, iteration):
-        # print("Inception: ", self.feature_extractor.main.Conv2d_1a_3x3.conv.weight)
-        # print("Feature extractor fc: ", self.feature_extractor.main.fc.weight)
-        # print("Predictor: ", self.predictor.main[0].weight)
-
         concept_logits = self.feature_extractor(x)
         concept_probs = self.sigmoid(concept_logits)
 
@@ -41,9 +35,6 @@ class BaseModel(nn.Module):
         concept_activated = concept_logits
         if self.interim_activation:
             concept_activated = self.interim_activation(*args)
-
-        # print()
-        # print("Gumbel: ", concept_activated)
 
         concept_activated_bn = self.bn(concept_activated)
         prediction = self.predictor(concept_activated_bn)
@@ -85,9 +76,6 @@ class LitBaseModel(pl.LightningModule):
         self.scheduler_template = scheduler_template
         self.field = field
 
-        # print("Predictor: ", self.main.predictor.main[0].weight)
-        # print("BatchNorm: ", self.main.bn.weight, self.main.bn.bias)
-
         self.automatic_optimization = False
 
     def forward(self, x, iteration=None):
@@ -102,8 +90,6 @@ class LitBaseModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, target = batch[self.field], batch["target"]
 
-        # print("target: ", target)
-
         iteration = self.trainer.global_step
         out_dict = self(x, iteration=iteration)
 
@@ -112,8 +98,6 @@ class LitBaseModel(pl.LightningModule):
 
         opt_clf = self.optimizers()
         opt_clf.zero_grad()
-
-        # torch.autograd.set_detect_anomaly(True)
 
         self.manual_backward(loss)
         opt_clf.step()

@@ -1,3 +1,4 @@
+import logging
 import os
 import traceback
 
@@ -8,22 +9,24 @@ from clearml import Task
 from extract import (compute_completeness, compute_disentanglement,
                      compute_informativeness, fit_linear_model,
                      prepare_data_dci, trace_interpretations)
-from helpers import load_experiment, pretty_cfg, report_to_telegram, set_seed
+from helpers import (get_scalar_page_clearml, load_experiment,
+                     report_to_telegram, set_seed)
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from pytorch_lightning.callbacks import (DeviceStatsMonitor,
                                          LearningRateMonitor, ModelCheckpoint)
 
-# import nltk
 
-# nltk.download("wordnet")
-
-
-def run(cfg):
+def init_clearml_task(cfg):
     task = Task.init(project_name='alphacaption',
                      task_name='debug' if cfg.debug else cfg.name)
     task.upload_artifact(
         'outputs', artifact_object=os.path.abspath(os.getcwd()))
+    return task
+
+
+def run(task, cfg):
+
     set_seed(cfg.seed)
 
     pl.seed_everything(cfg.seed, workers=True)
@@ -103,21 +106,25 @@ def run(cfg):
     if cfg.trace_interpretations:
         trace_interpretations(dm, inference)
 
-    # return f1_test
+    return f1_test
 
 
 @hydra.main(version_base=None, config_path="config/conf", config_name="config")
 def main(cfg: DictConfig):
-    print(cfg.name)
+    task = init_clearml_task(cfg)
+    logs_url = task.get_output_log_web_page()
+    scalar_url = get_scalar_page_clearml(logs_url)
     try:
-        metric = run(cfg)
+        metric = run(task, cfg)
         message = f"✅ Successful run from {cfg.timestamp}!\n\n"
         message += f"f1-score test: {metric}\n\n"
-        message += f"Configuration:\n{pretty_cfg(cfg)}"
+        message += f"ClearML: {scalar_url}"
     except Exception:
+        error_exc = traceback.format_exc()
         message = f"🚫 Run from {cfg.timestamp} failed!\n\n"
-        message += traceback.format_exc()
-        print(traceback.format_exc())
+        message += f"ClearML: {logs_url}\n\n"
+        message += error_exc
+        logging.error(message)
     report_to_telegram(message)
 
 

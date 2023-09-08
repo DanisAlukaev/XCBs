@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 
 import numpy as np
@@ -110,7 +111,7 @@ def trace_interpretations(dm, model):
     top_k_tokens = vocab_size
 
     n_concepts = model.main.concept_extractor.queries_w.num_embeddings
-    print(f"Vocab size: {vocab_size}")
+    logging.info(f"Vocab size: {vocab_size}")
 
     results = [dict(concept=None, feature=None) for _ in range(n_concepts)]
 
@@ -121,7 +122,7 @@ def trace_interpretations(dm, model):
 
     itos_map = dm.dataloader_kwargs['collate_fn'].vocabulary.vocab.get_itos()
 
-    print("Processing train data via concept extractor...")
+    logging.info("Processing train data via concept extractor...")
     for batch in tqdm(train_loader):
         input_ids = batch["indices"].cuda()
         N, _ = input_ids.shape
@@ -153,7 +154,7 @@ def trace_interpretations(dm, model):
         dummy_distributions) / len(train_loader.dataset)
     distributions = np.nan_to_num(np.array(distributions) / n_tokens)
 
-    print("Export results...")
+    logging.info("Export results...")
     for concept_idx in tqdm(range(n_concepts)):
         concept_distribution = distributions[concept_idx]
         token_ids_sorted = (-concept_distribution).argsort()[:top_k_tokens]
@@ -177,7 +178,7 @@ def trace_interpretations(dm, model):
     n_features = model.main.feature_extractor.main.fc.out_features
     top_k = 10
 
-    print("Processing train data via feature extractor...")
+    logging.info("Processing train data via feature extractor...")
     per_feature_logits = dict(
         lrg=[list() for _ in range(n_features)],
         mdm=[list() for _ in range(n_features)],
@@ -241,7 +242,7 @@ def trace_interpretations(dm, model):
         per_feature_logits["sml"] = [sorted(a, reverse=False, key=lambda x: x[1])[
             :top_k] for a in per_feature_logits["sml"]]
 
-    print("Export results...")
+    logging.info("Export results...")
     for feature_idx in tqdm(range(n_features)):
         if not results[feature_idx]["feature"]:
             results[feature_idx]["feature"] = dict()
