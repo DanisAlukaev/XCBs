@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List, Optional, Union
 
 import albumentations as A
 import cv2
@@ -6,6 +7,8 @@ import hydra
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn as nn
+from albumentations.core.transforms_interface import ImageOnlyTransform
 from albumentations.pytorch.transforms import ToTensorV2
 from datasets.collators import CollateEmulator
 from pytorch_lightning import LightningDataModule
@@ -17,20 +20,32 @@ class JointDataset(Dataset):
 
     def __init__(
         self,
-        annotations_file,
-        img_dir,
-        CUB_dir="data/CUB_200_2011",
-        transforms=None,
-        phase='train',
-        debug_sample=None,
-        mix_with_mscoco=True,
-    ):
-        self.CUB_dir = Path(CUB_dir)
-        self.annotations_file = annotations_file
+        annotations_file: Union[str, Path] = "data/captions_merged.csv",
+        img_dir: Union[str, Path] = "data/merged_files",
+        CUB_dir: Union[str, Path] = "data/CUB_200_2011",
+        transforms: List[Union[ImageOnlyTransform, nn.Module]] = None,
+        phase: Optional[str] = 'train',
+        debug_sample: Optional[int] = None,
+        mix_with_mscoco: Optional[bool] = True,
+    ) -> None:
+        """Constructor of joint CUB & MSCOCO dataset.
+
+        Can be set-up to work only with CUB dataset (for easier training).
+
+        :param annotations_file: path to .csv file with annotations.
+        :param img_dir: path to directory with dataset of merged images.
+        :param CUB_dir: path to directory with CUB data.
+        :param transforms: list of albumentation / torchvision trasforms.
+        :param phase: either 'train', 'val', 'test'.
+        :param debug_sample: index of sample to use as a debug batch.
+        :param mix_with_mscoco: bool whether to join CUB and MSCOCO.
+        """
+        self.annotations_file = hydra.utils.get_original_cwd() / annotations_file
+        self.img_dir = hydra.utils.get_original_cwd() / Path(img_dir)
+        self.CUB_dir = hydra.utils.get_original_cwd() / Path(CUB_dir)
+        self.transforms = transforms
         self.phase = phase
         self.mix_with_mscoco = mix_with_mscoco
-        self.transforms = transforms
-        self.img_dir = Path(img_dir)
 
         self.read_images_txt()
         self.read_classes_txt()
@@ -44,45 +59,42 @@ class JointDataset(Dataset):
         if self.transforms:
             self.transforms = A.Compose(transforms,)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.annotations)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> dict:
         row = self.annotations.iloc[idx]
 
+        img_path = self.CUB_dir / 'images' / row.path
         if self.mix_with_mscoco:
-            img_path = hydra.utils.get_original_cwd() / self.img_dir / row.path
-        else:
-            img_path = hydra.utils.get_original_cwd() / self.CUB_dir / 'images' / row.path
-        image = cv2.cvtColor(cv2.imread(str(img_path)), cv2.COLOR_BGR2RGB)
+            img_path = self.img_dir / row.path
+        image = cv2.imread(str(img_path))
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if self.transforms:
             transformed = self.transforms(image=image)
             image = transformed["image"]
 
-        attributes = torch.tensor(eval(row.attributes)).float()
+        mask_captions = row.mask_source_captions
+        source_captions = row.source_captions
+        mask_captions = [str(l)for l in eval(mask_captions)]
+        source_captions = [str(c) for c in eval(source_captions)]
 
-        mask_source_captions = [str(label)
-                                for label in eval(row.mask_source_captions)]
-        source_captions = [str(caption)
-                           for caption in eval(row.source_captions)]
+        captions_zip = zip(source_captions, mask_captions)
+        captions_cub = [c for c, l in captions_zip if l == 'cub']
+        captions_mscoco = [c for c, l in captions_zip if l == 'coco']
 
-        captions_cub = [caption for caption, label in zip(
-            source_captions, mask_source_captions) if label == 'cub']
-        captions_mscoco = [caption for caption, label in zip(
-            source_captions, mask_source_captions) if label == 'coco']
         mask_cub = ['cub'] * len(captions_cub)
         mask_mscoco = ['coco'] * len(captions_mscoco)
-
         if self.mix_with_mscoco:
             source_captions = captions_mscoco + captions_cub
-            mask_source_captions = mask_mscoco + mask_cub
+            mask_captions = mask_mscoco + mask_cub
         else:
             source_captions = captions_cub
-            mask_source_captions = mask_cub
+            mask_captions = mask_cub
 
         caption = " ".join(source_captions)
-
+        attributes = torch.tensor(eval(row.attributes)).float()
         class_id = self.image_id2class_id[row.name]
         target_one_hot = torch.zeros(len(self.class_id2class_name))
         target_one_hot[class_id - 1] = 1
@@ -97,14 +109,16 @@ class JointDataset(Dataset):
             class_id=class_id,
             class_name=self.class_id2class_name[class_id],
             source_captions=source_captions,
-            mask_source_captions=mask_source_captions,
+            mask_source_captions=mask_captions,
+            target=target,
         )
         self.dict_to_float32(sample)
         sample['target'] = target
         return sample
 
     @staticmethod
-    def dict_to_float32(d):
+    def dict_to_float32(d) -> None:
+
         def array_to_float32(a):
             if isinstance(a, np.ndarray):
                 return a.astype(np.float32)
@@ -116,7 +130,7 @@ class JointDataset(Dataset):
         for k, v in d.items():
             d[k] = array_to_float32(v)
 
-    def read_images_txt(self):
+    def read_images_txt(self) -> None:
         filename = self.CUB_dir / 'images.txt'
         df_images = pd.read_csv(filename, sep=' ', names=['image_id', 'path'])
         df_images['filename'] = df_images.path.apply(lambda s: s.split('/')[1])
@@ -164,8 +178,11 @@ class JointDataset(Dataset):
 
     def read_train_test_split_txt(self, test_size=0.2):
         filename = self.CUB_dir / 'train_test_split.txt'
-        df = pd.read_csv(filename, sep=' ', names=[
-                         'image_id', 'is_training_image'])
+        df = pd.read_csv(
+            filename,
+            sep=' ',
+            names=['image_id', 'is_training_image']
+        )
         df['class_id'] = df.image_id.apply(lambda x: self.image_id2class_id[x])
         self.df_train_test_split = df.set_index('image_id')
 

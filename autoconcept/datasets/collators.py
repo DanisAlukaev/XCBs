@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 import numpy as np
 import torch
@@ -15,7 +16,7 @@ class CollateEmulator:
 
     def __call__(
         self,
-        batch: list,
+        batch: List[dict],
     ) -> dict:
         """Combines data together in batches. This implementation
         replicates default collate_fn in PyTorch and is likely to
@@ -56,7 +57,7 @@ class CollateBOW:
 
     def __call__(
         self,
-        batch: list,
+        batch: List[dict],
     ) -> dict:
         """Combines data together in batches. In comparison with
         default collate function, this implementation generates
@@ -107,7 +108,7 @@ class CollateIndices:
 
     def __call__(
         self,
-        batch: list,
+        batch: List[dict],
     ) -> dict:
         """Combines data together in batches. In comparison with
         default collate function, this implementation generates
@@ -164,7 +165,7 @@ class CollateNgrams:
 
     def __call__(
         self,
-        batch: list,
+        batch: List[dict],
     ) -> dict:
         """Combines data together in batches. In comparison with
         default collate function, this implementation generates
