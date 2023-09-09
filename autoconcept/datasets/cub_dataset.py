@@ -30,6 +30,9 @@ class JointDataset(Dataset):
     ) -> None:
         """Constructor of joint CUB & MSCOCO dataset.
 
+        CUB: https://www.vision.caltech.edu/datasets/cub_200_2011/
+        MSCOCO: https://cocodataset.org/#home
+
         Can be set-up to work only with CUB dataset (for easier training).
 
         :param annotations_file: path to .csv file with annotations.
