@@ -34,7 +34,7 @@ Our cross-modal approach (see above) treats concepts as discrete latent variable
     ```
     make preprocess_mimic
     ```
-7. You are ready to run your first experiment! Checkpoints and explanations will appear in hydra `outputs/` directory.
+7. Now you're ready to run your first experiment! Checkpoints and explanations will appear in hydra `outputs/` directory (already in `.gitignore`).
     ```
     python main.py dataset.batch_size=64 seed=42 +experiment={XXX}
     ```
