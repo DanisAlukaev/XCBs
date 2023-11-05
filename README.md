@@ -42,7 +42,7 @@
 Following table helps you to navigate through all experimental setups. The configurations files are located in [this directory](autoconcept/config/conf/). However, some of them are outdated and left to revise our hypotheses later (for clarity we omit them in navigation table below). Feel free to reuse our setups and add new ones [here](autoconcept/config/conf/experiment).
 
 | Model     | EID-DATASET  | pretrained | act_fn  | norm_fn  | slot_norm | dummy_concept | dummy_tokens | reg_dist | tie_loss   |
-|:------------|:-----------:|:-----------:|:----------:|:----------:|:----------:|:-------------:|:---------------:|:---------------:|:---------------:|
+|:------------|:-----------|:-----------:|:----------|:----------|:----------:|:-------------:|:---------------:|:---------------:|:---------------|
 | Baseline | E35-SHP | ✓ | relu | - | - | -| - | - | - |
 | Baseline | E36-SHP | ✓ | sigmoid  | - | - | - | - | - | - |
 | Baseline | E36-CUB | ✓ | sigmoid  | - | - | - | - | - | - |
@@ -80,3 +80,15 @@ Following table helps you to navigate through all experimental setups. The confi
 | Framework | E60-SHP | ✗ |  gumbel | entmax | ✓ | ✓ | ✓ | ✗ | JS |
 | Framework | E61-SHP | ✗ |  gumbel | softmax | ✗ | - | - | ✓ | JS |
 | Framework | E62-SHP | ✗ | gumbel | entmax | ✗ | - | - | ✓ | JS |
+
+## 🎓 Citation
+
+Our research paper "Cross-Modal Conceptualization in Bottleneck Models" was accepted to EMNLP 2023, which will be held in December. Until the proceedings are published you can use this bibtex for our pre-print.
+```
+@article{2023-XCBs,
+  title={Cross-Modal Conceptualization in Bottleneck Models},
+  author={Alukaev, Danis and Kiselev, Semen and Pershin, Ilya and Ibragimov, Bulat and Ivanov, Vladimir and Kornaev, Alexey and Titov, Ivan},
+  journal={arXiv preprint arXiv:2310.14805},
+  year={2023}
+}
+```
