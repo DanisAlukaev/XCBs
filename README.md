@@ -81,7 +81,7 @@ Following table helps you to navigate through all experimental setups. The confi
 | Framework | E61-SHP | ✗ |  gumbel | softmax | ✗ | - | - | ✓ | JS |
 | Framework | E62-SHP | ✗ | gumbel | entmax | ✗ | - | - | ✓ | JS |
 
-## 🎓 Citation
+## 📖 Citation
 
 Our research paper was accepted to The 2023 Conference on Empirical Methods in Natural Language Processing (EMNLP 2023), which will take place in December. Until the proceedings are published, you can use this bibtex for [our pre-print](https://arxiv.org/abs/2310.14805)!
 ```
