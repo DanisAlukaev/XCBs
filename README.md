@@ -17,7 +17,7 @@ Our cross-modal approach (see above) treats concepts as discrete latent variable
     ```
     make set-up-env
     ```
-2. Create `.env` file from `.env.example`
+2. Create `.env` file from `.env.example` — optional, only if you're using Telegram to check pipelines
 3. Set-up experiment registry in clear-ml
     ```
     clearml-init
