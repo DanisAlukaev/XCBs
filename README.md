@@ -43,7 +43,7 @@ Our cross-modal approach (see above) treats concepts as discrete latent variable
 ## 🤔 FAQ
 
 1. How can I retrieve explanations?
-    > Our pipeline saves explanations in `results.json`, which can be found in experiment folder. For visualization you can use [`inspect.ipynb`](./autoconcept/inspect.ipynb) notebook.
+    > Our pipeline saves explanations in `results.json`, which can be found in experiment folder. For visualization you can use [`inspect.ipynb`](notebooks/inspect.ipynb) notebook.
 
 2. How can I assess my model in terms of DCI?
     > Measuring disentanglement, completeness, informativeness is moved outside the default pipeline and can be performed via [`metrics.ipynb`](notebooks/metrics.ipynb) notebook.
