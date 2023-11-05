@@ -1,4 +1,5 @@
 
+import os
 import random
 from pathlib import Path
 
@@ -69,8 +70,10 @@ class JointDataset(Dataset):
 
     def __getitem__(self, idx):
         row = self.annotations.iloc[idx]
-
-        img_path = hydra.utils.get_original_cwd() / Path(row.filepath)
+        try:
+            img_path = hydra.utils.get_original_cwd() / Path(row.filepath)
+        except:
+            img_path = os.getcwd() / Path(row.filepath)
         image = cv2.cvtColor(cv2.imread(str(img_path)), cv2.COLOR_BGR2RGB)
 
         if self.transforms:
@@ -132,7 +135,10 @@ class JointDataModule(LightningDataModule):
 
         self.img_size = img_size
         self.annotation_path = Path(annotation_path)
-        self.annotation_path = hydra.utils.get_original_cwd() / self.annotation_path
+        try:
+            self.annotation_path = hydra.utils.get_original_cwd() / self.annotation_path
+        except:
+            self.annotation_path = os.getcwd() / self.annotation_path
         self.debug_sample = debug_sample
         self.batch_size = batch_size
         self.num_workers = num_workers

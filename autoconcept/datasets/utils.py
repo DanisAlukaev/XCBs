@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 from collections import Counter
 from pathlib import Path
@@ -87,7 +88,11 @@ class Vocabulary:
         annotation_path="data/captions_merged.csv",
         mix_with_mscoco=True,
     ):
-        self.annotation_path = hydra.utils.get_original_cwd() / Path(annotation_path)
+        self.annotation_path = Path(annotation_path)
+        try:
+            self.annotation_path = hydra.utils.get_original_cwd() / self.annotation_path
+        except:
+            self.annotation_path = os.getcwd() / self.annotation_path
         self.mix_with_mscoco = mix_with_mscoco
         self.tokenizer = get_tokenizer('spacy', language='en')
         self.read_annotations_file()
@@ -139,7 +144,10 @@ class VocabularyShapes:
         annotation_path="data/shapes/captions.csv",
     ):
         self.annotation_path = Path(annotation_path)
-        self.annotation_path = hydra.utils.get_original_cwd() / self.annotation_path
+        try:
+            self.annotation_path = hydra.utils.get_original_cwd() / self.annotation_path
+        except:
+            self.annotation_path = os.getcwd() / self.annotation_path
         self.tokenizer = get_tokenizer('spacy', language='en')
         self.read_annotations_file()
         self.build_vocab()
@@ -170,7 +178,11 @@ class VocabularyMimic:
         self,
         annotation_path="data/mimic-cxr/captions.csv",
     ):
-        self.annotation_path = hydra.utils.get_original_cwd() / Path(annotation_path)
+        self.annotation_path = Path(annotation_path)
+        try:
+            self.annotation_path = hydra.utils.get_original_cwd() / self.annotation_path
+        except:
+            self.annotation_path = os.getcwd() / self.annotation_path
         self.tokenizer = get_tokenizer('spacy', language='en')
         self.read_annotations_file()
         self.build_vocab()
