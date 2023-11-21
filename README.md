@@ -98,7 +98,7 @@ Following table helps you to navigate through all experimental setups. The confi
 ## 📖 Citation
 
 Our research paper was accepted to The 2023 Conference on Empirical Methods in Natural Language Processing (EMNLP 2023), which will take place in December. Until the proceedings are published, you can use this bibtex for [our pre-print](https://arxiv.org/abs/2310.14805)!
-```
+```bibtex
 @article{alukaev2023cross,
   title={Cross-Modal Conceptualization in Bottleneck Models},
   author={Alukaev, Danis and Kiselev, Semen and Pershin, Ilya and Ibragimov, Bulat and Ivanov, Vladimir and Kornaev, Alexey and Titov, Ivan},
