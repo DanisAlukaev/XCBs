@@ -1,6 +1,6 @@
 # Cross-Modal Conceptualization in Bottleneck Models
 
-> How can you start talking to your model in the same language?
+> How can you start talking to your model in the same concepts?
 
 ## 🎯 Abstract
 
