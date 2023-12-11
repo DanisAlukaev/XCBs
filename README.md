@@ -97,14 +97,27 @@ Following table helps you to navigate through all experimental setups. The confi
 
 ## 📖 Citation
 
-Our research paper ["Cross-Modal Conceptualization in Bottleneck Models"](https://arxiv.org/abs/2310.14805) was published in proceedings of EMNLP 2023. To cite it please use the following bibtex:
+Our research paper ["Cross-Modal Conceptualization in Bottleneck Models"](https://aclanthology.org/2023.emnlp-main.318) was published in proceedings of EMNLP 2023. To cite it please use the following bibtex:
 ```bibtex
-@inproceedings{
-    alukaev2023crossmodal,
-    title={Cross-Modal Conceptualization in Bottleneck Models},
-    author={Danis Alukaev and Semen Kiselev and Ilya Pershin and Bulat Ibragimov and Vladimir V. Ivanov and Alexey Kornaev and Ivan Titov},
-    booktitle={The 2023 Conference on Empirical Methods in Natural Language Processing},
-    year={2023},
-    url={https://openreview.net/forum?id=ghF1EB6APx}
+@inproceedings{alukaev-etal-2023-cross,
+    title = "Cross-Modal Conceptualization in Bottleneck Models",
+    author = "Alukaev, Danis  and
+      Kiselev, Semen  and
+      Pershin, Ilya  and
+      Ibragimov, Bulat  and
+      Ivanov, Vladimir  and
+      Kornaev, Alexey  and
+      Titov, Ivan",
+    editor = "Bouamor, Houda  and
+      Pino, Juan  and
+      Bali, Kalika",
+    booktitle = "Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing",
+    month = dec,
+    year = "2023",
+    address = "Singapore",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2023.emnlp-main.318",
+    pages = "5241--5253",
+    abstract = "Concept Bottleneck Models (CBMs) assume that training examples (e.g., x-ray images) are annotated with high-level concepts (e.g., types of abnormalities), and perform classification by first predicting the concepts, followed by predicting the label relying on these concepts. However, the primary challenge in employing CBMs lies in the requirement of defining concepts predictive of the label and annotating training examples with these concepts. In our approach, we adopt a more moderate assumption and instead use text descriptions (e.g., radiology reports), accompanying the images, to guide the induction of concepts. Our crossmodal approach treats concepts as discrete latent variables and promotes concepts that (1) are predictive of the label, and (2) can be predicted reliably from both the image and text. Through experiments conducted on datasets ranging from synthetic datasets (e.g., synthetic images with generated descriptions) to realistic medical imaging datasets, we demonstrate that crossmodal learning encourages the induction of interpretable concepts while also facilitating disentanglement.",
 }
 ```
